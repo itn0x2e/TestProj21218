@@ -1,0 +1,10 @@
+
+
+typedef unsigned char byte;
+typedef unsigned long ulong;
+typedef unsigned long long ulonglong;
+
+typedef enum bool_e {
+	FALSE = 0,
+	TRUE
+} bool;
