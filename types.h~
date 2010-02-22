@@ -1,4 +1,6 @@
 
+#ifndef __TYPES_H__
+#define __TYPES_H__
 
 typedef unsigned char byte;
 typedef unsigned long ulong;
@@ -8,3 +10,10 @@ typedef enum bool_e {
 	FALSE = 0,
 	TRUE
 } bool;
+
+typedef enum algorithm_e {
+	SHA1,
+	MD5
+} algorithm;
+
+#endif /* __TYPES_H__ */

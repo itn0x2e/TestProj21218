@@ -17,5 +17,17 @@
 			goto LBL_ERROR; \
 		 }
 
+#define FREE(x) \
+		if(NULL != x) { \
+			free(x); \
+			x = NULL; \
+		}
+
+#define FCLOSE(x) \
+		if(NULL != x) { \
+			fclose(x); \
+			x = NULL; \
+		}
+
 
 #endif /* __UTIL_H__ */

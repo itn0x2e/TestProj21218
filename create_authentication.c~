@@ -6,15 +6,24 @@
 #include "constants.h"
 
 
-bool writeUserAuth(FILE * fd, char * username, char * password) 
+char * calcHash(algorithmId algo, char * password)
+{
+	//! TODO: fill in
+	return strdup(password);
+}
+
+bool writeUserAuth(FILE * fd, algorithmId algo, char * username, char * password) 
 {
 	bool ret = FALSE;
+	char * hash = NULL;
 
 	CHECK(fd != NULL);
 	CHECK(username != NULL);
 	CHECK(password != NULL);
 
-	fprintf(fd, "%s\t%s\n", username, password);
+	hash = calcHash(algo, password);
+
+	fprintf(fd, "%s\t%s\n", username, hash);
 	ret = TRUE;
 	goto LBL_CLEANUP;
 
@@ -22,6 +31,9 @@ LBL_ERROR:
 	ret = FALSE;
 
 LBL_CLEANUP:
+
+	FREE(hash);
+
 	return ret;
 }
 
@@ -45,9 +57,9 @@ bool readUserAuth(FILE * fd, char ** username, char ** hash)
 	}
 
 	/* temp setup */
-	*hash = strchr(line, "\t") + 1;
+	*hash = strchr((char *) line, '\t') + 1;
 
-	*strchr(line, "\t") = '\0';
+	*strchr(line, '\t') = '\0';
 	*username = strdup(*username);	
 
 	*hash = strdup(*hash);
@@ -62,7 +74,7 @@ LBL_CLEANUP:
 	return ret;
 }
 
-void create_authentication(char * filename) 
+void create_authentication(char * filename, algorithmId algo) 
 {
 	FILE * fd = fopen(filename, "a");
 	
@@ -70,11 +82,18 @@ void create_authentication(char * filename)
 		char line[MAX_LINE_LEN] = {0};
 		char * user = NULL;
 		char * pass = NULL;
+		
+		printf(">>> ");
+		fgets(line, sizeof(line), stdin);
 
-		fgets(stdin, line, sizeof(line));
+		if ((0 == strcmp(line, "quit"))	|| (0 == strcmp(line, "quit\n"))) {
+			printf("\nbye.\n");
+			goto LBL_CLEANUP;
+		}
+
 		user = line;
 		/* verify input */
-		if (NULL == strchr(line, '\t')) {
+		if (NULL == strchr((char *) line, '\t')) {
 			printf("bad request\n");
 			continue;
 		}
@@ -82,24 +101,45 @@ void create_authentication(char * filename)
 		pass = strchr(line, '\t') + 1;
 		*(pass - 1) = '\0';
 		
-		if (!writeUserAuth(fd, user, pass)) {
+		if (!writeUserAuth(fd, algo, user, pass)) {
 			FAIL("Error writing to file. quitting.\n");
 		}
 	}
 
+	goto LBL_CLEANUP;
+
 LBL_ERROR:
 	
 LBL_CLEANUP:
-	if (NULL != fd) {
-		fclose(fd);
-		fd = NULL;
-	}
+	FCLOSE(fd);
+}
+
+
+void printUsage(void) 
+{
+	printf("usage: create_authentication [MD5|SHA1] <file>\n");
 }
 
 
 int main(int argc, char ** argv) 
 {
-	writeAuth(NULL, NULL, NULL);
-	
+	algorithmId algo = ALGO_INVALID;
 
+	if (3 != argc) { 
+		printUsage();
+		return -1;
+	}
+
+	if (0 == strcasecmp(argv[1], "md5")) {
+		algo = ALGO_MD5;
+	} else if (0 == strcasecmp(argv[1], "sha1")) {
+		algo = ALGO_SHA1;
+	} else {
+		printUsage();
+		return -1;
+	}
+
+	create_authentication(argv[2], algo);
+	
+	return 0;
 }

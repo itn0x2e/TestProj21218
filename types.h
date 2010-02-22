@@ -11,5 +11,10 @@ typedef enum bool_e {
 	TRUE
 } bool;
 
+typedef enum algorithmId_e {
+	ALGO_INVALID = 0,
+	ALGO_SHA1,
+	ALGO_MD5
+} algorithmId;
 
 #endif /* __TYPES_H__ */
