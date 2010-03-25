@@ -1,0 +1,32 @@
+- You should use sha1.c, sha1.h, md5.c and md5.h in your project.
+- We supplied two test programs: md5test.c and sha1test.c. Both receive 
+input strings as arguments, compute the hash values and print them.
+- Just run
+gcc md5.c md5test.c -o md5test
+md5test name1 name2 david barak
+
+gcc sha1.c sha1test.c -o sha1test
+sha1test name1 name2 david barak
+
+-----------------------------------------------
+SHA1 code is based on the source code from-
+http://www.packetizer.com/security/sha1/
+(the c package).
+
+Check Wikipedia - 
+http://en.wikipedia.org/wiki/SHA_hash_functions
+and the RFC -
+http://www.apps.ietf.org/rfc/rfc3174.html
+for more details.
+
+-----------------------------------------------
+MD5 code is based on the source code from-
+http://people.csail.mit.edu/rivest/Md5.c
+
+Check Wikipedia-
+http://en.wikipedia.org/wiki/MD5
+and the RFC-
+http://tools.ietf.org/html/rfc1321
+for more details.
+
+

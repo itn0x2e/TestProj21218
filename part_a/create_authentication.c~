@@ -84,11 +84,17 @@ void create_authentication(char * filename, algorithmId algo)
 		char * pass = NULL;
 		
 		printf(">>> ");
-		fgets(line, sizeof(line), stdin);
+		if (NULL == fgets(line, sizeof(line), stdin)) {
+			goto LBL_EOF;
+		}
 
-		if ((0 == strcmp(line, "quit"))	|| (0 == strcmp(line, "quit\n"))) {
-			printf("\nbye.\n");
-			goto LBL_CLEANUP;
+		/* trim string */
+		if ('\n' == line[strlen(line) - 1]) { 
+			line[strlen(line) - 1] = '\0';
+		}
+
+		if (0 == strcmp(line, "quit")) {
+			goto LBL_EOF;
 		}
 
 		user = line;
@@ -106,6 +112,10 @@ void create_authentication(char * filename, algorithmId algo)
 		}
 	}
 
+	goto LBL_CLEANUP;
+
+LBL_EOF:
+	printf("\nbye.\n");
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
