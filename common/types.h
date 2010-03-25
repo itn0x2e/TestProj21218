@@ -9,7 +9,7 @@ typedef unsigned long long ulonglong;
 typedef enum bool_e {
 	FALSE = 0,
 	TRUE
-} bool;
+} bool_t;
 
 typedef enum algorithmId_e {
 	ALGO_INVALID = 0,
