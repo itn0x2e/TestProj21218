@@ -6,6 +6,7 @@
 #define _MISC_H_
 
 #include <string.h>
+#include "util.h"
 
 /*************************************************************************/
 /* typedef BasicHashFunctionPtr:                                         */
@@ -21,15 +22,14 @@ typedef int (*BasicHashFunctionPtr)(const unsigned char *,int,unsigned char *);
 /* int inputLength , i.e. its length in byte, as it may vary   */
 /* unsigned char *outBuf output buffer to fulfill. Assume long enough*/
 
-#define MD5_OUTPUT_LENGTH_IN_BYTES    16   
+#define MD5_OUTPUT_LENGTH_IN_BYTES    (16)
 int MD5BasicHash ( const unsigned char *in,int len, unsigned char *outBuf); 
-	/* import code, based on supplied internet link & example.        */
-    /* You are allowed to find yourself a different source if desired.*/
 
-#define SHA1_OUTPUT_LENGTH_IN_BYTES   32
+#define SHA1_OUTPUT_LENGTH_IN_BYTES   (32)
 int SHA1BasicHash ( const unsigned char *in,int len, unsigned char *outBuf); 
-	/* import code, based on supplied internet link & example.        */
-    /* You are allowed to find yourself a different source if desired.*/
+
+#define HASH_MAX_SIZE (MAX(SHA1_OUTPUT_LENGTH_IN_BYTES, MD5_OUTPUT_LENGTH_IN_BYTES))
+
 
 /*************************************************************************/
 /* Function cryptHash do it on an ascii string.                          */

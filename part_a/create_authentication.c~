@@ -1,29 +1,42 @@
 #include <stdio.h>
-#include <stdio.h>
+#include <string.h>
 
-#include "types.h"
-#include "util.h"
-#include "constants.h"
+#include "../common/types.h"
+#include "../common/util.h"
+#include "../common/misc.h"
+#include "../common/constants.h"
 
 
-char * calcHash(algorithmId algo, char * password)
+int calcHash(algorithmId algo, char * password, unsigned char * out)
 {
-	//! TODO: fill in
-	return strdup(password);
+	switch(algo) {
+	case ALGO_MD5:
+		return MD5BasicHash(password, strlen(password), out);
+	case ALGO_SHA1:
+		return SHA1BasicHash(password, strlen(password), out);		
+	default:
+		return 0;
+	}
 }
 
-bool writeUserAuth(FILE * fd, algorithmId algo, char * username, char * password) 
+bool_t writeUserAuth(FILE * fd, algorithmId algo, char * username, char * password) 
 {
-	bool ret = FALSE;
-	char * hash = NULL;
+	unsigned char hash[HASH_MAX_SIZE];
+	char asciiHash[2*HASH_MAX_SIZE + 1];
+
+	bool_t ret = FALSE;
+	int hashSize = 0;
 
 	CHECK(fd != NULL);
 	CHECK(username != NULL);
 	CHECK(password != NULL);
 
-	hash = calcHash(algo, password);
+	hashSize = calcHash(algo, password, hash);
+	printf("hashSize=%d\n", hashSize);
+	binary2hexa(hash, hashSize, asciiHash, sizeof(asciiHash));
+	printf("strlen(asciiHash)=%d\n", strlen(asciiHash));
+	fprintf(fd, "%s\t%s\n", username, asciiHash);
 
-	fprintf(fd, "%s\t%s\n", username, hash);
 	ret = TRUE;
 	goto LBL_CLEANUP;
 
@@ -32,14 +45,12 @@ LBL_ERROR:
 
 LBL_CLEANUP:
 
-	FREE(hash);
-
 	return ret;
 }
 
-bool readUserAuth(FILE * fd, char ** username, char ** hash) 
+bool_t readUserAuth(FILE * fd, char ** username, char ** hash) 
 {
-	bool ret = FALSE;
+	bool_t ret = FALSE;
 	char line[MAX_LINE_LEN] = {0};
 
 	CHECK(fd != NULL);
