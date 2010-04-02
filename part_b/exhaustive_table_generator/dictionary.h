@@ -1,17 +1,22 @@
-#ifndef DICTIONARY_H_
-#define DICTIONARY_H_
+#ifndef __DICTIONARY_H__
+#define __DICTIONARY_H__
 
-#include "../common/types.h"
+#include "../../common/types.h"
+
+typedef enum letterCast_e {
+	LOWER_CASE = 0,
+	UPPER_CASE = 1
+} letterCase_t;
 
 typedef struct dictionary_s {
-	const char ** entries,
-	unsigned int numEntries
+	const char ** entries;
+	uint_t numEntries;
 } dictionary_t;
 
-bool_t dictionaryInitialize(dictionary_t * dictionary,
-			    const char * filename);
-bool_t dictionaryFinalize();
-unsigned long dictionaryGetSize();
-const char * dictionaryGetEntry(unsigned long index);
+bool_t dictionaryInitialize(dictionary_t * self, const char * filename);
+void dictionaryFinalize(dictionary_t * self);
+inline ulong_t dictionaryGetSize(const dictionary_t * self);
+inline ulong_t dictionaryGetMaxLength(const dictionary_t * self);
+inline const char * dictionaryGetEntry(const dictionary_t * self, ulong_t index, letterCase_t letterCase);
 
-#endif /*DICTIONARY_H_*/
+#endif /*__DICTIONARY_H__*/

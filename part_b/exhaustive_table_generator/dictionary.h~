@@ -5,7 +5,7 @@
 
 typedef struct dictionary_s {
 	const char ** entries,
-	unsigned int entriesNum
+	unsigned int numEntries
 } dictionary_t;
 
 bool_t dictionaryInitialize(dictionary_t * dictionary,

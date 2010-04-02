@@ -1,24 +1,23 @@
-#ifndef PASSWORD_GENERATOR_H_
-#define PASSWORD_GENERATOR_H_
+#ifndef __PASSWORD_GENERATOR_H__
+#define __PASSWORD_GENERATOR_H__
 
-#include "../common/types.h"
-#include "dictionary.h"
+#include "../../common/types.h"
+#include "rule_segment.h"
 
 typedef struct passwordGenerator_s {
-	const char ** ruleEntries,
-	unsigned int numRuleEntries,
-	dictionary_t dictionary,
-	unsigned long maxPasswordLength
+	ruleSegment_t * ruleSegments;
+	ulong_t * ruleSegmentAccumulativeSizes; // TODO: document that the offset is the first which is outside the range
+	uint_t numRuleSegments;
+	ulong_t size;
+	ulong_t maxPasswordLength;
 } passwordGenerator_t;
 
-bool_t passwordGeneratorInitialize(passwordGenerator_t * passwordGenerator,
+bool_t passwordGeneratorInitialize(passwordGenerator_t * self,
 				   const char * rule,
-				   dictionary_t * dictionary);
-bool_t passwordGeneratorFinalize();
-unsigned long passwordGeneratorGetSize();
-const char * passwordGeneratorCalculatePassword(unsigned long index);
-unsigned long passwordGeneratorGetRuleEntrySize(const char * ruleEntry);
-unsigned long passwordGeneratorGetRuleEntryMaxLength(const char * ruleEntry);
-unsigned long passwordGeneratorGetDictionaryMaxLength();
+				   const dictionary_t * dictionary);
+void passwordGeneratorFinalize(passwordGenerator_t * self);
+inline ulong_t passwordGeneratorGetSize(const passwordGenerator_t * self);
+inline ulong_t passwordGeneratorGetMaxLength(const passwordGenerator_t * self);
+const bool_t passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_t index, char * buf);
 
-#endif /*PASSWORD_GENERATOR_H_*/
+#endif /* __PASSWORD_GENERATOR_H__ */

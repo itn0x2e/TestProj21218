@@ -1,5 +1,5 @@
-#ifndef EXHAUSTIVE_TABLE_GENERATOR_H_
-#define EXHAUSTIVE_TABLE_GENERATOR_H_
+#ifndef __EXHAUSTIVE_TABLE_GENERATOR_H__
+#define __EXHAUSTIVE_TABLE_GENERATOR_H__
 
 #define PAIRS_PER_BLOCK (7)
 #define BYTES_PER_SIGNATURE (8)
@@ -15,4 +15,4 @@ int hashKeyforEfficientComparison(const unsigned char * keyBuf,
 				  int keySizeof,
 				  unsigned char *validationKeyBuf); 
 
-#endif /*EXHAUSTIVE_TABLE_GENERATOR_H_*/
+#endif /* __EXHAUSTIVE_TABLE_GENERATOR_H__ */
