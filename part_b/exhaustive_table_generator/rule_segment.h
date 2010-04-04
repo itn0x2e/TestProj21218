@@ -5,7 +5,7 @@
 #include "dictionary.h"
 #include "password_part_generator.h"
 
-const char * RULE_SEGMENT_RULE_TOKENS = "?&!%@#$";
+#define RULE_SEGMENT_RULE_TOKENS "?&!%@#$"
 
 typedef struct ruleSegment_s {
 	passwordPartGenerator_t ** passwordPartGenerators;

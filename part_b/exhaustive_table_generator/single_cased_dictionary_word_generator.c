@@ -1,9 +1,10 @@
+#include <string.h>
 #include "../../common/util.h"
 #include "single_cased_dictionary_word_generator.h"
 
 inline void singleCasedDictionaryWordGeneratorInitialize(
 		singleCasedDictionaryWordGenerator_t * self,
-		dictionary_t * dictionary,
+		const dictionary_t * dictionary,
 		letterCase_t letterCase) {
 
 	passwordPartGenerator_t * passwordPartGenerator = (passwordPartGenerator_t *) self;

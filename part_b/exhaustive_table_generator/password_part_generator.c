@@ -43,3 +43,14 @@ inline ulong_t passwordPartGeneratorGetMaxLength(const passwordPartGenerator_t *
 inline char * passwordPartGeneratorCalculatePassword(const passwordPartGenerator_t * self, ulong_t index, char * buf) {
 	return self->calcPassFunc(self, index, buf);
 }
+
+static passwordPartGenerator_t * createSingleCasedDictionaryWordGenerator(const char * rulePart, const dictionary_t * dictionary, letterCase_t letterCase) {
+	// TODO: dummy
+	return NULL;
+}
+
+static passwordPartGenerator_t * createMixedCasedDictionaryWordGenerator(const char * rulePart, const dictionary_t * dictionary) {
+	// TODO: dummy
+	return NULL;
+}
+
