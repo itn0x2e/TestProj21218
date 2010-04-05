@@ -5,7 +5,7 @@
 #include "../common/misc.h"
 
 
-int calcHash(algorithmId algo, char * password, unsigned char * out)
+int calcHash(algorithmId_t algo, char * password, unsigned char * out)
 {
 	switch(algo) {
 	case ALGO_MD5:
@@ -18,7 +18,7 @@ int calcHash(algorithmId algo, char * password, unsigned char * out)
 }
 
 
-bool_t writeUserAuth(FILE * fd, algorithmId algo, char * username, char * password) 
+bool_t writeUserAuth(FILE * fd, algorithmId_t algo, char * username, char * password) 
 {
 	unsigned char hash[HASH_MAX_SIZE];
 	char asciiHash[2*HASH_MAX_SIZE + 1];

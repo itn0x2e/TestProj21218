@@ -9,7 +9,7 @@
 
 
 
-bool_t create_authentication(char * filename, algorithmId algo) 
+bool_t create_authentication(char * filename, algorithmId_t algo) 
 {
 	bool_t ret = FALSE;
 
@@ -98,7 +98,7 @@ void printUsage(void)
 
 int main(int argc, char ** argv) 
 {
-	algorithmId algo = ALGO_INVALID;
+	algorithmId_t algo = ALGO_INVALID;
 
 	if (3 != argc) { 
 		printUsage();

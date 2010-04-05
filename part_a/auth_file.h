@@ -15,12 +15,12 @@ typedef struct accountInfo_s {
 } accountInfo_t;
 
 typedef struct authFile_s {
-	algorithmId algo;
+	algorithmId_t algo;
 	unsigned int entryCount;
 	accountInfo_t * entries;
 } authFile_t;
 
-bool_t writeUserAuth(FILE * fd, algorithmId algo, char * username, char * password);
+bool_t writeUserAuth(FILE * fd, algorithmId_t algo, char * username, char * password);
 bool_t readUserAuth(FILE * fd, accountInfo_t * res);
 
 bool_t readAuthFile(char * filename, authFile_t * res);
