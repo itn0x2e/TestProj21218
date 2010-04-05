@@ -11,7 +11,7 @@ typedef struct singleCasedDictionaryWordGenerator_s {
 } singleCasedDictionaryWordGenerator_t;
 
 inline void singleCasedDictionaryWordGeneratorInitialize(singleCasedDictionaryWordGenerator_t * self, const dictionary_t * dictionary, letterCase_t letterCase);
-inline bool_t singleCasedDictionaryWordGeneratorFinalize(singleCasedDictionaryWordGenerator_t * self);
+inline void singleCasedDictionaryWordGeneratorFinalize(singleCasedDictionaryWordGenerator_t * self);
 char * singleCasedDictionaryWordGeneratorCalcPass(const singleCasedDictionaryWordGenerator_t * self, ulong_t index, char * buf);
 
 #endif /*__SINGLE_CASED_DICTIONARY_WORD_GENERATOR_H__*/

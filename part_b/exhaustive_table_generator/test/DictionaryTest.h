@@ -14,6 +14,7 @@
 int dictionaryTest();
 int dictionaryTestEmpty();
 int dictionaryTestWords();
+int dictionaryTestMixed();
 
 #define SPACES "\r\n  \t \n\t  "
 

@@ -5,8 +5,10 @@
  *      Author: ritzpaz
  */
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 #include "../dictionary.h"
+#include "../mixed_cased_dictionary_word_generator.h"
 #include "../single_cased_dictionary_word_generator.h"
 #include "DictionaryTest.h"
 
@@ -15,7 +17,7 @@ int isGenEmpty(const dictionaryWordGenerator_t* dict);
 int hasWords(const dictionary_t* dict, const char ** words, uint_t numWords);
 
 int dictionaryTest() {
-	int r = dictionaryTestEmpty() && dictionaryTestWords();
+	int r = dictionaryTestEmpty() && dictionaryTestWords() && dictionaryTestMixed();
 	return r;
 }
 
@@ -79,6 +81,48 @@ int dictionaryTestWords() {
 	dictionaryFinalize(&dict);
 
 	return 1;
+}
+
+int dictionaryTestMixed() {
+	char r[5000] = {0};
+	char * raw = r;
+	int i, j;
+	dictionary_t dict;
+	const char * words[] = {"7782902!!h$$e", "llo", "w0rld"};
+	for (i = 0; i < (sizeof(words) / sizeof(*words)); ++i) {
+		for (j = 0; j < i % 2 + 1; ++j) {
+			strcpy(raw, SPACES);
+			raw += strlen(SPACES);
+		}
+		strcpy(raw, words[i]);
+		raw += strlen(words[i]);
+		for (j = 0; j < i % 3; ++j) {
+			strcpy(raw, SPACES);
+			raw += strlen(SPACES);
+		}
+		strcpy(raw, "\n");
+		raw += 1;
+	}
+
+	if(!dictionaryInitialize(&dict, r)) return 0;
+	mixedCasedDictionaryWordGenerator_t mix;
+	mixedCasedDictionaryWordGeneratorInitialize(&mix, &dict);
+	passwordPartGenerator_t * gen = (passwordPartGenerator_t *) &mix;
+
+	printf("Mixed max length: %u\n", passwordPartGeneratorGetMaxLength(gen));
+
+	ulong_t k;
+	char word[500];
+	for (k = 0; k < passwordPartGeneratorGetSize(gen); ++k) {
+		*passwordPartGeneratorCalculatePassword(gen, k, word) = '\0';
+		printf("Mixed word #%08u: %s\n", k, word);
+	}
+
+	passwordPartGeneratorFinalize(gen);
+
+	dictionaryFinalize(&dict);
+
+	return TRUE;
 }
 
 int isEmpty(const dictionary_t* dict) {

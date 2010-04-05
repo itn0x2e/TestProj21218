@@ -22,8 +22,8 @@ inline void singleCasedDictionaryWordGeneratorInitialize(
 			singleCasedDictionaryWordGeneratorFinalize;
 }
 
-inline bool_t singleCasedDictionaryWordGeneratorFinalize(singleCasedDictionaryWordGenerator_t * singleCasedDictionaryWordGenerator) {
-	return TRUE;
+inline void singleCasedDictionaryWordGeneratorFinalize(singleCasedDictionaryWordGenerator_t * self) {
+	/* Left blank on purpose */
 }
 
 char * singleCasedDictionaryWordGeneratorCalcPass(
@@ -36,7 +36,7 @@ char * singleCasedDictionaryWordGeneratorCalcPass(
 	ASSERT(index < dictionaryGetSize(dictionary));
 
 	dictionaryEntry = dictionaryGetEntry(dictionary, index, self->letterCase);
-	assert(NULL != dictionaryEntry);
+	ASSERT(NULL != dictionaryEntry);
 
 	strcpy(buf, dictionaryEntry);
 

@@ -85,6 +85,9 @@ const char * dictionaryGetEntry(const dictionary_t * self, ulong_t index, letter
 }
 
 static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextLen) {
+
+	/* TODO: should we allow ' ' as a part of a word? */
+
 	uint_t i = 0;
 
 	/* Skip any loose terminators in the string's beginning */

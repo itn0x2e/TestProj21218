@@ -1,12 +1,18 @@
-/*
- * mixed_cased_dictionary_word_generator.h
- *
- *  Created on: Mar 31, 2010
- *      Author: ritzpaz
- */
+#ifndef __MIXED_CASED_DICTIONARY_WORD_GENERATOR_H__
+#define __MIXED_CASED_DICTIONARY_WORD_GENERATOR_H__
 
-#ifndef MIXED_CASED_DICTIONARY_WORD_GENERATOR_H_
-#define MIXED_CASED_DICTIONARY_WORD_GENERATOR_H_
+#include "../../common/types.h"
+#include "dictionary.h"
+#include "dictionary_word_generator.h"
 
+typedef struct mixedCasedDictionaryWordGenerator_s {
+	dictionaryWordGenerator_t super;
+	ulong_t * accumulativeSizes;
+} mixedCasedDictionaryWordGenerator_t;
 
-#endif /* MIXED_CASED_DICTIONARY_WORD_GENERATOR_H_ */
+inline bool_t mixedCasedDictionaryWordGeneratorInitialize(mixedCasedDictionaryWordGenerator_t * self, const dictionary_t * dictionary);
+inline void mixedCasedDictionaryWordGeneratorFinalize(mixedCasedDictionaryWordGenerator_t * self);
+char * mixedCasedDictionaryWordGeneratorCalcPass(const mixedCasedDictionaryWordGenerator_t * self, ulong_t index, char * buf);
+
+#endif /*__MIXED_CASED_DICTIONARY_WORD_GENERATOR_H__*/
+
