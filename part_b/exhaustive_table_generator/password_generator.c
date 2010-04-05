@@ -91,7 +91,10 @@ static bool_t parseRule(passwordGenerator_t * self, const char * rule, const dic
 	self->numRuleSegments = 0;
 	while (ruleSegmentStr != NULL) {
 		self->numRuleSegments++;
-		ruleSegmentStr = strchr(rule + 1, '|');
+		ruleSegmentStr = strchr(ruleSegmentStr, '|');
+		if (NULL != ruleSegmentStr) {
+			ruleSegmentStr += 1;
+		}
 	}
 	
 	self->ruleSegments = (ruleSegment_t *) malloc(self->numRuleSegments * sizeof(ruleSegment_t));
@@ -105,7 +108,7 @@ static bool_t parseRule(passwordGenerator_t * self, const char * rule, const dic
 	
 	for (i = 0; i < self->numRuleSegments; ++i) {
 		CHECK(ruleSegmentInitialize(self->ruleSegments + i, ruleSegmentStr, dictionary));
-		ruleSegmentStr = strchr(rule + 1, '|');
+		ruleSegmentStr = strchr(ruleSegmentStr, '|') + 1;
 	}
 	
 	return TRUE;

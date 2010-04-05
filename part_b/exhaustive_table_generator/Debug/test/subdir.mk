@@ -6,16 +6,19 @@
 C_SRCS += \
 ../test/AlphabetTest.c \
 ../test/DictionaryTest.c \
+../test/PasswordGeneratorTest.c \
 ../test/test.c 
 
 OBJS += \
 ./test/AlphabetTest.o \
 ./test/DictionaryTest.o \
+./test/PasswordGeneratorTest.o \
 ./test/test.o 
 
 C_DEPS += \
 ./test/AlphabetTest.d \
 ./test/DictionaryTest.d \
+./test/PasswordGeneratorTest.d \
 ./test/test.d 
 
 

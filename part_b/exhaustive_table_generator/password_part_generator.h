@@ -17,10 +17,10 @@ typedef struct passwordPartGenerator_s {
 } passwordPartGenerator_t;
 
 passwordPartGenerator_t * passwordPartGeneratorCreate(const char * rulePart, const dictionary_t * dictionary);
-inline void passwordPartGeneratorInitialize(passwordPartGenerator_t * self);
-inline void passwordPartGeneratorFinalize(passwordPartGenerator_t * self);
-inline ulong_t passwordPartGeneratorGetSize(const passwordPartGenerator_t * self);
-inline ulong_t passwordPartGeneratorGetMaxLength(const passwordPartGenerator_t * self);
-inline char * passwordPartGeneratorCalculatePassword(const passwordPartGenerator_t * self, ulong_t index, char * buf);
+void passwordPartGeneratorInitialize(passwordPartGenerator_t * self);
+void passwordPartGeneratorFinalize(passwordPartGenerator_t * self);
+ulong_t passwordPartGeneratorGetSize(const passwordPartGenerator_t * self);
+ulong_t passwordPartGeneratorGetMaxLength(const passwordPartGenerator_t * self);
+char * passwordPartGeneratorCalculatePassword(const passwordPartGenerator_t * self, ulong_t index, char * buf);
 
 #endif /*__PASSWORD_PART_GENERATOR_H_*/

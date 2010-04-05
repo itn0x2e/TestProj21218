@@ -16,8 +16,8 @@ typedef struct ruleSegment_s {
 
 bool_t ruleSegmentInitialize(ruleSegment_t * self, const char * ruleSegmentStr, const dictionary_t * dictionary);
 void ruleSegmentFinalize(ruleSegment_t * self);
-inline ulong_t ruleSegmentGetSize(const ruleSegment_t * self);
-inline ulong_t ruleSegmentGetMaxLength(const ruleSegment_t * self);
+ulong_t ruleSegmentGetSize(const ruleSegment_t * self);
+ulong_t ruleSegmentGetMaxLength(const ruleSegment_t * self);
 bool_t ruleSegmentCalculatePassword(const ruleSegment_t * self, ulong_t index, char * buf);
 
 #endif /*__RULE_SEGMENT_H__*/

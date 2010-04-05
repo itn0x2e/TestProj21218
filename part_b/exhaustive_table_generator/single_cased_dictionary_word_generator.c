@@ -2,7 +2,7 @@
 #include "../../common/util.h"
 #include "single_cased_dictionary_word_generator.h"
 
-inline void singleCasedDictionaryWordGeneratorInitialize(
+void singleCasedDictionaryWordGeneratorInitialize(
 		singleCasedDictionaryWordGenerator_t * self,
 		const dictionary_t * dictionary,
 		letterCase_t letterCase) {
@@ -22,7 +22,7 @@ inline void singleCasedDictionaryWordGeneratorInitialize(
 			singleCasedDictionaryWordGeneratorFinalize;
 }
 
-inline void singleCasedDictionaryWordGeneratorFinalize(singleCasedDictionaryWordGenerator_t * self) {
+void singleCasedDictionaryWordGeneratorFinalize(singleCasedDictionaryWordGenerator_t * self) {
 	/* Left blank on purpose */
 }
 

@@ -69,6 +69,8 @@ bool_t ruleSegmentCalculatePassword(const ruleSegment_t * self, ulong_t index, c
 		index /= size;
 	}
 
+	*buf = '\0';
+
 	return TRUE;
 }
 
@@ -77,6 +79,7 @@ static bool_t parseRuleSegment(
 		const char * ruleSegmentStr,
 		const dictionary_t * dictionary) {
 
+	const char * ruleSegmentEnd = strchr(ruleSegmentStr, '|');
 	const char * currRulePart = strpbrk(ruleSegmentStr, RULE_SEGMENT_RULE_TOKENS);
 	uint_t numRuleParts = 0;
 	uint_t i;
@@ -84,6 +87,10 @@ static bool_t parseRuleSegment(
 	self->numPasswordPartGenerators = 0;
 
 	while (currRulePart != NULL) {
+		/* if we exeeded the current rule segment, stop */
+		if ((NULL != ruleSegmentEnd) && (currRulePart > ruleSegmentEnd)) {
+			break;
+		}
 		numRuleParts++;
 		currRulePart = strpbrk(currRulePart + 1, RULE_SEGMENT_RULE_TOKENS);
 	}
