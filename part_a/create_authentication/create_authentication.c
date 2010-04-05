@@ -5,89 +5,38 @@
 #include "../common/util.h"
 #include "../common/misc.h"
 #include "../common/constants.h"
+#include "auth_file.h"
 
 
-int calcHash(algorithmId algo, char * password, unsigned char * out)
-{
-	switch(algo) {
-	case ALGO_MD5:
-		return MD5BasicHash(password, strlen(password), out);
-	case ALGO_SHA1:
-		return SHA1BasicHash(password, strlen(password), out);		
-	default:
-		return 0;
-	}
-}
 
-bool_t writeUserAuth(FILE * fd, algorithmId algo, char * username, char * password) 
-{
-	unsigned char hash[HASH_MAX_SIZE];
-	char asciiHash[2*HASH_MAX_SIZE + 1];
-
-	bool_t ret = FALSE;
-	int hashSize = 0;
-
-	CHECK(fd != NULL);
-	CHECK(username != NULL);
-	CHECK(password != NULL);
-
-	hashSize = calcHash(algo, password, hash);
-	printf("hashSize=%d\n", hashSize);
-	binary2hexa(hash, hashSize, asciiHash, sizeof(asciiHash));
-	printf("strlen(asciiHash)=%lu\n", strlen(asciiHash));
-	fprintf(fd, "%s\t%s\n", username, asciiHash);
-
-	ret = TRUE;
-	goto LBL_CLEANUP;
-
-LBL_ERROR:
-	ret = FALSE;
-
-LBL_CLEANUP:
-
-	return ret;
-}
-
-bool_t readUserAuth(FILE * fd, char ** username, char ** hash) 
+bool_t create_authentication(char * filename, algorithmId algo) 
 {
 	bool_t ret = FALSE;
-	char line[MAX_LINE_LEN] = {0};
 
-	CHECK(fd != NULL);
-	CHECK(username != NULL);
-	CHECK(hash != NULL);
-
-	/* read line */
-	fgets(line, sizeof(line), fd);
-
-	/* temp setup */
-
-	/* find token */
-	if (NULL == strchr((char *) line, '\t')) {
-		FAIL("bad file format");
-	}
-
-	/* temp setup */
-	*hash = strchr((char *) line, '\t') + 1;
-
-	*strchr(line, '\t') = '\0';
-	*username = strdup(*username);	
-
-	*hash = strdup(*hash);
+	char * algoName = NULL;
+	FILE * fd = NULL;
 	
-	ret = TRUE;
-	goto LBL_CLEANUP;
+	CHECK(NULL != filename);
 
-LBL_ERROR:
-	ret = FALSE;
+	fd = fopen(filename, "w");
+	if (NULL == fd) {
+		FAIL("fopen hash file");
+	}
 
-LBL_CLEANUP:
-	return ret;
-}
+	switch (algo) {
+	case ALGO_MD5:
+		algoName = "MD5\n";
+		break;
+	case ALGO_SHA1:
+		algoName = "SHA1\n";
+		break;
+	default:
+		FAIL("invalid algorithm id");
+	}
+	if (1 != fwrite(algoName, strlen(algoName), 1, fd)) {
+		FAIL("fwrite hash algorith id to hash file");
+	}
 
-void create_authentication(char * filename, algorithmId algo) 
-{
-	FILE * fd = fopen(filename, "a");
 	
 	for(;;) {
 		char line[MAX_LINE_LEN] = {0};
@@ -119,7 +68,7 @@ void create_authentication(char * filename, algorithmId algo)
 		*(pass - 1) = '\0';
 		
 		if (!writeUserAuth(fd, algo, user, pass)) {
-			FAIL("Error writing to file. quitting.\n");
+			FAIL("Error writing new auth credentials to file");
 		}
 	}
 
@@ -127,12 +76,17 @@ void create_authentication(char * filename, algorithmId algo)
 
 LBL_EOF:
 	printf("\nbye.\n");
+
+	ret = TRUE;
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
+	ret = FALSE;
 	
 LBL_CLEANUP:
 	FCLOSE(fd);
+
+	return ret;
 }
 
 
@@ -160,7 +114,6 @@ int main(int argc, char ** argv)
 		return -1;
 	}
 
-	create_authentication(argv[2], algo);
-	
-	return 0;
+	/* return 0 if create_authentication returned successfully */
+	return (TRUE != create_authentication(argv[2], algo));
 }

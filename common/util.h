@@ -2,7 +2,9 @@
 #ifndef __UTIL_H__
 #define __UTIL_H__
 
+#include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <malloc.h>
 
 #define MIN(a, b) ((a > b) ? b : a)
@@ -12,6 +14,9 @@
 #define WARN(x) fprintf(stderr, "WARNING: %s: %s\n", __FUNCTION__, x)
 #define TRACE(x) fprintf(stderr, "TRACE: %s: %s\n", __FUNCTION__, x)
 
+#define ASSERT(x) \
+		assert(x);
+		
 #define FAIL(x) \
 		ERROR(x); \
 		goto LBL_ERROR;
