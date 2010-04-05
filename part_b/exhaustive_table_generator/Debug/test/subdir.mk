@@ -4,14 +4,17 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../test/AlphabetTest.c \
 ../test/DictionaryTest.c \
 ../test/test.c 
 
 OBJS += \
+./test/AlphabetTest.o \
 ./test/DictionaryTest.o \
 ./test/test.o 
 
 C_DEPS += \
+./test/AlphabetTest.d \
 ./test/DictionaryTest.d \
 ./test/test.d 
 

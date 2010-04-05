@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../alphabet_phrase_generator.c \
 ../dictionary.c \
 ../dictionary_word_generator.c \
 ../exhaustive_table_generator.c \
@@ -15,6 +16,7 @@ C_SRCS += \
 ../single_cased_dictionary_word_generator.c 
 
 OBJS += \
+./alphabet_phrase_generator.o \
 ./dictionary.o \
 ./dictionary_word_generator.o \
 ./exhaustive_table_generator.o \
@@ -26,6 +28,7 @@ OBJS += \
 ./single_cased_dictionary_word_generator.o 
 
 C_DEPS += \
+./alphabet_phrase_generator.d \
 ./dictionary.d \
 ./dictionary_word_generator.d \
 ./exhaustive_table_generator.d \
