@@ -75,8 +75,8 @@ int binary2hexa(const unsigned char *bufIn, int lengthIn,
 	char tempOut[2 + 1] = {0};
 	memset(outStr, 0, outMaxLen);
 
-	for (i = 0; (((i/2) < lengthIn) && (i < outMaxLen - 1)); i += 2) {
-		snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i]);
+	for (i = 0; (((i/2) < lengthIn) && (i < (outMaxLen - 1))); i += 2) {
+		snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);
 		outStr[i] = tempOut[0];
 		outStr[i+1] = tempOut[1];
 	}
@@ -91,13 +91,16 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
 {
 	int i = 0;
 	char tempByte[3] = {0};
+	unsigned int temp = 0;
 
-	for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < outMaxLen)); i += 2) {
-		tempByte[0] = strIn[i];
-		tempByte[1] = strIn[i + 1];
+	for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < (outMaxLen - 1))); ++i) {
+		tempByte[0] = strIn[2*i];
+		tempByte[1] = strIn[2*i + 1];
 		tempByte[3] = 0x00;
 
-		sscanf(tempByte, "%c", outBuf+i);
+
+		sscanf(tempByte, "%02X", &temp);
+		outBuf[i] = temp;
 	}
 
 	return MIN(strlen(strIn) / 2, outMaxLen);
