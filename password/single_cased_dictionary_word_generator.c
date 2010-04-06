@@ -1,5 +1,5 @@
 #include <string.h>
-#include "../common/util.h"
+#include "../common/utils.h"
 #include "single_cased_dictionary_word_generator.h"
 
 void singleCasedDictionaryWordGeneratorInitialize(

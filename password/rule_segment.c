@@ -1,5 +1,5 @@
 #include <string.h>
-#include "../common/util.h"
+#include "../common/utils.h"
 #include "rule_segment.h"
 
 static bool_t parseRuleSegment(ruleSegment_t * self, const char * ruleSegmentStr, const dictionary_t * dictionary);

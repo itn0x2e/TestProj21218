@@ -2,7 +2,7 @@
 #define ALPHABETTEST_H_
 
 #include "../../common/types.h"
-#include "../../common/util.h"
+#include "../../common/utils.h"
 
 int alphabetTest();
 
