@@ -86,9 +86,6 @@ const char * dictionaryGetEntry(const dictionary_t * self, ulong_t index, letter
 }
 
 static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextLen) {
-
-	/* TODO: should we allow ' ' as a part of a word? */
-
 	uint_t i = 0;
 
 	/* Skip any loose terminators in the string's beginning */
@@ -101,8 +98,10 @@ static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextL
 		return FALSE;
 	}
 
-	/* Scan the string, looking for the word's ending */
-	for (i = 0; ('\0' != rawDict[i]) && (isgraph(rawDict[i])); ++i) {
+	/* Scan the string, looking for the word's ending.
+	 * Since ' ' is considered a valid symbol in passwords, it is also considered
+	 * a valid symbol in the middle or ending of a dictionary entry. */
+	for (i = 0; ('\0' != rawDict[i]) && (isgraph(rawDict[i]) || (' ' == rawDict[i])); ++i) {
 		/* Do nothing here */
 	}
 

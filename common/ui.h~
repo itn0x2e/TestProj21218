@@ -1,6 +1,11 @@
+#ifndef __UI_H__
+#define __UI_H__
+
 #include <stdio.h>
 #include "constants.h"
 #include "types.h"
+
+bool_t validateRule(const char * rule);
 
 /**
  * @param line
@@ -9,3 +14,5 @@
  * @pre line is allocated for at least MAX_LINE_LEN chars
  */
 bool_t readPrompt(char * line);
+
+#endif /* __UI_H__ */

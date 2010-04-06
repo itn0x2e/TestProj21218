@@ -1,9 +1,9 @@
 #ifndef __UI_H__
 #define __UI_H__
 
-#include <stdio.h>
-#include "constants.h"
 #include "types.h"
+
+bool_t validateRule(const char * rule);
 
 /**
  * @param line
