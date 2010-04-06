@@ -7,6 +7,6 @@ typedef struct randomPasswordEnumerator_s {
 	passwordEnumerator_t super;
 } randomPasswordEnumerator_t;
 
-void randomPasswordEnumeratorInitialize(randomPasswordEnumerator_t * self, const passwordGenerator_t * generator, char * buf);
+void randomPasswordEnumeratorInitialize(randomPasswordEnumerator_t * self, const passwordGenerator_t * generator, char * buf, ulong_t iterations);
 
 #endif /* __RANDOM_PASSWORD_ENUMERATOR_H__ */
