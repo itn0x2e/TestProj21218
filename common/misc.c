@@ -107,3 +107,57 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
 
 	return MIN(strlen(strIn) / 2, outMaxLen);
 }
+
+bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size)
+{
+	bool_t ret = FALSE;
+
+	CHECK(NULL != fd);
+	CHECK(NULL != buf);
+
+	/* We attempt a flush before moving the file pointer, since there may be data pending the buffer */
+	/* We ignore the return value, since we should try it anyway - it may work anyway */
+	(void) fflush(fd);
+
+	CHECK(0 == fseek(fd, offset_from_begining, SEEK_SET));
+
+	/* read */
+	CHECK(buf_size == fread(buf, 1, buf_size, fd));
+
+	ret = TRUE;
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+
+LBL_CLEANUP:
+	return ret;
+}
+
+bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size)
+{
+	bool_t ret = FALSE;
+
+	CHECK(NULL != fd);
+	CHECK(NULL != buf);
+
+	/* We attempt a flush before moving the file pointer, since there may be data pending the buffer */
+	/* We ignore the return value, since we should try it anyway - it may work anyway */
+	(void) fflush(fd);
+
+	CHECK(0 == fseek(fd, offset_from_begining, SEEK_SET));
+
+	/* write */
+	CHECK(buf_size == fwrite(buf, 1, buf_size, fd));
+
+	ret = TRUE;
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+
+LBL_CLEANUP:
+	return ret;
+}

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
+#include <errno.h>
 
 #define MIN(a, b) ((a > b) ? b : a)
 #define MAX(a, b) ((a > b) ? a : b)

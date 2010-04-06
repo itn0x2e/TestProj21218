@@ -25,7 +25,8 @@ int cryptHash(BasicHashFunctionPtr cryptHashPtr, const char *passwd, unsigned ch
 int MD5BasicHash(const unsigned char *in, int len, unsigned char *outBuf)
 {
 	/* when you want to compute MD5, first, declere the next struct */
-	MD5_CTX mdContext;/* = {0};*/
+	/*! TODO: restore !*/
+	MD5_CTX mdContext;/*! = {0};!*/
 
 	if ((NULL == in) || (NULL == outBuf)) {
 		return 0;
@@ -46,7 +47,8 @@ int MD5BasicHash(const unsigned char *in, int len, unsigned char *outBuf)
 int SHA1BasicHash ( const unsigned char *in,int len, unsigned char *outBuf)
 {
 	/* when you want to compute SH!, first, declere the next struct */
-	SHA1Context hashCtx;/* = {0};*/
+	/*! TODO: restore !*/
+	SHA1Context hashCtx;/*! = {0};!*/
 
 	if ((NULL == in) || (NULL == outBuf)) {
 		return 0;
@@ -74,7 +76,9 @@ int binary2hexa(const unsigned char *bufIn, int lengthIn,
 	memset(outStr, 0, outMaxLen);
 
 	for (i = 0; (((i/2) < lengthIn) && (i < (outMaxLen - 1))); i += 2) {
-		snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);
+/*! TODO: restore !*/
+		/*!snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);!*/
+		sprintf(tempOut, "%02X", bufIn[i/2]);
 		outStr[i] = tempOut[0];
 		outStr[i+1] = tempOut[1];
 	}
@@ -102,4 +106,70 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
 	}
 
 	return MIN(strlen(strIn) / 2, outMaxLen);
+}
+bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size)
+{
+	bool_t ret = FALSE;
+	int currFileSize = 0;
+
+	TRACE_FPRINTF(stderr, "fd=%p, offset=%d, buf=%p, buf_size=%d\n", fd, offset_from_begining, buf, buf_size);
+
+	CHECK(NULL != fd);
+	CHECK(NULL != buf);
+
+	if ( (0 != fseek(fd, SEEK_SET, offset_from_begining)) && (offset_from_begining != ftell(fd)) ) {
+		/* if we want to seek to a location greater than the current EOF, append null bytes */
+		CHECK(0 == fseek(fd, SEEK_END, 0));
+		currFileSize = ftell(fd);
+		for(currFileSize = ftell(fd);  currFileSize < offset_from_begining + buf_size;  ++currFileSize) {
+			CHECK(1 == fwrite("\0", 1, 1, fd));		
+		}
+		fflush(fd);
+		
+		/* now move back to the wanted offset */
+		CHECK(0 == fseek(fd, SEEK_SET, offset_from_begining));
+	}
+
+	CHECK(1 == fread(buf, buf_size, 1, fd));
+
+	rewind(fd);
+
+	ret = TRUE;
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+
+LBL_CLEANUP:
+	return ret;
+}
+
+bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size)
+{
+	bool_t ret = FALSE;
+
+	CHECK(NULL != fd);
+	CHECK(NULL != buf);
+
+	/* We attempt a flush before moving the file pointer, since there may be data pending the buffer */
+	/* We ignore the return value, since we should try it anyway - it may work anyway */
+	(void) fflush(fd);
+
+	CHECK(0 == fseek(fd, offset_from_begining, SEEK_SET));
+
+	/* write */
+	CHECK(buf_size == fwrite(buf, 1, buf_size, fd));
+
+	ret = TRUE;
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+		printf("bbbb  current pointer=%d\n", ftell(fd));
+	perror("bla");
+	ret = FALSE;
+
+LBL_CLEANUP:
+	return ret;
 }
