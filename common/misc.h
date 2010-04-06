@@ -6,7 +6,7 @@
 #define _MISC_H_
 
 #include <string.h>
-#include "util.h"
+#include "utils.h"
 
 /*************************************************************************/
 /* typedef BasicHashFunctionPtr:                                         */

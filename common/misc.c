@@ -19,13 +19,13 @@ LONG_INDEX_PROJ pseudo_random_generator_proj(int step)
 
 int cryptHash(BasicHashFunctionPtr cryptHashPtr, const char *passwd, unsigned char *outBuf )
 {
-	return cryptHashPtr ( passwd, strlen(passwd) , outBuf) ; 
+	return cryptHashPtr ((const unsigned char *) passwd, strlen(passwd) , outBuf) ; 
 }
 
 int MD5BasicHash(const unsigned char *in, int len, unsigned char *outBuf)
 {
 	/* when you want to compute MD5, first, declere the next struct */
-	MD5_CTX mdContext = {0};
+	MD5_CTX mdContext;/* = {0};*/
 
 	if ((NULL == in) || (NULL == outBuf)) {
 		return 0;
@@ -45,10 +45,8 @@ int MD5BasicHash(const unsigned char *in, int len, unsigned char *outBuf)
 
 int SHA1BasicHash ( const unsigned char *in,int len, unsigned char *outBuf)
 {
-	unsigned int i;
-
 	/* when you want to compute SH!, first, declere the next struct */
-	SHA1Context hashCtx = {0};
+	SHA1Context hashCtx;/* = {0};*/
 
 	if ((NULL == in) || (NULL == outBuf)) {
 		return 0;
@@ -76,7 +74,8 @@ int binary2hexa(const unsigned char *bufIn, int lengthIn,
 	memset(outStr, 0, outMaxLen);
 
 	for (i = 0; (((i/2) < lengthIn) && (i < (outMaxLen - 1))); i += 2) {
-		snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);
+		/*snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);*/
+		sprintf(tempOut, "%02X", bufIn[i/2]);
 		outStr[i] = tempOut[0];
 		outStr[i+1] = tempOut[1];
 	}
