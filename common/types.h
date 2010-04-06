@@ -4,7 +4,6 @@
 typedef unsigned char byte_t;
 typedef unsigned int uint_t;
 typedef unsigned long ulong_t;
-typedef unsigned long long ulonglong_t;
 
 typedef enum bool_e {
 	FALSE = 0,

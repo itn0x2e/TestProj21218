@@ -6,7 +6,7 @@
 
 typedef struct passwordGenerator_s {
 	ruleSegment_t * ruleSegments;
-	ulong_t * ruleSegmentAccumulativeSizes; // TODO: document that the offset is the first which is outside the range
+	ulong_t * ruleSegmentAccumulativeSizes; /* TODO: document that the offset is the first which is outside the range */
 	uint_t numRuleSegments;
 	ulong_t size;
 	ulong_t maxPasswordLength;
