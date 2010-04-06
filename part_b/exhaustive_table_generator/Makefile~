@@ -16,7 +16,7 @@ misc.o: ../../common/misc.c ../../common/misc.h
 	gcc -ansi -pedantic-errors -c -Wall -g -o misc.o ../../common/misc.c
 
 sha1.o: ../../common/sha1.c ../../common/sha1.h 
-	gcc -ansi -pedantic-errors -c -Wall -g -o sha1.o ../common/sha1.c
+	gcc -ansi -pedantic-errors -c -Wall -g -o sha1.o ../../common/sha1.c
 
 alphabet_phrase_generator.o: ../../password/alphabet_phrase_generator.c ../../password/alphabet_phrase_generator.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o alphabet_phrase_generator.o ../../password/alphabet_phrase_generator.c

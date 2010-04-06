@@ -1,10 +1,10 @@
 all: exhaustive_table_generator
 
 clean:
-	-rm exhaustive_table_generator exhaustive_table_generator.o md5.o misc.o sha1.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_generator.o password_part_generator.o rule_segment.o single_cased_dictionary_word_generator.o exaustive_table_generator.o
+	-rm exhaustive_table_generator exhaustive_table_generator.o md5.o misc.o sha1.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_generator.o password_part_generator.o rule_segment.o single_cased_dictionary_word_generator.o
 
-exhaustive_table_generator: exhaustive_table_generator.o md5.o misc.o sha1.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_generator.o password_part_generator.o rule_segment.o single_cased_dictionary_word_generator.o exaustive_table_generator.o
-	gcc -ansi -pedantic-errors -g -lm -o exhaustive_table_generator exhaustive_table_generator.o md5.o misc.o sha1.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_generator.o password_part_generator.o rule_segment.o single_cased_dictionary_word_generator.o exaustive_table_generator.o
+exhaustive_table_generator: exhaustive_table_generator.o md5.o misc.o sha1.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_generator.o password_part_generator.o rule_segment.o single_cased_dictionary_word_generator.o
+	gcc -ansi -pedantic-errors -g -lm -o exhaustive_table_generator exhaustive_table_generator.o md5.o misc.o sha1.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_generator.o password_part_generator.o rule_segment.o single_cased_dictionary_word_generator.o
 
 exhaustive_table_generator.o: exhaustive_table_generator.c exhaustive_table_generator.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o exhaustive_table_generator.o exhaustive_table_generator.c
