@@ -11,7 +11,10 @@
 #define MIN(a, b) ((a > b) ? b : a)
 #define MAX(a, b) ((a > b) ? a : b)
 
-#define ERROR(msg) fprintf(stderr, "ERROR: %s: %s\n", __FUNCTION__, msg)
+#define ERROR(msg) fprintf(stderr, "ERROR: %s: %s\n", __FUNCTION__, msg); \
+			if (0 != errno) { \
+		   		perror("possible error cause"); \
+			}
 #define WARN(msg) fprintf(stderr, "WARNING: %s: %s\n", __FUNCTION__, msg)
 
 #ifdef DEBUG

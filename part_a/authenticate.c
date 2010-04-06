@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "../common/types.h"
-#include "../common/util.h"
+#include "../common/utils.h"
 #include "../common/misc.h"
 #include "../common/constants.h"
 #include "auth_file.h"

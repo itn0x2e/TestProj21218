@@ -5,7 +5,7 @@
 
 #include "../common/types.h"
 #include "../common/misc.h"
-#include "../common/util.h"
+#include "../common/utils.h"
 
 typedef struct accountInfo_s {
 	char * user;

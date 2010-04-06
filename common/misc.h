@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include "utils.h"
+#include "types.h"
 
 /*************************************************************************/
 /* typedef BasicHashFunctionPtr:                                         */
@@ -113,6 +114,11 @@ LONG_INDEX_PROJ pseudo_random_generator_proj(int step);
 /*   implementation. Just make it as generic as this one.                */
 /*************************************************************************/
 LONG_INDEX_PROJ pseudo_random_function(const unsigned char *x,int inputLength,LONG_INDEX_PROJ seed);
+
+
+
+bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
+bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
 
 #endif
 /**********************  EOF (misc.h) *********************/
