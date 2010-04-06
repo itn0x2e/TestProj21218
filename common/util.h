@@ -1,9 +1,14 @@
+
 #ifndef __UTIL_H__
 #define __UTIL_H__
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <malloc.h>
+
+#define MIN(a, b) ((a > b) ? b : a)
+#define MAX(a, b) ((a > b) ? a : b)
 
 #define ERROR(x) fprintf(stderr, "ERROR: %s: %s\n", __FUNCTION__, x)
 #define WARN(x) fprintf(stderr, "WARNING: %s: %s\n", __FUNCTION__, x)
