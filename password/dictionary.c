@@ -1,6 +1,6 @@
 #include <ctype.h>
 #include <string.h>
-#include "../../common/util.h"
+#include "../common/util.h"
 #include "dictionary.h"
 
 static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextLen);

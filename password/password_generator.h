@@ -1,7 +1,7 @@
 #ifndef __PASSWORD_GENERATOR_H__
 #define __PASSWORD_GENERATOR_H__
 
-#include "../../common/types.h"
+#include "../common/types.h"
 #include "rule_segment.h"
 
 typedef struct passwordGenerator_s {

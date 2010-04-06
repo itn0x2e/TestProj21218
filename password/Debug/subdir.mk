@@ -8,7 +8,6 @@ C_SRCS += \
 ../dictionary.c \
 ../dictionary_word_generator.c \
 ../exhaustive_table_generator.c \
-../load_file.c \
 ../mixed_cased_dictionary_word_generator.c \
 ../password_generator.c \
 ../password_part_generator.c \
@@ -20,7 +19,6 @@ OBJS += \
 ./dictionary.o \
 ./dictionary_word_generator.o \
 ./exhaustive_table_generator.o \
-./load_file.o \
 ./mixed_cased_dictionary_word_generator.o \
 ./password_generator.o \
 ./password_part_generator.o \
@@ -32,7 +30,6 @@ C_DEPS += \
 ./dictionary.d \
 ./dictionary_word_generator.d \
 ./exhaustive_table_generator.d \
-./load_file.d \
 ./mixed_cased_dictionary_word_generator.d \
 ./password_generator.d \
 ./password_part_generator.d \

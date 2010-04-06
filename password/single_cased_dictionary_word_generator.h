@@ -1,7 +1,7 @@
 #ifndef __SINGLE_CASED_DICTIONARY_WORD_GENERATOR_H__
 #define __SINGLE_CASED_DICTIONARY_WORD_GENERATOR_H__
 
-#include "../../common/types.h"
+#include "../common/types.h"
 #include "dictionary.h"
 #include "dictionary_word_generator.h"
 

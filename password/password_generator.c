@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
-#include "../../common/util.h"
+#include "../common/util.h"
 #include "password_generator.h"
 
 static bool_t parseRule(passwordGenerator_t * self, const char * rule, const dictionary_t * dictionary);

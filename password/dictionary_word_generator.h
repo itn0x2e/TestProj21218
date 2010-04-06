@@ -1,7 +1,7 @@
 #ifndef __DICTIONARY_WORD_GENERATOR_H__
 #define __DICTIONARY_WORD_GENERATOR_H__
 
-#include "../../common/types.h"
+#include "../common/types.h"
 #include "dictionary.h"
 #include "password_part_generator.h"
 

@@ -1,6 +1,6 @@
 #include <ctype.h>
 #include <string.h>
-#include "../../common/util.h"
+#include "../common/util.h"
 #include "mixed_cased_dictionary_word_generator.h"
 
 static inline ulong_t countLower(const char * str);

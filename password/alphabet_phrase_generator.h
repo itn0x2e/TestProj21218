@@ -1,7 +1,7 @@
 #ifndef __ALPHABET_PHRASE_GENERATOR_H__
 #define __ALPHABET_PHRASE_GENERATOR_H__
 
-#include "../../common/types.h"
+#include "../common/types.h"
 #include "password_part_generator.h"
 
 typedef enum alphabet_e {

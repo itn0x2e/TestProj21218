@@ -1,6 +1,6 @@
 #include <math.h>
 #include <string.h>
-#include "../../common/util.h"
+#include "../common/util.h"
 #include "alphabet_phrase_generator.h"
 
 static const char * ALPHABETS[] = {

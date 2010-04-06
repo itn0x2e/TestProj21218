@@ -1,7 +1,7 @@
 #ifndef __DICTIONARY_H__
 #define __DICTIONARY_H__
 
-#include "../../common/types.h"
+#include "../common/types.h"
 
 typedef enum letterCast_e {
 	LOWER_CASE = 0,

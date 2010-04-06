@@ -1,7 +1,7 @@
 #ifndef __PASSWORD_PART_GENERATOR_H_
 #define __PASSWORD_PART_GENERATOR_H_
 
-#include "../../common/types.h"
+#include "../common/types.h"
 #include "dictionary.h"
 
 struct passwordPartGenerator_s;
