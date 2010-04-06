@@ -64,7 +64,7 @@ ulong_t passwordGeneratorGetMaxLength(const passwordGenerator_t * self) {
 	return self->maxPasswordLength;
 }
 
-const bool_t passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_t index, char * buf) {
+bool_t passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_t index, char * buf) {
 	uint_t i;
 
 	ASSERT(index < self->size);

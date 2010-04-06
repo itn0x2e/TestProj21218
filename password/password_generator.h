@@ -18,6 +18,6 @@ bool_t passwordGeneratorInitialize(passwordGenerator_t * self,
 void passwordGeneratorFinalize(passwordGenerator_t * self);
 ulong_t passwordGeneratorGetSize(const passwordGenerator_t * self);
 ulong_t passwordGeneratorGetMaxLength(const passwordGenerator_t * self);
-const bool_t passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_t index, char * buf);
+bool_t passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_t index, char * buf);
 
 #endif /* __PASSWORD_GENERATOR_H__ */

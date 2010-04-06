@@ -15,7 +15,12 @@ bool_t validateRule(const char * rule) {
 	
 	return TRUE;
 }
-
+/*
+hashKeyIntoTableFunctionPtr getHashFunFromName(const char * name) {
+	if (strcmp(name, "MD5")) {
+		return 
+}
+*/
 bool_t readPrompt(char * line) {
 	do {
 		printf(">>");

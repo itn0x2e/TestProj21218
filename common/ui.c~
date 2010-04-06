@@ -16,6 +16,11 @@ bool_t validateRule(const char * rule) {
 	return TRUE;
 }
 
+hashKeyIntoTableFunctionPtr getHashFunFromName(const char * name) {
+	if (strcmp(name, "MD5")) {
+		return 
+}
+
 bool_t readPrompt(char * line) {
 	do {
 		printf(">>");
@@ -29,8 +34,6 @@ bool_t readPrompt(char * line) {
  
 static bool_t isRuleValid(const char * rule) {
 	uint_t rangeBegin, rangeEnd;
-	
-	printf("rule: %s\n", rule);
 	
 	while ('\0' != *rule) {
 		switch (*rule) {

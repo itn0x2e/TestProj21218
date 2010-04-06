@@ -10,11 +10,16 @@ int main(int argc, char** argv) {
 	const char * flag = NULL;
 	
 	if (6 != argc) {
-		fprintf(stderr, "Error: Usage exhaustive_table_generator <rule> <dictionary> <hash> <filenames prefix> <\"all\" or number of random password>\n");
+		fprintf(stderr, "Error: Usage exhaustive_table_generator <rule> <dictionary> "
+				"<hash> <filenames prefix> <\"all\" or number of random password>\n");
 		return 1;
 	}
 	
 	rule = argv[1];
+	dictionaryFilename = argv[2];
+	hashName = argv[3];
+	prefix = argv[4];
+	flag = argv[5];
 	
 	if (!validateRule(rule)) {
 		return 1;
