@@ -7,6 +7,7 @@ static inline ulong_t countLower(const char * str);
 static inline ulong_t getNumOfVariations(const char * str);
 static void applyStringCapitalizationMask(char * str, ulong_t mask);
 static inline char * getNextLower(char * str);
+static int compareIndexToRange(const void * a, const void * b);
 
 inline bool_t mixedCasedDictionaryWordGeneratorInitialize(
 		mixedCasedDictionaryWordGenerator_t * self,
@@ -28,10 +29,22 @@ inline bool_t mixedCasedDictionaryWordGeneratorInitialize(
 
 	if (0 == dictionarySize) {
 		passwordPartGenerator->size = 0;
-		self->accumulativeSizes = NULL;
+		self->beginIndexes = NULL;
+		//self->accumulativeSizes = NULL;
 		return TRUE;
 	}
 
+	self->beginIndexes = (ulong_t *) malloc((dictionarySize + 1)* sizeof(ulong_t));
+	CHECK(NULL != self->beginIndexes);
+
+	self->beginIndexes[0] = 0;
+
+	for (i = 0; i < dictionarySize; ++i) {
+		self->beginIndexes[i + 1] =
+				self->beginIndexes[i] +
+				getNumOfVariations(dictionaryGetEntry(dictionary, i, LOWER_CASE));
+	}
+	/*
 	self->accumulativeSizes = (ulong_t *) malloc(dictionarySize * sizeof(ulong_t));
 	CHECK(NULL != self->accumulativeSizes);
 
@@ -44,6 +57,8 @@ inline bool_t mixedCasedDictionaryWordGeneratorInitialize(
 	}
 
 	passwordPartGenerator->size = self->accumulativeSizes[dictionarySize - 1];
+*/
+	passwordPartGenerator->size = self->beginIndexes[dictionarySize];
 
 	return TRUE;
 
@@ -52,7 +67,8 @@ LBL_ERROR:
 }
 
 inline void mixedCasedDictionaryWordGeneratorFinalize(mixedCasedDictionaryWordGenerator_t * self) {
-	FREE(self->accumulativeSizes);
+	FREE(self->beginIndexes);
+	//FREE(self->accumulativeSizes);
 }
 
 char * mixedCasedDictionaryWordGeneratorCalcPass(
@@ -61,12 +77,23 @@ char * mixedCasedDictionaryWordGeneratorCalcPass(
 		char * buf) {
 	const dictionary_t * dictionary = ((dictionaryWordGenerator_t *) self)->dictionary;
 	const char * dictionaryEntry = NULL;
-	ulong_t size = ((passwordPartGenerator_t *) self)->size;
-	ulong_t i;
+	ulong_t size = dictionaryGetSize(dictionary);
+	ulong_t * pItem = (ulong_t *) bsearch(&index, self->beginIndexes, size, sizeof (ulong_t), compareIndexToRange);
+	ulong_t i = (ulong_t) (pItem - self->beginIndexes);
+	ulong_t capitalizationMask;
 
-	ASSERT(index < size);
+	dictionaryEntry = dictionaryGetEntry(dictionary, i, LOWER_CASE);
+	ASSERT(NULL != dictionaryEntry);
 
-	/* TODO: consider binary search */
+	strcpy(buf, dictionaryEntry);
+
+	/* The mask is equal to the index within the range of variations of the current word */
+	capitalizationMask = index - self->beginIndexes[i];
+	applyStringCapitalizationMask(buf, capitalizationMask);
+
+	return buf + strlen(dictionaryEntry);
+
+/*
 	for (i = 0; i < size; ++i) {
 		if (index < self->accumulativeSizes[i]) {
 			ulong_t capitalizationMask;
@@ -79,7 +106,7 @@ char * mixedCasedDictionaryWordGeneratorCalcPass(
 			if (0 == i) {
 				capitalizationMask = index;
 			} else {
-				/* The mask is equal to the index within the range of variations of the current word */
+				// The mask is equal to the index within the range of variations of the current word
 				capitalizationMask = index - self->accumulativeSizes[i - 1];
 			}
 
@@ -90,9 +117,9 @@ char * mixedCasedDictionaryWordGeneratorCalcPass(
 
 	}
 
-	/*This should never be reached */
+	// This should never be reached
 	ASSERT(FALSE);
-	return buf;
+	return buf;*/
 }
 
 static inline ulong_t countLower(const char * str) {
@@ -137,4 +164,26 @@ static inline char * getNextLower(char * str) {
 	}
 
 	return str;
+}
+
+static int compareIndexToRange(const void * a, const void * b) {
+	const ulong_t index = *((const ulong_t *) a);
+
+	/* A pointer to the first index within the range */
+	const ulong_t * pBeginIndex = (const ulong_t *) b;
+
+	/* A pointer to the first index which is after the range */
+	const ulong_t * pEndIndex = pBeginIndex + 1;
+
+	ASSERT(*pBeginIndex <= *pEndIndex);
+
+	if (index >= *pEndIndex) {
+		return 1;
+	}
+
+	if (index < *pBeginIndex) {
+		return -1;
+	}
+
+	return 0;
 }

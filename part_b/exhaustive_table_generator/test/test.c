@@ -4,9 +4,9 @@
 #include "PasswordGeneratorTest.h"
 
 int main(int argc, char** argv) {
-	//if (dictionaryTest()) {
+	if (dictionaryTest()) {
 	//if (alphabetTest()) {
-	if (generatorTest()) {
+	//if (generatorTest()) {
 		printf("Test dictionary: SUCCESS\n");
 	} else {
 		printf("Test dictionary: FAILURE\n");
@@ -14,3 +14,4 @@ int main(int argc, char** argv) {
 	}
 	return 0;
 }
+

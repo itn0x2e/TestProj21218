@@ -7,7 +7,8 @@
 
 typedef struct mixedCasedDictionaryWordGenerator_s {
 	dictionaryWordGenerator_t super;
-	ulong_t * accumulativeSizes;
+	//ulong_t * accumulativeSizes;
+	ulong_t * beginIndexes;
 } mixedCasedDictionaryWordGenerator_t;
 
 inline bool_t mixedCasedDictionaryWordGeneratorInitialize(mixedCasedDictionaryWordGenerator_t * self, const dictionary_t * dictionary);
