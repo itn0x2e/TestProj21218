@@ -107,6 +107,7 @@ bool_t readAuthFile(char * filename, authFile_t * res)
 	int filePtr = 0;
 	unsigned int identityCount = 0;
 	accountInfo_t tempCredentials = {0};
+	accountInfo_t * credentialsArr = NULL;
 
 	FILE * fd = NULL;
 

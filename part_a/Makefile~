@@ -4,10 +4,10 @@ clean:
 	-rm create_authentication authenticate create_authentication.o authenticate.o md5.o misc.o sha1.o auth_file.o
 
 create_authentication: create_authentication.o md5.o misc.o sha1.o auth_file.o
-	gcc -ansi -pedantic-errors -g -lm -o create_authentication create_authentication.o md5.o misc.o sha1.o auth_file.o
+	gcc -ansi -pedantic-errors -g -lm -o create_authentication create_authentication.o md5.o misc.o sha1.o
 
 authenticate: authenticate.o md5.o misc.o sha1.o auth_file.o
-	gcc -ansi -pedantic-errors -g -lm -o authenticate authenticate.o md5.o misc.o sha1.o auth_file.o
+	gcc -ansi -pedantic-errors -g -lm -o authenticate authenticate.o md5.o misc.o sha1.o
 
 create_authentication.o: create_authentication.c
 	gcc -ansi -pedantic-errors -c -Wall -g -o create_authentication.o create_authentication.c
