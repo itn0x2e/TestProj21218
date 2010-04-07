@@ -13,6 +13,6 @@ bool_t validateRule(const char * rule);
  */
 bool_t readPrompt(char * line);
 
-bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys);
+bool_t parseIni(char * content, const char ** keys, const char ** values, int_t numKeys);
 
 #endif /* __UI_H__ */
