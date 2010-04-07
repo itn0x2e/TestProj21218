@@ -12,8 +12,8 @@
 
 #define SALT_LEN (6)
 
-#define SHA1_DIGEST_LEN (sizeof(SHA1Context::Message_Digest))
-#define MD5_DIGEST_LEN (sizeof(MD5_CTX::digest))
+#define SHA1_DIGEST_LEN (sizeof(((SHA1Context *) 0)->Message_Digest))
+#define MD5_DIGEST_LEN (sizeof(((MD5_CTX *) 0)->digest))
 #define MAX_DIGEST_LEN (MAX(SHA1_DIGEST_LEN, MD5_DIGEST_LEN))
 
 #endif /* __CONSTANTS_H__ */

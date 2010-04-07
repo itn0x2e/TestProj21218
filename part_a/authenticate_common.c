@@ -1,38 +1,20 @@
 #include <stdio.h>
 #include <string.h>
-
 #include "../common/constants.h"
 #include "../common/misc.h"
 #include "../common/types.h"
 #include "../common/ui.h"
 #include "../common/utils.h"
 #include "auth_file.h"
+#include "authenticate_common.h"
 
-int main(int argc, char ** argv);
-bool_t authenticate(char * filename);
-void commandLoop(authFile_t * authFile);
+static void commandLoop(authFile_t * authFile);
 
-int main(int argc, char ** argv) {
-	if (2 != argc) { 
-		fprintf(stderr, "Error: Usage authenticate <authentication table text file>\n");
-		return 1;
-	}
-
-	/* return 0 if authenticate returned successfully, otherwise 1 */
-	if (authenticate(argv[1])) {
-		return 0;
-	}
-	
-	return 1;
-}
-
-bool_t authenticate(char * filename) {
+bool_t authenticate(char * filename, bool_t salty) {
 	authFile_t authFile = {0};
 
 	/* Load auth file to memory */
-	if (!authFileInitialize(&authFile, filename)) { /* TODO: should we invoke finalize in this case? */
-		/* TODO: reconsider error message */
-		fprintf(stderr, "unable to read auth file");
+	if (!authFileInitialize(&authFile, filename, salty)) {
 		return FALSE;
 	}
 	
@@ -43,7 +25,7 @@ bool_t authenticate(char * filename) {
 	return TRUE;
 }
 
-void commandLoop(authFile_t * authFile) {
+static void commandLoop(authFile_t * authFile) {
 	char line[MAX_LINE_LEN] = {0};
 	const char * user = NULL;
 	const char * password = NULL;

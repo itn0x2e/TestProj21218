@@ -6,26 +6,11 @@
 #include "../common/misc.h"
 #include "../common/constants.h"
 #include "auth_file.h"
+#include "create_authentication_common.h"
 
-int main(int argc, char ** argv);
-bool_t create_authentication(char * filename, const char * hashFuncName);
-bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc);
+static bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc, bool_t salty);
 
-int main(int argc, char ** argv) {
-	if (3 != argc) {
-		fprintf(stderr, "Error: Usage create_authentication <hash function name> <filename to create>\n");
-		return 1;
-	}
-
-	/* return 0 if create_authentication returned successfully, otherwise 1 */
-	if (create_authentication(argv[2], argv[1])) {
-		return 0;
-	}
-
-	return 1;
-}
-
-bool_t create_authentication(char * filename, const char * hashFuncName) {
+bool_t create_authentication(char * filename, const char * hashFuncName, bool_t salty) {
 	/* TODO: check whether the file already exist? */
 	bool_t ret = FALSE;
 	BasicHashFunctionPtr hashFunc = getHashFunFromName(hashFuncName);
@@ -51,14 +36,14 @@ bool_t create_authentication(char * filename, const char * hashFuncName) {
 		return FALSE;
 	}
 	
-	ret = commandLoop(file, hashFunc);
+	ret = commandLoop(file, hashFunc, salty);
 
 	FCLOSE(file);
 
 	return ret;
 }
 
-bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc) {
+static bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc, bool_t salty) {
 	char line[MAX_LINE_LEN] = {0};
 	const char * user = NULL;
 	const char * password = NULL;
@@ -85,7 +70,7 @@ bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc) {
 		 * everything that follows the separator */
 		password = separator + 1;
 
-		if (!writeUserAuth(file, hashFunc, user, password)) {
+		if (!writeUserAuth(file, hashFunc, user, password, salty)) {
 			return FALSE;
 		}
 	}

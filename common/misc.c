@@ -93,7 +93,9 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
 	char tempByte[3] = {0};
 	unsigned int temp = 0;
 
-	for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < (outMaxLen - 1))); ++i) {
+	/* TODO!!!!!!!!!!!!!!!!! below is a temporary bug fix */
+	/*for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < (outMaxLen - 1))); ++i) {*/
+	for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < (outMaxLen))); ++i) {
 		tempByte[0] = strIn[2*i];
 		tempByte[1] = strIn[2*i + 1];
 		tempByte[3] = 0x00;

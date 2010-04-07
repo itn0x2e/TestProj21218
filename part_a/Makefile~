@@ -1,25 +1,43 @@
-all: create_authentication authenticate
+all: create_authentication create_salty_authentication authenticate salty_authenticate
 
 clean:
-	-rm create_authentication authenticate create_authentication.o authenticate.o md5.o misc.o sha1.o ui.o auth_file.o
+	-rm create_authentication authenticate create_authentication.o authenticate.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o
 
-create_authentication: create_authentication.o md5.o misc.o sha1.o ui.o auth_file.o
-	gcc -ansi -pedantic-errors -g -lm -o create_authentication create_authentication.o md5.o misc.o sha1.o ui.o auth_file.o
+create_authentication: create_authentication.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o create_authentication_common.o
+	gcc -ansi -pedantic-errors -g -lm -o create_authentication create_authentication.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o create_authentication_common.o
 
-authenticate: authenticate.o md5.o misc.o sha1.o ui.o auth_file.o
-	gcc -ansi -pedantic-errors -g -lm -o authenticate authenticate.o md5.o misc.o sha1.o ui.o auth_file.o
+create_salty_authentication: create_salty_authentication.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o create_authentication_common.o
+	gcc -ansi -pedantic-errors -g -lm -o create_salty_authentication create_salty_authentication.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o create_authentication_common.o
+
+authenticate: authenticate.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o
+	gcc -ansi -pedantic-errors -g -lm -o authenticate authenticate.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o
+
+salty_authenticate: salty_authenticate.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o
+	gcc -ansi -pedantic-errors -g -lm -o salty_authenticate salty_authenticate.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o
 
 create_authentication.o: create_authentication.c
 	gcc -ansi -pedantic-errors -c -Wall -g -o create_authentication.o create_authentication.c
 
+create_salty_authentication.o: create_salty_authentication.c
+	gcc -ansi -pedantic-errors -c -Wall -g -o create_salty_authentication.o create_salty_authentication.c
+
 authenticate.o: authenticate.c
 	gcc -ansi -pedantic-errors -c -Wall -g -o authenticate.o authenticate.c
+
+salty_authenticate.o: salty_authenticate.c
+	gcc -ansi -pedantic-errors -c -Wall -g -o salty_authenticate.o salty_authenticate.c
+
+io.o: ../common/io.c ../common/io.h 
+	gcc -ansi -pedantic-errors -c -Wall -g -o io.o ../common/io.c
 
 md5.o: ../common/md5.c ../common/md5.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o md5.o ../common/md5.c
 
 misc.o: ../common/misc.c ../common/misc.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o misc.o ../common/misc.c
+
+rand_utils.o: ../common/rand_utils.c ../common/rand_utils.h 
+	gcc -ansi -pedantic-errors -c -Wall -g -o rand_utils.o ../common/rand_utils.c
 
 sha1.o: ../common/sha1.c ../common/sha1.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o sha1.o ../common/sha1.c
@@ -29,3 +47,9 @@ ui.o: ../common/ui.c ../common/ui.h
 
 auth_file.o: auth_file.c auth_file.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o auth_file.o auth_file.c
+
+authenticate_common.o: authenticate_common.c authenticate_common.h 
+	gcc -ansi -pedantic-errors -c -Wall -g -o authenticate_common.o authenticate_common.c
+
+create_authentication_common.o: create_authentication_common.c create_authentication_common.h 
+	gcc -ansi -pedantic-errors -c -Wall -g -o create_authentication_common.o create_authentication_common.c
