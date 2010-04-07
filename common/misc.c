@@ -70,46 +70,44 @@ int SHA1BasicHash ( const unsigned char *in,int len, unsigned char *outBuf)
 	return sizeof(hashCtx.Message_Digest);
 }
 
-int binary2hexa(const unsigned char *bufIn, int lengthIn,
-				char *outStr, int outMaxLen)
-{
-	int i = 0;
-	char tempOut[2 + 1] = {0};
-	memset(outStr, 0, outMaxLen);
-
-	for (i = 0; (((i/2) < lengthIn) && (i < (outMaxLen - 1))); i += 2) {
-/*! TODO: restore !*/
-		/*!snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);!*/
-		sprintf(tempOut, "%02X", bufIn[i/2]);
-		outStr[i] = tempOut[0];
-		outStr[i+1] = tempOut[1];
+int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen) {
+	int lengthIn = strlen(strIn);
+	int i;
+	
+	if (((lengthIn + 1) / 2) > outMaxLen) {
+		return -1;
 	}
-
-	/* Terminate the string for sure */
-	outStr[outMaxLen - 1] = 0x00;
-
-	return MIN(2 * lengthIn + 1, outMaxLen);
+	
+	for (i =0; i < lengthIn; ++i) {
+		if (('0' > strIn[i]) || (('9' < strIn[i]) && ('a' > strIn[i])) || ('f' < strIn[i])) {
+			return -1;
+		}
+		
+		outBuf[i / 2] &= 0xf0;
+		outBuf[i / 2] |= SYMBOL2NIBBLE(strIn[i]);
+		outBuf[i / 2] <<= (4 * ((i + 1) % 2));
+	}
+	
+	return ((lengthIn + 1) / 2);
 }
 
-int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
-{
-	int i = 0;
-	char tempByte[3] = {0};
-	unsigned int temp = 0;
-
-	/* TODO!!!!!!!!!!!!!!!!! below is a temporary bug fix */
-	/*for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < (outMaxLen - 1))); ++i) {*/
-	for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < (outMaxLen))); ++i) {
-		tempByte[0] = strIn[2*i];
-		tempByte[1] = strIn[2*i + 1];
-		tempByte[3] = 0x00;
-
-
-		sscanf(tempByte, "%02X", &temp);
-		outBuf[i] = temp;
+int binary2hexa(const unsigned char *bufIn, int lengthIn,
+				char *outStr, int outMaxLen) {
+	int i;
+	
+	if ((2 * lengthIn + 1) > outMaxLen) {
+		/* outStr is null terminated even in case of failure */
+		*outStr = '\0';
+		return -1;
 	}
-
-	return MIN(strlen(strIn) / 2, outMaxLen);
+	
+	for (i =0; i < lengthIn; ++i) {
+		outStr[2 * i] = (char) NIBBLE2SYMBOL((bufIn[i] >> 4));
+		outStr[(2 * i) + 1] = (char) NIBBLE2SYMBOL(bufIn[i] & 0xf);
+	}
+	
+	outStr[2 * lengthIn] = '\0';
+	return (2 * lengthIn);
 }
 
 BasicHashFunctionPtr getHashFunFromName(const char * name) {
