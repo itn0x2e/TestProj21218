@@ -9,9 +9,6 @@
 #include "utils.h"
 #include "types.h"
 
-#define SYMBOL2NIBBLE(symbol) ((((symbol) >= 'a') * 9) + ((symbol) & 0xf))
-#define NIBBLE2SYMBOL(nibble) (('0' + (((nibble) >= 10) * ('a' - '0')) + ((nibble) % 10)))
-
 /*************************************************************************/
 /* typedef BasicHashFunctionPtr:                                         */
 /* A cryptographic hash function performs many bitic operation on a      */

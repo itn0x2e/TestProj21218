@@ -93,7 +93,7 @@ bool_t writeUserAuth(FILE * fd, BasicHashFunctionPtr hashFunc, const char * user
 	return TRUE;
 
 LBL_ERROR:
-	perror("ERROR");
+	perror("Error");
 	return FALSE;
 }
 
@@ -175,7 +175,7 @@ static bool_t cryptHashWithSalt(BasicHashFunctionPtr cryptHashPtr, const char *p
 	uint_t saltedPasswordLen = passwdLen + SALT_LEN;
 	char * saltedPassword = (char *) malloc(sizeof(char) * saltedPasswordLen);
 	if (NULL == saltedPassword) {
-		perror("ERROR");
+		perror("Error");
 		return FALSE;
 	}
 	memcpy(saltedPassword, passwd, passwdLen);
