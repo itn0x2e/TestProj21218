@@ -2,9 +2,18 @@
 #include <stdio.h>
 #include "utils.h"
 #include "DEHT.h"
+#include <time.h>
 
 
-typedef bool_t (* bucketTesterFunc_t) (DEHT * ht, byte_t bucketId, void * param);
+typedef struct TestParams_s {
+	ulong_t testDepth;
+	char * keyFormatStr;
+	char * dataFormatStr;
+} TestParams_t;
+
+
+typedef bool_t (* BucketTesterFunc_t) (DEHT * ht, byte_t bucketId, TestParams_t * params);
+
 
 
 
@@ -31,7 +40,7 @@ int hashKeyforEfficientComparisonFunction(const unsigned char * key,int keySize,
 
 
 
-bool_t createEmptyTable(DEHT ** ht)
+bool_t createEmptyTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableLastBlockCache)
 {
 	bool_t ret = FALSE;
 	
@@ -41,6 +50,13 @@ bool_t createEmptyTable(DEHT ** ht)
 			       "test_dict",
 				10, 5, 100);
 	CHECK(NULL != *ht);
+
+	if (enableFirstBlockCache) {
+		CHECK(DEHT_STATUS_FAIL != read_DEHT_pointers_table(*ht));
+	}
+	if (enableLastBlockCache) {
+		CHECK(DEHT_STATUS_FAIL != calc_DEHT_last_block_per_bucket(*ht));
+	}
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
@@ -55,7 +71,7 @@ LBL_CLEANUP:
 }
 
 
-bool_t openTable(DEHT ** ht)
+bool_t openTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableLastBlockCache)
 {
 	bool_t ret = FALSE;
 	
@@ -63,6 +79,14 @@ bool_t openTable(DEHT ** ht)
 
 	*ht = load_DEHT_from_files("test", hashKeyIntoTableFunction, hashKeyforEfficientComparisonFunction);
 	CHECK(NULL != *ht);
+
+	if (enableFirstBlockCache) {
+		CHECK(DEHT_STATUS_FAIL != read_DEHT_pointers_table(*ht));
+	}
+	if (enableLastBlockCache) {
+		CHECK(DEHT_STATUS_FAIL != calc_DEHT_last_block_per_bucket(*ht));
+	}
+
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
@@ -139,7 +163,7 @@ LBL_CLEANUP:
 
 
 
-bool_t testEntireTable(DEHT * ht, bucketTesterFunc_t func, void * param)
+bool_t testEntireTable(DEHT * ht, BucketTesterFunc_t func, TestParams_t * params)
 {
 	bool_t ret = FALSE;
 	byte_t bucketId = 0;
@@ -150,7 +174,7 @@ bool_t testEntireTable(DEHT * ht, bucketTesterFunc_t func, void * param)
 	CHECK(NULL != func);
 
 	for (bucketId = 0; bucketId < ht->header.numEntriesInHashTable; ++bucketId) {
-		CHECK(func(ht, bucketId, param));
+		CHECK(func(ht, bucketId, params));
 	}
 	
 	ret = TRUE;
@@ -167,32 +191,29 @@ LBL_CLEANUP:
 
 
 
-bool_t massiveInsertIntoBucket(DEHT * ht, byte_t bucketId, void * param)
+bool_t massiveInsertIntoBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 {
 	bool_t ret = FALSE;
 	
 	ulong_t elemCount = 0;
-	byte_t key[80] = {0};
-	byte_t data[] = "test data";
-
-	ulong_t targetElemCount = 0;
-
+	byte_t key[100] = {0};
+	byte_t data[100] = {0};
 
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != ht);
-	CHECK(NULL != param);
-
-	targetElemCount = *((ulong_t *) param);
+	CHECK(NULL != params);
 
 	key[0] = 0x30 + bucketId;
 
 	/* in each round, we build the corresponding string for that value. they will all collide predictably, because the key
 	   hash func only depends on the first byte */
-	for (elemCount = 0; elemCount < targetElemCount; ++elemCount) {
-		printf("%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, targetElemCount);
+	for (elemCount = 0; elemCount < params->testDepth; ++elemCount) {
+		TRACE_FPRINTF(stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth);
 
-		snprintf(key+1, sizeof(key) - 1, "baa_01234567890ABCDEF01234567890ABCDEF %lu", elemCount);
+		snprintf(key+1, sizeof(key) - 1, params->keyFormatStr, elemCount);
+		snprintf(data, sizeof(data), params->dataFormatStr, elemCount);
+
 		CHECK(DEHT_STATUS_SUCCESS == add_DEHT(ht, key, sizeof(key), data, sizeof(data)));
 	}
 
@@ -208,32 +229,31 @@ LBL_CLEANUP:
 }
 
 
-bool_t massiveUpdateBucket(DEHT * ht, byte_t bucketId, void * param)
+bool_t massiveUpdateBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 {
 	bool_t ret = FALSE;
 	
 	ulong_t elemCount = 0;
-	byte_t key[80] = {0};
-	byte_t data[] = "new test data - now with exta binary!";
-
-	ulong_t targetElemCount = 0;
+	byte_t key[100] = {0};
+	byte_t data[100] = {0};
 
 
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != ht);
-	CHECK(NULL != param);
+	CHECK(NULL != params);
 
-	targetElemCount = *((ulong_t *) param);
 
 	key[0] = 0x30 + bucketId;
 
 	/* in each round, we build the corresponding string for that value. they will all collide predictably, because the key
 	   hash func only depends on the first byte */
-	for (elemCount = 0; elemCount < targetElemCount; ++elemCount) {
-		printf("%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, targetElemCount);
+	for (elemCount = 0; elemCount < params->testDepth; ++elemCount) {
+		TRACE_FPRINTF(stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth);
 
-		snprintf(key+1, sizeof(key) - 1, "baa_01234567890ABCDEF01234567890ABCDEF %lu", elemCount);
+		snprintf(key+1, sizeof(key) - 1, params->keyFormatStr, elemCount);
+		snprintf(data, sizeof(data), params->dataFormatStr, elemCount);
+
 		CHECK(DEHT_STATUS_NOT_NEEDED == insert_uniquely_DEHT(ht, key, sizeof(key), data, sizeof(data)));
 	}
 
@@ -250,32 +270,30 @@ LBL_CLEANUP:
 
 
 
-bool_t massiveQueryBucket(DEHT * ht, byte_t bucketId, void * param)
+bool_t massiveQueryBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 {
 	bool_t ret = FALSE;
 	
 	ulong_t elemCount = 0;
 	byte_t key[80] = {0};
-	byte_t expectedData[] = "test data";
+	byte_t expectedData[100] = {0};
 	byte_t tempData[200] = {0};
-
-	ulong_t targetElemCount = 0;
 
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != ht);
-	CHECK(NULL != param);
-
-	targetElemCount = *((ulong_t *) param);
+	CHECK(NULL != params);
 
 	key[0] = 0x30 + bucketId;
 
 	/* in each round, we build the corresponding string for that value. they will all collide predictably, because the key
 	   hash func only depends on the first byte */
-	for (elemCount = 0; elemCount < targetElemCount; ++elemCount) {
-		printf("%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, targetElemCount);
+	for (elemCount = 0; elemCount < params->testDepth; ++elemCount) {
+		TRACE_FPRINTF(stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth);
 
-		snprintf(key+1, sizeof(key) - 1, "baa_01234567890ABCDEF01234567890ABCDEF %lu", elemCount);
+		snprintf(key+1, sizeof(key) - 1, params->keyFormatStr, elemCount);
+		snprintf(expectedData, sizeof(expectedData), params->dataFormatStr, elemCount);
+
 		CHECK(0 < query_DEHT(ht, key, sizeof(key), tempData, sizeof(tempData)));
 		CHECK(0 == memcmp(tempData, expectedData, strlen(expectedData)));
 	}
@@ -284,6 +302,8 @@ bool_t massiveQueryBucket(DEHT * ht, byte_t bucketId, void * param)
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
+	printf("expectedData=%s, tempData=%s\n", expectedData, tempData);
+
 	ret = FALSE;
 	TRACE_FUNC_ERROR();
 
@@ -294,23 +314,81 @@ LBL_CLEANUP:
 
 
 
-bool_t tortureTable(DEHT * ht)
+bool_t tortureTable(DEHT * ht, uint_t state)
 {
 	bool_t ret = FALSE;
 
-	ulong_t targetChainLen = 1337;
+	TestParams_t params = {0};
 
 	TRACE_FUNC_ENTRY();
 	CHECK(NULL != ht);
 
-	CHECK(testEntireTable(ht, massiveInsertIntoBucket, &targetChainLen));
-	printf("\nmassiveInsertIntoBucket passed\n\n");
 
-	CHECK(testEntireTable(ht, massiveQueryBucket, &targetChainLen));
-	printf("\nmassiveQueryBucket passed\n\n");
+	params.testDepth = 1337;
+	params.keyFormatStr = "this_is_my_key_0123456789ABCDEF0123456789ABCDEF %lu";
 
-	CHECK(testEntireTable(ht, massiveUpdateBucket, &targetChainLen));
-	printf("\nmassiveUpdateBucket passed\n\n\n");
+	switch (state) {
+	case 0:
+
+		printf("state=0: assuming table is empty. doing many inserts, followed by queries and then updates\n");
+
+		params.dataFormatStr = "this_is_my_data_0123456789ABCDEF0123456789ABCDEF %lu";
+
+		CHECK(testEntireTable(ht, massiveInsertIntoBucket, &params));
+		printf("\nmassiveInsertIntoBucket passed\n\n");
+
+		printf("cotinuing to state=2 - many queries and updates\n");
+		goto LBL_CASE_2;
+
+
+	case 1:
+	LBL_CASE_1:
+		params.dataFormatStr = "this_is_my_new_data_0123456789ABCDEF0123456789ABCDEF %lu";
+
+		printf("state=1: assuming table is filled with state=1 values. doing many queries, then many updates to state=0 values\n");
+
+		CHECK(testEntireTable(ht, massiveQueryBucket, &params));
+		printf("\nmassiveQueryBucket passed\n\n");
+
+
+		params.dataFormatStr = "this_is_my_data_0123456789ABCDEF0123456789ABCDEF %lu";
+
+		CHECK(testEntireTable(ht, massiveUpdateBucket, &params));
+		printf("\nmassiveUpdateBucket passed\n");
+
+		/* test the update */
+		CHECK(testEntireTable(ht, massiveQueryBucket, &params));
+		printf("\nmassiveQueryBucket after update passed\n");
+
+		break;
+
+	case 2:
+	LBL_CASE_2:
+
+		printf("state=2: assuming table is filled with state=0 values. doing many queries, then many updates to state=1 values\n");
+
+		params.dataFormatStr = "this_is_my_data_0123456789ABCDEF0123456789ABCDEF %lu";
+
+		CHECK(testEntireTable(ht, massiveQueryBucket, &params));
+		printf("\nmassiveQueryBucket passed\n\n");
+
+
+		params.dataFormatStr = "this_is_my_new_data_0123456789ABCDEF0123456789ABCDEF %lu";
+
+		CHECK(testEntireTable(ht, massiveUpdateBucket, &params));
+		printf("\nmassiveUpdateBucket passed\n");
+
+		/* test the update */
+		CHECK(testEntireTable(ht, massiveQueryBucket, &params));
+		printf("\nmassiveQueryBucket after update passed\n");
+
+
+		break;
+
+	default:
+		FAIL("bad state requested");		
+
+	}
 
 	ret = TRUE;
 	goto LBL_CLEANUP;		
@@ -324,20 +402,62 @@ LBL_CLEANUP:
 }
 
 
-bool_t testCreatedTable(void)
+bool_t testCreatedTable(bool_t enableFirstBlockCache, bool_t enableLastBlockCache)
 {
 	bool_t ret = FALSE;
 	DEHT * ht = NULL;
 
 	TRACE_FUNC_ENTRY();
 
-	printf("testCreatedTable started\n");
+	printf("\n\ntestCreatedTable started\n");
 
-	CHECK(createEmptyTable(&ht));
+	CHECK(createEmptyTable(&ht, enableFirstBlockCache, enableLastBlockCache));
 
-	CHECK(tortureTable(ht));
+	CHECK(tortureTable(ht, 0));
 
 	printf("testCreatedTable passed!\n");
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	if (NULL != ht) {
+		lock_DEHT_files(ht);
+		ht = NULL;
+	}
+
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+
+bool_t testOpenedTable(bool_t enableFirstBlockCache, bool_t enableLastBlockCache)
+{
+	bool_t ret = FALSE;
+	DEHT * ht = NULL;
+
+	TRACE_FUNC_ENTRY();
+
+	printf("\n\ntestOpenedTable started\n");
+
+	CHECK(openTable(&ht, enableFirstBlockCache, enableLastBlockCache));
+
+	CHECK(tortureTable(ht, 1));
+
+	printf("testOpenedTable passed for state=1\n");
+	printf("\nclosing and re-opening\n");
+	lock_DEHT_files(ht);
+	ht = NULL;
+
+	CHECK(openTable(&ht, enableFirstBlockCache, enableLastBlockCache));
+
+	CHECK(tortureTable(ht, 2));
+
+	printf("testOpenedTable passed for state=2\n");
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
@@ -362,17 +482,37 @@ LBL_CLEANUP:
 int main(void)
 {
 	int ret = -2;
+	bool_t enableFirstBlockCache = FALSE;
+	bool_t enableLastBlockCache = FALSE;
 
 	DEHT * ht = NULL;
 
+	time_t beginTime;
+	time_t endTime;
+
 	CHECK(createAndCloseEmptyTable());
-	printf("createAndCloseEmptyTable - passed\n");
+	printf(">>> createAndCloseEmptyTable - passed.\n");
 
 	CHECK(openAndCloseTable());
-	printf("openAndCloseTable - passed\n");
+		printf(">>> openAndCloseTable - passed.\n");
 
-	CHECK(testCreatedTable());
+	for (enableFirstBlockCache = 0; enableFirstBlockCache < 2; ++enableFirstBlockCache) {
+		for (enableLastBlockCache = 0; enableLastBlockCache < 2; ++enableLastBlockCache) {
+			printf("\n>>> testing table for enableFirstBlockCache=%s, enableLastBlockCache=%s\n", enableFirstBlockCache ? "True" : "False", enableLastBlockCache ? "True" : "False");
 
+			beginTime = time(NULL);
+
+			CHECK(testCreatedTable(enableFirstBlockCache, enableLastBlockCache));
+			printf(">>>>>>>> testCreatedTable - passed.\n");
+			CHECK(testOpenedTable(enableFirstBlockCache, enableLastBlockCache));
+			printf(">>>>>>>> testOpenedTable - passed.\n");
+
+			endTime = time(NULL);
+
+			printf("\n\n>>> tests for enableFirstBlockCache=%s, enableLastBlockCache=%s took %lu secs.\n\n", enableFirstBlockCache ? "True" : "False", enableLastBlockCache ? "True" : "False", (ulong_t) (endTime - beginTime));
+		}
+
+	}
 
 	/*
 	CHECK(createEmptyTable());
@@ -380,12 +520,13 @@ int main(void)
 	CHECK(openEmptyTable());
 	printf("openEmptyTable passed\n");
 */
-	printf("\ndone.\n");
+	printf("\n>>> All tests passed!\n");
 
 	ret = 0;
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
+	printf("\n\n>>> last test failed!\n");
 	TRACE_FUNC_ERROR();
 	ret = -1;
 

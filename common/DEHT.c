@@ -168,6 +168,7 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	KeyFilePair_t * targetRecord = NULL;
 	DEHT_DISK_PTR newDataOffset = 0;
 	
+	byte_t tempData[DEHT_DATA_MAX_LEN] = {0};
 
 	TRACE_FUNC_ENTRY();
 
@@ -179,7 +180,7 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	tempKeyBlock = malloc(KEY_FILE_BLOCK_SIZE(ht));
 	CHECK(NULL != tempKeyBlock);
 	
-	ret = DEHT_queryInternal(ht, key, keyLength, data, dataLength, tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht), 
+	ret = DEHT_queryInternal(ht, key, keyLength, tempData, sizeof(tempData), tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht), 
 				  &keyBlockDiskOffset, &keyIndex, &lastKeyBlockDiskOffset);
 
 	switch(ret) {
@@ -194,15 +195,13 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 
 	case DEHT_STATUS_FAIL:
 	default:
-		if (0 > ret) {
+		if (0 >= ret) {
 			/* internal error */
 			goto LBL_ERROR;
 		}
 
 		/* if we got here, the key was found */
-
-		TRACE("re-writing record");
-		/* found - need to update */
+		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): updating record at %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockDiskOffset);
 
 		/* write the new data to the data file */
 		CHECK(DEHT_writeData(ht, data, dataLength, &newDataOffset));
@@ -360,8 +359,6 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 	CHECK(NULL != keyBlockDiskOffset);
 	CHECK(NULL != keyIndex);
 	CHECK(NULL != lastKeyBlockDiskOffset);
-
-	fprintf(stderr, "88888 DEHT_queryInternal: key=%02X %s\n", key[0], key+1);
 
 	/* calc hash for key */
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);

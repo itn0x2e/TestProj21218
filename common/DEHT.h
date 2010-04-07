@@ -10,6 +10,14 @@
 #include <stdio.h>
 #include "types.h"
 
+
+
+/* Maximum size for any single object in the DEHT data store */
+/*! If you wish to increase this size, you MUST adjust the members used in data file access !*/
+#define DEHT_DATA_MAX_LEN (255)
+
+
+
 /********************************************************************/
 /* type DEHT_DISK_PTR stands for "pointers" representation in DEHT  */
 /* Data-type of long (argument of "fseek" function) represents an   */
