@@ -27,7 +27,7 @@ int hashKeyIntoTableFunction(const unsigned char * key, int keySize, int tableSi
 	}
 */
 	/* to simplify collision creation, the buckets are chosen only by the first char */
-	cksum = key[0] * 255;
+	cksum = key[0];
 	return (cksum  % tableSize);
 
 
@@ -49,7 +49,7 @@ bool_t createEmptyTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableL
 
 	*ht = create_empty_DEHT("test", hashKeyIntoTableFunction, hashKeyforEfficientComparisonFunction, 
 			       "test_dict",
-				65535, 5, 100);
+				255, 5, 100, 0);
 	CHECK(NULL != *ht);
 
 	if (enableFirstBlockCache) {
@@ -111,7 +111,7 @@ bool_t createAndCloseEmptyTable(void)
 
 	ht = create_empty_DEHT("test", hashKeyIntoTableFunction, hashKeyforEfficientComparisonFunction, 
 			       "test_dict",
-				65535, 5, 100);
+				255, 5, 100, 0);
 
 	CHECK(NULL != ht);
 
@@ -325,7 +325,7 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 	CHECK(NULL != ht);
 
 
-	params.testDepth = 10;
+	params.testDepth = 4;
 	params.keyFormatStr = "this_is_my_key_0123456789ABCDEF0123456789ABCDEF %lu";
 
 	switch (state) {

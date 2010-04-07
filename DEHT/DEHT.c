@@ -10,7 +10,8 @@
 DEHT *create_empty_DEHT(const char *prefix,
                         hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun,
                         const char *dictName,
-                        int numEntriesInHashTable, int nPairsPerBlock, int nBytesPerKey)
+                        int numEntriesInHashTable, int nPairsPerBlock, int nBytesPerKey,
+			int nUserBytes)
 {
 	bool_t errorState = FALSE;
 
@@ -32,13 +33,18 @@ DEHT *create_empty_DEHT(const char *prefix,
 	instance->header.numEntriesInHashTable = numEntriesInHashTable;
 	instance->header.nPairsPerBlock = nPairsPerBlock;
 	instance->header.nBytesPerValidationKey = nBytesPerKey;
-	instance->header.numUnrelatedBytesSaved = 0;
+	instance->header.numUnrelatedBytesSaved = nUserBytes;
 
 	/* write header to disk */
 	CHECK(1 == fwrite(&(instance->header), sizeof(instance->header), 1, instance->keyFP));
 
+	/* write (empty) user data to disk */
+	CHECK(growFile(instance->keyFP, ht->header.numUnrelatedBytesSaved));
+
 	/* write (empty) pointer table to disk */
 	CHECK(growFile(instance->keyFP, sizeof(DEHT_DISK_PTR) * numEntriesInHashTable));
+
+
 
 	goto LBL_CLEANUP;	
 
@@ -373,7 +379,7 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 	}
 	else {
 		/* no cache - read from disk */
-		CHECK(pfread(ht->keyFP, sizeof(ht->header) + hashTableIndex * sizeof(DEHT_DISK_PTR), (byte_t *) keyBlockDiskOffset, sizeof(*keyBlockDiskOffset)));
+		CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + hashTableIndex * sizeof(DEHT_DISK_PTR), (byte_t *) keyBlockDiskOffset, sizeof(*keyBlockDiskOffset)));
 		TRACE_FPRINTF(stderr, "%s: first ptr from disk: %#x\n", __FUNCTION__, (uint_t) *keyBlockDiskOffset);
 	}
 	*lastKeyBlockDiskOffset = *keyBlockDiskOffset;
@@ -454,6 +460,76 @@ LBL_CLEANUP:
 
 
 
+bool_t readUserBytes(DEHT * ht, void ** bufPtr, ulong_t * bufSize)
+{
+	bool_t ret = FALSE;
+
+	TRACE_FUNC_ENTRY();
+	CHECK(NULL != ht);
+	CHECK(NULL != bufPtr);
+	CHECK(NULL != bufSize);
+
+	if (NULL != ht->userBuf) {
+		*bufPtr = ht->userBuf;
+		*bufSize = ht->header.numUnrelatedBytesSaved;
+	
+		ret = TRUE;
+		goto LBL_CLEANUP;
+	}
+
+	ht->userBuf = malloc(ht->header.numUnrelatedBytesSaved);
+	CHECK(NULL != ht->userBuf);
+
+	CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_USER_BYTES(ht), ht->userBuf, ht->header.numUnrelatedBytesSaved));
+	*bufSize = ht->header.numUnrelatedBytesSaved;
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	if (!ret) {
+		FREE(ht->userBuf);
+	}
+
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+
+
+
+bool_t writeUserBytes(DEHT * ht)
+{
+	bool_t ret = FALSE;
+
+	TRACE_FUNC_ENTRY();
+	CHECK(NULL != ht);
+
+	if (NULL == ht->userBuf) {
+		ret = TRUE;
+		goto LBL_CLEANUP;
+	}
+
+	CHECK(pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_USER_BYTES(ht), ht->userBuf, ht->header.numUnrelatedBytesSaved));
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+
+
 
 
 int read_DEHT_pointers_table(DEHT *ht)
@@ -471,11 +547,11 @@ int read_DEHT_pointers_table(DEHT *ht)
 	}
 
 	/* alloc cache */
-	ht->hashTableOfPointersImageInMemory = malloc(KEY_FILE_BUCKET_POINTERS_SIZE(ht));
+	ht->hashTableOfPointersImageInMemory = malloc(KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht));
 	CHECK(NULL != ht->hashTableOfPointersImageInMemory);
 
 	/* read the offset table */
-	CHECK(pfread(ht->keyFP, sizeof(ht->header), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_BUCKET_POINTERS_SIZE(ht)));
+	CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht)));
 
 	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
@@ -503,7 +579,7 @@ int write_DEHT_pointers_table(DEHT *ht)
 	}
 
 	/* write the offset table */
-	CHECK(pfwrite(ht->keyFP, sizeof(ht->header), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_BUCKET_POINTERS_SIZE(ht)));
+	CHECK(pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht)));
 
 	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
@@ -567,7 +643,7 @@ DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex)
 		blockOffset = ht->hashTableOfPointersImageInMemory[bucketIndex];
 	}
 	else {
-		CHECK(pfread(ht->keyFP, sizeof(ht->header) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
+		CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
 	}
 
 	/* if this is the very first block, alloc a new one */
@@ -582,7 +658,7 @@ DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex)
 		}
 		else {
 			/* update on-disk ptr */
-			CHECK(pfwrite(ht->keyFP, sizeof(ht->header) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
+			CHECK(pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
 		}
 
 		if (NULL != ht->hashPointersForLastBlockImageInMemory) {
