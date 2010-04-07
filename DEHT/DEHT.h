@@ -8,7 +8,7 @@
 #define _DEHT_H_
 
 #include <stdio.h>
-#include "types.h"
+#include "../common/types.h"
 
 
 

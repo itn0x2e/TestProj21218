@@ -97,3 +97,114 @@ uint_t countNewlines(const char * str) {
 	
 	return count;
 }
+
+
+bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size)
+{
+	bool_t ret = FALSE;
+
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != fd);
+	CHECK(NULL != buf);
+
+	/* We attempt a flush before moving the file pointer, since there may be data pending the buffer */
+	/* We ignore the return value, since we should try it anyway - it may work anyway */
+	(void) fflush(fd);
+
+	CHECK(0 == fseek(fd, offset_from_begining, SEEK_SET));
+
+	/* read */
+	CHECK(buf_size == fread(buf, 1, buf_size, fd));
+
+	ret = TRUE;
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size)
+{
+	bool_t ret = FALSE;
+
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != fd);
+	CHECK(NULL != buf);
+
+	/* We attempt a flush before moving the file pointer, since there may be data pending the buffer */
+	/* We ignore the return value, since we should try it anyway - it may work anyway */
+	(void) fflush(fd);
+
+	CHECK(0 == fseek(fd, offset_from_begining, SEEK_SET));
+
+	/* write */
+	CHECK(buf_size == fwrite(buf, 1, buf_size, fd));
+	/*! TODO: remove? !*/
+	fflush(fd);
+
+
+	ret = TRUE;
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+bool_t growFile(FILE * fd, size_t size)
+{
+	bool_t ret = FALSE;
+
+	byte_t zeroBuf[WRITE_BUF_SIZE];
+	ulong_t writeSize = WRITE_BUF_SIZE;
+
+	ulong_t bytesWritten = 0;
+
+	TRACE_FUNC_ENTRY();
+	CHECK(NULL != fd);
+
+	/* init buf */
+	memset(zeroBuf, 0, sizeof(zeroBuf));
+
+	/* move to file end (ignore flush errors) */
+	(void) fflush(fd);
+	CHECK(0 == fseek(fd, 0, SEEK_END));
+
+	/* write in chunks */
+	if (writeSize > size) {
+		writeSize = size;
+	}
+	for (bytesWritten = 0;  bytesWritten < size; bytesWritten += writeSize) {
+
+		CHECK(writeSize == fwrite(zeroBuf, 1, writeSize, fd));
+		
+		if (bytesWritten + writeSize > size) {
+			writeSize = size - bytesWritten;
+		}
+	}
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+
+}

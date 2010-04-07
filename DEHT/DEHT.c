@@ -1,7 +1,8 @@
 
 #include "DEHT.h"
-#include "types.h"
-#include "utils.h"
+#include "../common/types.h"
+#include "../common/utils.h"
+#include "../common/io.h"
 
 
 
@@ -124,9 +125,11 @@ DEHT * DEHT_init_instance (const char * prefix, char * keyFileMode, char * dataF
 
 	instance->keyFP = fopen(instance->sKeyfileName, keyFileMode);
 	CHECK(NULL != instance->keyFP);
+	/*! CHECK(0 == setvbuf(instance->keyFP, NULL, _IOFBF, 256)); !*/
 
 	instance->dataFP = fopen(instance->sDatafileName, dataFileMode);
-	CHECK(NULL != instance->dataFP);	
+	CHECK(NULL != instance->dataFP);
+	/*! CHECK(0 == setvbuf(instance->dataFP, NULL, _IOFBF, 256)); !*/
 	
 	instance->hashTableOfPointersImageInMemory = NULL;
 	instance->hashPointersForLastBlockImageInMemory = NULL;
@@ -370,7 +373,7 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 	}
 	else {
 		/* no cache - read from disk */
-		CHECK(pfread(ht->keyFP, sizeof(ht->header) + hashTableIndex * sizeof(DEHT_DISK_PTR), keyBlockDiskOffset, sizeof(*keyBlockDiskOffset)));
+		CHECK(pfread(ht->keyFP, sizeof(ht->header) + hashTableIndex * sizeof(DEHT_DISK_PTR), (byte_t *) keyBlockDiskOffset, sizeof(*keyBlockDiskOffset)));
 		TRACE_FPRINTF(stderr, "%s: first ptr from disk: %#x\n", __FUNCTION__, (uint_t) *keyBlockDiskOffset);
 	}
 	*lastKeyBlockDiskOffset = *keyBlockDiskOffset;
@@ -472,7 +475,7 @@ int read_DEHT_pointers_table(DEHT *ht)
 	CHECK(NULL != ht->hashTableOfPointersImageInMemory);
 
 	/* read the offset table */
-	CHECK(pfread(ht->keyFP, sizeof(ht->header), ht->hashTableOfPointersImageInMemory, KEY_FILE_BUCKET_POINTERS_SIZE(ht)));
+	CHECK(pfread(ht->keyFP, sizeof(ht->header), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_BUCKET_POINTERS_SIZE(ht)));
 
 	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
@@ -500,7 +503,7 @@ int write_DEHT_pointers_table(DEHT *ht)
 	}
 
 	/* write the offset table */
-	CHECK(pfwrite(ht->keyFP, sizeof(ht->header), ht->hashTableOfPointersImageInMemory, KEY_FILE_BUCKET_POINTERS_SIZE(ht)));
+	CHECK(pfwrite(ht->keyFP, sizeof(ht->header), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_BUCKET_POINTERS_SIZE(ht)));
 
 	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
@@ -564,7 +567,7 @@ DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex)
 		blockOffset = ht->hashTableOfPointersImageInMemory[bucketIndex];
 	}
 	else {
-		CHECK(pfread(ht->keyFP, sizeof(ht->header) + bucketIndex * sizeof(DEHT_DISK_PTR), &blockOffset, sizeof(blockOffset)));
+		CHECK(pfread(ht->keyFP, sizeof(ht->header) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
 	}
 
 	/* if this is the very first block, alloc a new one */
@@ -579,7 +582,7 @@ DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex)
 		}
 		else {
 			/* update on-disk ptr */
-			CHECK(pfwrite(ht->keyFP, sizeof(ht->header) + bucketIndex * sizeof(DEHT_DISK_PTR), &blockOffset, sizeof(blockOffset)));
+			CHECK(pfwrite(ht->keyFP, sizeof(ht->header) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
 		}
 
 		if (NULL != ht->hashPointersForLastBlockImageInMemory) {
@@ -618,7 +621,7 @@ DEHT_DISK_PTR DEHT_findLastBlockForBucketDumb(DEHT * ht, ulong_t bucketIndex)
 		lastBlockOffset = blockOffset;
 		
 		/* read the offset to the next block from disk */
-		CHECK(pfread(ht->keyFP, blockOffset + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR), &blockOffset, sizeof(blockOffset)));
+		CHECK(pfread(ht->keyFP, blockOffset + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
 	}
 
 	CHECK(0 != lastBlockOffset);
