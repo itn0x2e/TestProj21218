@@ -9,8 +9,8 @@
 #include "utils.h"
 #include "types.h"
 
-#define SYMBOL2NIBBLE(symbol) ((((symbol) / 0x61) * 9) + ((symbol) & 0xf))
-#define NIBBLE2SYMBOL(nibble) (((((nibble) / 10) * 0x31) + 0x30 + ((nibble) % 10)))
+#define SYMBOL2NIBBLE(symbol) ((((symbol) >= 'a') * 9) + ((symbol) & 0xf))
+#define NIBBLE2SYMBOL(nibble) (('0' + (((nibble) >= 10) * ('a' - '0')) + ((nibble) % 10)))
 
 /*************************************************************************/
 /* typedef BasicHashFunctionPtr:                                         */

@@ -17,6 +17,8 @@
  */
 bool_t readLine(FILE * stream, char * line);
 
+bool_t doesFileExist(const char * filename);
+
 byte_t * readEntireBinaryFile(const char * filename, ulong_t * len); /* TODO: do we use this? */
 
 char * readEntireTextFile(const char * filename);

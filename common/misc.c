@@ -6,6 +6,9 @@
 #include "sha1.h"
 #include "constants.h"
 
+#define SYMBOL2NIBBLE(symbol) ((((symbol) >= 'a') * 9) + ((symbol) & 0xf))
+#define NIBBLE2SYMBOL(nibble) (('0' + (((nibble) >= 10) * ('a' - '0')) + ((nibble) % 10)))
+
 LONG_INDEX_PROJ pseudo_random_generator_proj(int step)
 {
 	LONG_INDEX_PROJ hashedBuffer[MD5_OUTPUT_LENGTH_IN_BYTES/sizeof(LONG_INDEX_PROJ)];

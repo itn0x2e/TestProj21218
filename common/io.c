@@ -18,6 +18,15 @@ bool_t readLine(FILE * stream, char * line) {
 	return TRUE;
 }
 
+bool_t doesFileExist(const char * filename) {
+	FILE * file = fopen(filename, "r");
+	if (NULL != file) {
+		fclose(file);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 byte_t * readEntireBinaryFile(const char * filename, ulong_t * len) {
 	byte_t * res = NULL;
 	FILE * fp = NULL;
