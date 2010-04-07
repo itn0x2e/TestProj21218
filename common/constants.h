@@ -14,4 +14,6 @@
 #define MD5_DIGEST_LEN (sizeof(((MD5_CTX *) 0)->digest))
 #define MAX_DIGEST_LEN (MAX(SHA1_DIGEST_LEN, MD5_DIGEST_LEN))
 
+#define WRITE_BUF_SIZE (4096)
+
 #endif /* __CONSTANTS_H__ */

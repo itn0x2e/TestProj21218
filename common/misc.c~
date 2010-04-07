@@ -4,6 +4,7 @@
 #include "md5.h"
 #include "misc.h"
 #include "sha1.h"
+#include "constants.h"
 
 LONG_INDEX_PROJ pseudo_random_generator_proj(int step)
 {
@@ -26,7 +27,8 @@ int cryptHash(BasicHashFunctionPtr cryptHashPtr, const char *passwd, unsigned ch
 int MD5BasicHash(const unsigned char *in, int len, unsigned char *outBuf)
 {
 	/* when you want to compute MD5, first, declere the next struct */
-	MD5_CTX mdContext;/* = {0};*/
+	/*! TODO: restore !*/
+	MD5_CTX mdContext;/*! = {0};!*/
 
 	if ((NULL == in) || (NULL == outBuf)) {
 		return 0;
@@ -47,7 +49,8 @@ int MD5BasicHash(const unsigned char *in, int len, unsigned char *outBuf)
 int SHA1BasicHash ( const unsigned char *in,int len, unsigned char *outBuf)
 {
 	/* when you want to compute SH!, first, declere the next struct */
-	SHA1Context hashCtx;/* = {0};*/
+	/*! TODO: restore !*/
+	SHA1Context hashCtx;/*! = {0};!*/
 
 	if ((NULL == in) || (NULL == outBuf)) {
 		return 0;
@@ -75,7 +78,8 @@ int binary2hexa(const unsigned char *bufIn, int lengthIn,
 	memset(outStr, 0, outMaxLen);
 
 	for (i = 0; (((i/2) < lengthIn) && (i < (outMaxLen - 1))); i += 2) {
-		/*snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);*/
+/*! TODO: restore !*/
+		/*!snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);!*/
 		sprintf(tempOut, "%02X", bufIn[i/2]);
 		outStr[i] = tempOut[0];
 		outStr[i+1] = tempOut[1];
@@ -93,6 +97,7 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
 	char tempByte[3] = {0};
 	unsigned int temp = 0;
 
+	/* TODO!!!!!!!!!!!!!!!!! below is a temporary bug fix */
 	/*for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < (outMaxLen - 1))); ++i) {*/
 	for (i = 0; ( ((2 * i) < strlen(strIn)) && (i < (outMaxLen))); ++i) {
 		tempByte[0] = strIn[2*i];
@@ -107,6 +112,7 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
 	return MIN(strlen(strIn) / 2, outMaxLen);
 }
 
+<<<<<<< HEAD:common/misc.c
 BasicHashFunctionPtr getHashFunFromName(const char * name) {
 	if (0 == strcmp(name, "MD5")) {
 		return MD5BasicHash;
@@ -138,3 +144,113 @@ const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc) {
 	return NULL;
 }
 */
+=======
+bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size)
+{
+	bool_t ret = FALSE;
+
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != fd);
+	CHECK(NULL != buf);
+
+	/* We attempt a flush before moving the file pointer, since there may be data pending the buffer */
+	/* We ignore the return value, since we should try it anyway - it may work anyway */
+	(void) fflush(fd);
+
+	CHECK(0 == fseek(fd, offset_from_begining, SEEK_SET));
+
+	/* read */
+	CHECK(buf_size == fread(buf, 1, buf_size, fd));
+
+	ret = TRUE;
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size)
+{
+	bool_t ret = FALSE;
+
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != fd);
+	CHECK(NULL != buf);
+
+	/* We attempt a flush before moving the file pointer, since there may be data pending the buffer */
+	/* We ignore the return value, since we should try it anyway - it may work anyway */
+	(void) fflush(fd);
+
+	CHECK(0 == fseek(fd, offset_from_begining, SEEK_SET));
+
+	/* write */
+	CHECK(buf_size == fwrite(buf, 1, buf_size, fd));
+	/*! TODO: remove? !*/
+	fflush(fd);
+
+
+	ret = TRUE;
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+bool_t growFile(FILE * fd, size_t size)
+{
+	bool_t ret = FALSE;
+
+	byte_t zeroBuf[WRITE_BUF_SIZE];
+	ulong_t writeSize = WRITE_BUF_SIZE;
+
+	ulong_t bytesWritten = 0;
+
+	TRACE_FUNC_ENTRY();
+	CHECK(NULL != fd);
+
+	/* init buf */
+	memset(zeroBuf, 0, sizeof(zeroBuf));
+
+	/* move to file end (ignore flush errors) */
+	(void) fflush(fd);
+	CHECK(0 == fseek(fd, 0, SEEK_END));
+
+	/* write in chunks */
+	if (writeSize < size) {
+		writeSize = size;
+	}
+	for (bytesWritten = 0;  bytesWritten < size; bytesWritten += writeSize) {
+		CHECK(writeSize == fwrite(zeroBuf, 1, writeSize, fd));
+		
+		if (bytesWritten + writeSize < size) {
+			writeSize = size - bytesWritten;
+		}
+	}
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+
+}
+>>>>>>> 8b7ff3769e923ecfe6d08d23b867504f3348f726:common/misc.c

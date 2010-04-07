@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include "utils.h"
+#include "types.h"
 
 /*************************************************************************/
 /* typedef BasicHashFunctionPtr:                                         */
@@ -119,6 +120,10 @@ BasicHashFunctionPtr getHashFunFromName(const char * name);
 const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc);
 
 unsigned int getHashFunDigestLength(BasicHashFunctionPtr hashFunc);
+
+bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
+bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
+bool_t growFile(FILE * fd, size_t size);
 
 #endif
 /**********************  EOF (misc.h) *********************/
