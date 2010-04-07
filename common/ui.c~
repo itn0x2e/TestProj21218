@@ -1,6 +1,8 @@
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 #include "constants.h"
+#include "io.h"
 #include "ui.h"
 
 static bool_t isRuleValid(const char * rule);
@@ -16,18 +18,13 @@ bool_t validateRule(const char * rule) {
 	return TRUE;
 }
 
-hashKeyIntoTableFunctionPtr getHashFunFromName(const char * name) {
-	if (strcmp(name, "MD5")) {
-		return 
-}
-
 bool_t readPrompt(char * line) {
+	/* Repeat as long as empty lines are read */
 	do {
-		printf(">>");
-		if (NULL == fgets(line, sizeof(line), stdin)) {
+		if (!readLine(stdin, line)) {
 			return FALSE;
 		}
-	} while ('\n' == line[0]);
+	} while ('\0' == *line);
 	
 	return TRUE;
 }

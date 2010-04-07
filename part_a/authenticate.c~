@@ -2,12 +2,26 @@
 #include <string.h>
 
 #include "../common/types.h"
-#include "../common/util.h"
+#include "../common/utils.h"
 #include "../common/misc.h"
 #include "../common/constants.h"
 #include "auth_file.h"
+#include "authenticate.h"
 
+int main(int argc, char ** argv) 
+{
+	if (2 != argc) { 
+		fprintf(stderr, "Error: Usage authenticate <authentication table text file>\n");
+		return 1;
+	}
 
+	/* return 0 if authenticate returned successfully, otherwise 1 */
+	if (authenticate(argv[1])) {
+		return 0;
+	}
+	
+	return 1;
+}
 
 bool_t authenticate(char * filename) 
 {
@@ -75,22 +89,4 @@ LBL_CLEANUP:
 	freeAuthFile(&authFile);
 
 	return ret;
-}
-
-
-void printUsage(void) 
-{
-	printf("usage: authenticate <file>\n");
-}
-
-
-int main(int argc, char ** argv) 
-{
-	if (2 != argc) { 
-		printUsage();
-		return -1;
-	}
-
-	/* return 0 if create_authentication returned successfully */
-	return (TRUE != authenticate(argv[1]));
 }

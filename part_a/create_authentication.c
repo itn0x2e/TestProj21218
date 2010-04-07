@@ -1,119 +1,93 @@
 #include <stdio.h>
 #include <string.h>
-
 #include "../common/types.h"
+#include "../common/ui.h"
 #include "../common/utils.h"
 #include "../common/misc.h"
 #include "../common/constants.h"
 #include "auth_file.h"
 
+int main(int argc, char ** argv);
+bool_t create_authentication(char * filename, const char * hashFuncName);
+bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc);
 
+int main(int argc, char ** argv) {
+	if (3 != argc) {
+		fprintf(stderr, "Error: Usage create_authentication <hash function name> <filename to create>\n");
+		return 1;
+	}
 
-bool_t create_authentication(char * filename, algorithmId_t algo) 
-{
+	/* return 0 if create_authentication returned successfully, otherwise 1 */
+	if (create_authentication(argv[2], argv[1])) {
+		return 0;
+	}
+
+	return 1;
+}
+
+bool_t create_authentication(char * filename, const char * hashFuncName) {
+	/* TODO: check whether the file already exist? */
 	bool_t ret = FALSE;
+	BasicHashFunctionPtr hashFunc = getHashFunFromName(hashFuncName);
+	FILE * file = NULL;
 
-	char * algoName = NULL;
-	FILE * fd = NULL;
+	if (NULL == hashFunc) {
+		fprintf(stderr, "Error: Hash \"%s\" is not supported\n", hashFuncName);
+		return FALSE;
+	}
+
+	ASSERT(NULL != filename);
+
+	file = fopen(filename, "w");
+	if (NULL == file) {
+		/* TODO: print error msg? FAIL("fopen hash file"); */
+		return FALSE;
+	}
+
+	if ((1 != fwrite(hashFuncName, strlen(hashFuncName), 1, file)) ||
+			(1 != fwrite("\n", 1, 1, file))) {
+		/* TODO: reconsider error msg */
+		FCLOSE(file);
+		return FALSE;
+	}
 	
-	CHECK(NULL != filename);
+	ret = commandLoop(file, hashFunc);
 
-	fd = fopen(filename, "w");
-	if (NULL == fd) {
-		FAIL("fopen hash file");
-	}
-
-	switch (algo) {
-	case ALGO_MD5:
-		algoName = "MD5\n";
-		break;
-	case ALGO_SHA1:
-		algoName = "SHA1\n";
-		break;
-	default:
-		FAIL("invalid algorithm id");
-	}
-	if (1 != fwrite(algoName, strlen(algoName), 1, fd)) {
-		FAIL("fwrite hash algorith id to hash file");
-	}
-
-	
-	for(;;) {
-		char line[MAX_LINE_LEN] = {0};
-		char * user = NULL;
-		char * pass = NULL;
-		
-		printf(">>> ");
-		if (NULL == fgets(line, sizeof(line), stdin)) {
-			goto LBL_EOF;
-		}
-
-		/* trim string */
-		if ('\n' == line[strlen(line) - 1]) { 
-			line[strlen(line) - 1] = '\0';
-		}
-
-		if (0 == strcmp(line, "quit")) {
-			goto LBL_EOF;
-		}
-
-		user = line;
-		/* verify input */
-		if (NULL == strchr((char *) line, '\t')) {
-			printf("bad request\n");
-			continue;
-		}
-
-		pass = strchr(line, '\t') + 1;
-		*(pass - 1) = '\0';
-		
-		if (!writeUserAuth(fd, algo, user, pass)) {
-			FAIL("Error writing new auth credentials to file");
-		}
-	}
-
-	goto LBL_CLEANUP;
-
-LBL_EOF:
-	printf("\nbye.\n");
-
-	ret = TRUE;
-	goto LBL_CLEANUP;
-
-LBL_ERROR:
-	ret = FALSE;
-	
-LBL_CLEANUP:
-	FCLOSE(fd);
+	FCLOSE(file);
 
 	return ret;
 }
 
+bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc) {
+	char line[MAX_LINE_LEN] = {0};
+	const char * user = NULL;
+	const char * password = NULL;
+	char* separator = NULL;
 
-void printUsage(void) 
-{
-	printf("usage: create_authentication [MD5|SHA1] <file>\n");
-}
+	for(;;) {
+		if (!readPrompt(line) || (0 == strcmp(line, "quit"))) {
+			return TRUE;
+		}
 
+		separator = strchr(line, '\t');
 
-int main(int argc, char ** argv) 
-{
-	algorithmId_t algo = ALGO_INVALID;
+		/* Verify input */
+		if (NULL == separator) {
+			fprintf(stderr, "Error: Commands are either \"quit\" or <user name>tab<password>.\n");
+			continue;
+		}
 
-	if (3 != argc) { 
-		printUsage();
-		return -1;
+		/* The user name is whatever proceeds the separator */
+		user = line;
+		*separator = '\0';
+
+		/* Since the password may contain ' ', we simply consider it to be
+		 * everything that follows the separator */
+		password = separator + 1;
+
+		if (!writeUserAuth(file, hashFunc, user, password)) {
+			/* TODO: consider some error msg */
+			return FALSE;
+		}
 	}
-
-	if (0 == strcmp(argv[1], "MD5")) {
-		algo = ALGO_MD5;
-	} else if (0 == strcmp(argv[1], "SHA1")) {
-		algo = ALGO_SHA1;
-	} else {
-		printUsage();
-		return 1;
-	}
-
-	/* return 0 if create_authentication returned successfully */
-	return (TRUE != create_authentication(argv[2], algo));
 }

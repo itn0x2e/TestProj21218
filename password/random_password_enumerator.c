@@ -17,6 +17,5 @@ static ulong_t getRandomIndex(const passwordEnumerator_t * passwordEnumerator) {
 	/* TODO: document that there is a precondition that this function is invoked only if (passwordEnumerator->size > 0) */
 	ASSERT(passwordEnumerator->size > 0);
 
-	//return (getRandomULong() % passwordEnumerator->size);
-	return 0;
+	return (getRandomULong() % passwordEnumerator->size);
 }

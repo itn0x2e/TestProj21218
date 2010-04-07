@@ -1,29 +1,16 @@
 #include <stdio.h>
-#include "auth_file.h"
-#include "../common/types.h"
 #include "../common/constants.h"
+#include "../common/io.h"
 #include "../common/misc.h"
+#include "../common/types.h"
+#include "auth_file.h"
 
 
 /* Needed on some machines (Ubuntu 9.04 with some patch config) since strdup's 
  * definition was broken in some versions of gnu libc */
 extern char *strdup (__const char *__s);  /* TODO: tmp */
 
-
-int calcHash(algorithmId_t algo, char * password, unsigned char * out)
-{
-	switch(algo) {
-	case ALGO_MD5:
-		return MD5BasicHash((unsigned char *) password, strlen(password), out);
-	case ALGO_SHA1:
-		return SHA1BasicHash((unsigned char *) password, strlen(password), out);		
-	default:
-		return 0;
-	}
-}
-
-
-bool_t writeUserAuth(FILE * fd, algorithmId_t algo, char * username, char * password) 
+bool_t writeUserAuth(FILE * fd, BasicHashFunctionPtr hashFunc, const char * username, const char * password)
 {
 	unsigned char hash[HASH_MAX_SIZE];
 	char asciiHash[2*HASH_MAX_SIZE + 1];
@@ -35,7 +22,7 @@ bool_t writeUserAuth(FILE * fd, algorithmId_t algo, char * username, char * pass
 	CHECK(username != NULL);
 	CHECK(password != NULL);
 
-	hashSize = calcHash(algo, password, hash);
+	hashSize = hashFunc((unsigned char *) password, strlen(password), hash);
 	binary2hexa(hash, hashSize, asciiHash, sizeof(asciiHash));
 	fprintf(fd, "%s\t%s\n", username, asciiHash);
 
@@ -50,7 +37,7 @@ LBL_CLEANUP:
 	return ret;
 }
 
-bool_t readUserAuth(FILE * fd, accountInfo_t * res) 
+bool_t readUserAuth(FILE * fd, accountInfo_t * res)
 {
 	bool_t ret = FALSE;
 	char line[MAX_LINE_LEN] = {0};
@@ -98,71 +85,67 @@ LBL_CLEANUP:
 }
 
 
-bool_t readAuthFile(char * filename, authFile_t * res)
+bool_t authFileInitialize(authFile_t * self, const char * filename)
 {
 	bool_t ret = FALSE;
 
-	char algoName[MAX_LINE_LEN] = {0};
+	char hashFuncName[MAX_LINE_LEN] = {0};
 
 	int filePtr = 0;
 	unsigned int identityCount = 0;
 	accountInfo_t tempCredentials = {0};
 
-	FILE * fd = NULL;
+	FILE * file = NULL;
 
 	CHECK(NULL != filename);
-	CHECK(NULL != res);
 
-	res->algo = ALGO_INVALID;
-	res->entryCount = 0;
-	res->entries = NULL;
+	self->hashFunc = NULL;
+	self->entryCount = 0;
+	self->entries = NULL;
 
 	/* open file */
-	fd = fopen(filename, "r");
-	if (NULL == fd) {
+	file = fopen(filename, "r"); /* TODO: should be "rb" */
+	if (NULL == file) {
+		/* TODO: reconsider error msg */
 		FAIL("fopen hash file");
 	}
 
-	/* read algo id */
-	if (NULL == fgets(algoName, sizeof(algoName), fd)) {
+	if (!readLine(file, hashFuncName)) {
+		/* TODO: reconsider error msg */
 		FAIL("fread algorithm id");
 	}
-	/* trim trailing '\n' */
-	if ('\n' == algoName[strlen(algoName)-1]) {
-		algoName[strlen(algoName)-1] = '\0';
-	}
 
-	/* parse algo id */
-	if (0 == strcmp(algoName, "MD5")) {
-		res->algo = ALGO_MD5;
-	} else if (0 == strcmp(algoName, "SHA1")) {
-		res->algo = ALGO_SHA1;
-	} else {
+	self->hashFunc = getHashFunFromName(hashFuncName);
+
+	if (NULL == self->hashFunc) {
+		/* TODO: reconsider error msg */
 		FAIL("invalid algorithm ID");
 	}
 
 	/* save old file ptr */
-	filePtr = ftell(fd);
+	filePtr = ftell(file);
 
 	/* count entries in the file */
-	for(identityCount = 0; readUserAuth(fd, &tempCredentials); ++identityCount) {
+	/* TODO: shouldn't we check the return value of readUserAuth? */
+	for(identityCount = 0; readUserAuth(file, &tempCredentials); ++identityCount) {
 		FREE(tempCredentials.user);
 		FREE(tempCredentials.hash);
 	}
-	res->entryCount = identityCount;
+	self->entryCount = identityCount;
 
 
 	/* restore old file ptr */
-	fseek(fd, filePtr, SEEK_SET);
+	fseek(file, filePtr, SEEK_SET);
 
 	/* alloc array for credential info */
-	res->entries = (accountInfo_t *) malloc(sizeof(accountInfo_t) * identityCount);
-	if (NULL == res->entries) {
+	self->entries = (accountInfo_t *) malloc(sizeof(accountInfo_t) * identityCount);
+	if (NULL == self->entries) {
 		FAIL("malloc credentials array failed");
 	}
 
 	/* scan the records, again, this time keeping them in memory */
-	for(identityCount = 0; readUserAuth(fd, (res->entries) + identityCount); ++identityCount) {
+	/* TODO: shouldn't we check the return value of readUserAuth? */
+	for(identityCount = 0; readUserAuth(file, (self->entries) + identityCount); ++identityCount) {
 		/* Do nothing here (everything is done in the loop construct) */
 	}
 
@@ -173,51 +156,49 @@ LBL_ERROR:
 	ret = FALSE;
 	
 LBL_CLEANUP:
-	FCLOSE(fd);
+	FCLOSE(file);
 
 	return ret;
 }
 
-void freeAuthFile(authFile_t * authFile) 
-{
+void authFileFinalize(authFile_t * self) {
 	unsigned int i = 0;
 
-	if (NULL == authFile) {
-		return;
+	/* TODO: is this done if Initizlize fails? */
+	for(i = 0; i < self->entryCount; ++i) {
+		FREE(self->entries[i].user);
+		FREE(self->entries[i].hash);
 	}
 
-	for(i = 0; i < authFile->entryCount; ++i) {
-		FREE(authFile->entries[i].user);
-		FREE(authFile->entries[i].hash);
-	}
-
-	FREE(authFile->entries);
+	FREE(self->entries);
 }
 
-bool_t authenticateAgainstAuthFile(authFile_t * authFile, char * user, char * password)
+bool_t authFileAuthenticate(const authFile_t * self, const char * username, const char * password)
 {
 	bool_t ret = FALSE;
 	unsigned int i = 0;
 	unsigned char hashedPassword[HASH_MAX_SIZE] = {0};
 	int hashLen = 0;
 
-	CHECK(NULL != authFile);
-	CHECK(NULL != user);
-	CHECK(NULL != password);
+	ASSERT(NULL != self);
+	ASSERT(NULL != username);
+	ASSERT(NULL != password);
 
-	for (i = 0; i < authFile->entryCount; ++i) {
-		if (0 != strcmp(user, authFile->entries[i].user)) {
+	for (i = 0; i < self->entryCount; ++i) {
+		if (0 != strcmp(username, self->entries[i].user)) {
 			continue;
 		}
 
 		/* calc hash on password */
-		hashLen = calcHash(authFile->algo, password, hashedPassword);
+		ASSERT(NULL != self->hashFunc)
+		hashLen = self->hashFunc((unsigned char *) password, strlen(password), hashedPassword);
 		if (0 == hashLen) {
+			/* TODO: reconsider error msg */
 			FAIL("Internal error while computing hash");
 		}
 		
 		/* compare results */
-		if (0 == memcmp(hashedPassword, authFile->entries[i].hash, hashLen)) {
+		if (0 == memcmp(hashedPassword, self->entries[i].hash, hashLen)) {
 			ret = TRUE;
 		}
 		else {

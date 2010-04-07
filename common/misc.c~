@@ -74,7 +74,8 @@ int binary2hexa(const unsigned char *bufIn, int lengthIn,
 	memset(outStr, 0, outMaxLen);
 
 	for (i = 0; (((i/2) < lengthIn) && (i < (outMaxLen - 1))); i += 2) {
-		snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);
+		/*snprintf(tempOut, sizeof(tempOut), "%02X", bufIn[i/2]);*/
+		sprintf(tempOut, "%02X", bufIn[i/2]);
 		outStr[i] = tempOut[0];
 		outStr[i+1] = tempOut[1];
 	}
@@ -102,4 +103,24 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
 	}
 
 	return MIN(strlen(strIn) / 2, outMaxLen);
+}
+
+BasicHashFunctionPtr getHashFunFromName(const char * name) {
+	if (0 == strcmp(name, "MD5")) {
+		return MD5BasicHash;
+	}
+	if (0 == strcmp(name, "SHA1")) {
+		return SHA1BasicHash;
+	}
+	return NULL;
+}
+
+const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc) {
+	switch(hashFunc) {
+	case MD5BasicHash:
+		return "MD5";
+	case SHA1BasicHash:
+		return "SHA1";
+	}
+	return NULL;
 }

@@ -1,11 +1,9 @@
 #ifndef __UI_H__
 #define __UI_H__
 
-#include "DEHT.h"
 #include "types.h"
 
 bool_t validateRule(const char * rule);
-/*hashKeyIntoTableFunctionPtr getHashFunFromName(const char * name);*/
 
 /**
  * @param line

@@ -104,3 +104,24 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen)
 
 	return MIN(strlen(strIn) / 2, outMaxLen);
 }
+
+BasicHashFunctionPtr getHashFunFromName(const char * name) {
+	if (0 == strcmp(name, "MD5")) {
+		return MD5BasicHash;
+	}
+	if (0 == strcmp(name, "SHA1")) {
+		return SHA1BasicHash;
+	}
+	return NULL;
+}
+/*
+const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc) {
+	switch(hashFunc) {
+	case MD5BasicHash:
+		return "MD5";
+	case SHA1BasicHash:
+		return "SHA1";
+	}
+	return NULL;
+}
+*/

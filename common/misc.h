@@ -114,5 +114,9 @@ LONG_INDEX_PROJ pseudo_random_generator_proj(int step);
 /*************************************************************************/
 LONG_INDEX_PROJ pseudo_random_function(const unsigned char *x,int inputLength,LONG_INDEX_PROJ seed);
 
+BasicHashFunctionPtr getHashFunFromName(const char * name);
+
+const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc);
+
 #endif
 /**********************  EOF (misc.h) *********************/
