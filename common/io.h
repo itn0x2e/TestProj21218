@@ -18,4 +18,6 @@ byte_t * readEntireBinaryFile(const char * filename, ulong_t * len); /* TODO: do
 
 char * readEntireTextFile(const char * filename);
 
+uint_t countNewlines(const char * str); /* counts the occurrences of '\n' */ 
+
 #endif /* __IO_H__ */

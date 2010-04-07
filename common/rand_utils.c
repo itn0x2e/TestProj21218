@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <constants.h>
 #include "rand_utils.h"
 
 ulong_t getRandomULong() {
@@ -23,5 +24,6 @@ ulong_t getRandomULong() {
 }
 
 void randomizeSalt(byte_t * salt) {
-	memcpy(salt, (byte_t *) getRandomULong(), 6);
+	/* Note that SALT_LEN is indeed lesser than sizeof(ulong_t) */
+	memcpy(salt, (byte_t *) getRandomULong(), SALT_LEN);
 }

@@ -1,7 +1,8 @@
 #include <string.h>
 #include <stdio.h>
-#include "misc.h"
+#include "constants.h"
 #include "md5.h"
+#include "misc.h"
 #include "sha1.h"
 
 LONG_INDEX_PROJ pseudo_random_generator_proj(int step)
@@ -115,12 +116,12 @@ BasicHashFunctionPtr getHashFunFromName(const char * name) {
 	return NULL;
 }
 
-uint_t getHashFunOutputLength(BasicHashFunctionPtr hashFunc) {
+unsigned int getHashFunOutputLength(BasicHashFunctionPtr hashFunc) {
 	if (MD5BasicHash == hashFunc) {
-		return MD5_OUTPUT_LENGTH_IN_BYTES;
+		return MD5_DIGEST_LEN;
 	}
 	if (SHA1BasicHash == hashFunc) {
-		return SHA1_OUTPUT_LENGTH_IN_BYTES;
+		return SHA1_DIGEST_LEN;
 	}
 	return 0;
 }

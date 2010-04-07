@@ -75,3 +75,16 @@ LBL_ERROR:
 	FCLOSE(fp);
 	return NULL;
 }
+
+uint_t countNewlines(const char * str) {
+	uint_t count = 0;
+	
+	str = strchr(str, '\n');
+	
+	while (NULL != str) {
+		++count;
+		str = strchr(str + 1, '\n');
+	}
+	
+	return count;
+}

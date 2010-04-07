@@ -62,9 +62,11 @@ char * readEntireTextFile(const char * filename) {
 	fseek(fp,0,SEEK_SET);
   
 	CHECK(1 == fread(res, len, 1, fp));
-	res[len] = '\0';
-  
+	
 	FCLOSE(fp);
+	
+	res[len] = '\0';
+	
 	return res;
 	
 LBL_ERROR:
@@ -72,4 +74,17 @@ LBL_ERROR:
 	FREE(res);
 	FCLOSE(fp);
 	return NULL;
+}
+
+uint_t countNewlines(const char * str) {
+	uint_t count = 0;
+	
+	str = strchr(str, '\n');
+	
+	while (NULL != str) {
+		++count;
+		str = strchr(str + 1, '\n');
+	}
+	
+	return count;
 }

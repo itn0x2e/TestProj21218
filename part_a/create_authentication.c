@@ -86,7 +86,6 @@ bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc) {
 		password = separator + 1;
 
 		if (!writeUserAuth(file, hashFunc, user, password)) {
-			/* TODO: consider some error msg */
 			return FALSE;
 		}
 	}

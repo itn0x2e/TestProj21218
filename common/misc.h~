@@ -118,5 +118,7 @@ BasicHashFunctionPtr getHashFunFromName(const char * name);
 
 const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc);
 
+unsigned int getHashFunOutputLength(BasicHashFunctionPtr hashFunc);
+
 #endif
 /**********************  EOF (misc.h) *********************/
