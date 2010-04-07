@@ -11,35 +11,33 @@
 static bool_t commandLoop(FILE * file, BasicHashFunctionPtr hashFunc, bool_t salty);
 
 bool_t create_authentication(char * filename, const char * hashFuncName, bool_t salty) {
-	/* TODO: check whether the file already exist? */
 	bool_t ret = FALSE;
-	BasicHashFunctionPtr hashFunc = getHashFunFromName(hashFuncName);
+	BasicHashFunctionPtr hashFunc = NULL;
 	FILE * file = NULL;
 
-	if (NULL == hashFunc) {
-		fprintf(stderr, "Error: Hash \"%s\" is not supported\n", hashFuncName);
+	/* Validate arguments */
+	if (!parseHashFunName(&hashFunc, hashFuncName) || !validateFileNotExist(filename)) {
 		return FALSE;
 	}
 
-	ASSERT(NULL != filename);
-
+	/* Create an empty authentication file for writing */
 	file = fopen(filename, "w");
 	if (NULL == file) {
-		/* TODO: print error msg? FAIL("fopen hash file"); */
+		perror(filename);
 		return FALSE;
 	}
 
-	if ((1 != fwrite(hashFuncName, strlen(hashFuncName), 1, file)) ||
-			(1 != fwrite("\n", 1, 1, file))) {
-		/* TODO: reconsider error msg */
+	/* Write the name of the hash function into the file */
+	if ((1 != fwrite(hashFuncName, strlen(hashFuncName), 1, file)) || (1 != fwrite("\n", 1, 1, file))) {
+		perror(filename);
 		FCLOSE(file);
 		return FALSE;
 	}
-	
+
+	/* Treat user commands */
 	ret = commandLoop(file, hashFunc, salty);
 
 	FCLOSE(file);
-
 	return ret;
 }
 

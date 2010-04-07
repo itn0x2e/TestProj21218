@@ -18,6 +18,24 @@ bool_t validateRule(const char * rule) {
 	return TRUE;
 }
 
+bool_t validateFileNotExist(const char * filename) {
+	if (doesFileExist(filename)) {
+		fprintf(stderr, "Error: File \"%s\" already exist\n", filename);
+		return FALSE;
+	}
+	
+	return TRUE;
+}
+
+bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name) {
+	*hashFunc = getHashFunFromName(name);
+	if (NULL == hashFunc) {
+		fprintf(stderr, "Error: Hash \"%s\" is not supported\n", name);
+		return FALSE;
+	}
+	return TRUE;
+}
+
 bool_t readPrompt(char * line) {
 	/* Repeat as long as empty lines are read */
 	do {
