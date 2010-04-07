@@ -97,7 +97,23 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen) {
 int binary2hexa(const unsigned char *bufIn, int lengthIn,
 				char *outStr, int outMaxLen) {
 	int i;
-
+	
+	
+	
+	
+	unsigned int c = 0;
+	for(;c<0xff;++c){
+		if (0x10>(SYMBOL2NIBBLE(c))) {
+			printf("%02X ==> %02x", c, SYMBOL2NIBBLE(c));
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
 	if ((2 * lengthIn + 1) > outMaxLen) {
 		/* outStr is null terminated even in case of failure */
 		*outStr = '\0';
