@@ -1,13 +1,16 @@
 all: exhaustive_table_generator
 
 clean:
-	-rm exhaustive_table_generator exhaustive_table_generator.o md5.o misc.o rand_utils.o sha1.o ui.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
+	-rm exhaustive_table_generator exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
 
-exhaustive_table_generator: exhaustive_table_generator.o md5.o misc.o rand_utils.o sha1.o ui.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
-	gcc -ansi -pedantic-errors -g -lm -o exhaustive_table_generator exhaustive_table_generator.o md5.o misc.o rand_utils.o sha1.o ui.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
+exhaustive_table_generator: exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
+	gcc -ansi -pedantic-errors -g -lm -o exhaustive_table_generator exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
 
 exhaustive_table_generator.o: exhaustive_table_generator.c exhaustive_table_generator.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o exhaustive_table_generator.o exhaustive_table_generator.c
+
+io.o: ../common/io.c ../common/io.h 
+	gcc -ansi -pedantic-errors -c -Wall -g -o io.o ../common/io.c
 
 md5.o: ../common/md5.c ../common/md5.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o md5.o ../common/md5.c

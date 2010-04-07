@@ -115,6 +115,17 @@ BasicHashFunctionPtr getHashFunFromName(const char * name) {
 	return NULL;
 }
 
+uint_t getHashFunOutputLength(BasicHashFunctionPtr hashFunc) {
+	if (MD5BasicHash == hashFunc) {
+		return MD5_OUTPUT_LENGTH_IN_BYTES;
+	}
+	if (SHA1BasicHash == hashFunc) {
+		return SHA1_OUTPUT_LENGTH_IN_BYTES;
+	}
+	return 0;
+}
+
+/*
 const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc) {
 	switch(hashFunc) {
 	case MD5BasicHash:
@@ -124,3 +135,4 @@ const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc) {
 	}
 	return NULL;
 }
+*/

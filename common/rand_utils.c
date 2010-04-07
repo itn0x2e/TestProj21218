@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "rand_utils.h"
 
@@ -19,4 +20,8 @@ ulong_t getRandomULong() {
 	}
 	
 	return randNum;
+}
+
+void randomizeSalt(byte_t * salt) {
+	memcpy(salt, (byte_t *) getRandomULong(), 6);
 }
