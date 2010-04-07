@@ -119,6 +119,7 @@ LONG_INDEX_PROJ pseudo_random_function(const unsigned char *x,int inputLength,LO
 
 bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
 bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
+bool_t growFile(FILE * fd, size_t size);
 
 #endif
 /**********************  EOF (misc.h) *********************/

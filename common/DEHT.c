@@ -35,16 +35,9 @@ DEHT *create_empty_DEHT(const char *prefix,
 
 	/* write header to disk */
 	CHECK(1 == fwrite(&(instance->header), sizeof(instance->header), 1, instance->keyFP));
-	fflush(instance->keyFP);
 
-	/* alloc pointer table */
-	instance->hashTableOfPointersImageInMemory = malloc(KEY_FILE_BUCKET_POINTERS_SIZE(instance));
-	CHECK(NULL != instance->hashTableOfPointersImageInMemory);
-	memset(instance->hashTableOfPointersImageInMemory, 0, KEY_FILE_BUCKET_POINTERS_SIZE(instance));
-
-	/* write pointer table to disk */
-	CHECK(pfwrite(instance->keyFP, sizeof(instance->header), instance->hashTableOfPointersImageInMemory, KEY_FILE_BUCKET_POINTERS_SIZE(instance)));
-	
+	/* write (empty) pointer table to disk */
+	CHECK(growFile(instance->keyFP, sizeof(DEHT_DISK_PTR) * numEntriesInHashTable));
 
 	goto LBL_CLEANUP;	
 
@@ -55,12 +48,14 @@ LBL_ERROR:
 LBL_CLEANUP:
 	if (errorState) {
 		if (NULL != instance) {
-			DEHT_freeResources(instance);
+			DEHT_freeResources(instance, TRUE);
+			instance = NULL;
 		}
 	}
-	else {
-		return instance;
-	}
+
+	TRACE_FUNC_EXIT();
+
+	return instance;
 }
 
 
@@ -88,12 +83,14 @@ LBL_ERROR:
 LBL_CLEANUP:
 	if (errorState) {
 		if (NULL != instance) {
-			DEHT_freeResources(instance);
+			DEHT_freeResources(instance, FALSE);
+			instance = NULL;
 		}
 	}
-	else {
-		return instance;
-	}
+
+	TRACE_FUNC_EXIT();
+
+	return instance;
 }
 
 
@@ -114,7 +111,6 @@ DEHT * DEHT_init_instance (const char * prefix, char * keyFileMode, char * dataF
 	CHECK(NULL != hashfun);
 	CHECK(NULL != validfun);
 
-
 	instance = malloc(sizeof(DEHT));
 	CHECK(NULL != instance);
 
@@ -133,6 +129,10 @@ DEHT * DEHT_init_instance (const char * prefix, char * keyFileMode, char * dataF
 	CHECK(NULL != instance->dataFP);	
 	
 	instance->hashTableOfPointersImageInMemory = NULL;
+	instance->hashPointersForLastBlockImageInMemory = NULL;
+
+	instance->hashFunc = hashfun;
+	instance->comparisonHashFunc = validfun;
 
 	errorState = FALSE;
 	goto LBL_CLEANUP;
@@ -145,12 +145,11 @@ LBL_ERROR:
 LBL_CLEANUP:
 	if (errorState) {
 		FREE(instance);
-		
-		return NULL;
+		instance = NULL;
 	}
-	else {
-		return instance;
-	}
+
+	TRACE_FUNC_EXIT();
+	return instance;
 }
 
 
@@ -176,11 +175,11 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	CHECK(NULL != key);
 	CHECK(NULL != data);
 
-	/* allocate a buffer for DEHT_query_internal */
+	/* allocate a buffer for DEHT_queryInternal */
 	tempKeyBlock = malloc(KEY_FILE_BLOCK_SIZE(ht));
 	CHECK(NULL != tempKeyBlock);
 	
-	ret = DEHT_query_internal(ht, key, keyLength, data, dataLength, tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht), 
+	ret = DEHT_queryInternal(ht, key, keyLength, data, dataLength, tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht), 
 				  &keyBlockDiskOffset, &keyIndex, &lastKeyBlockDiskOffset);
 
 	switch(ret) {
@@ -193,7 +192,15 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 
 		break;
 
-	case DEHT_STATUS_SUCCESS:
+	case DEHT_STATUS_FAIL:
+	default:
+		if (0 > ret) {
+			/* internal error */
+			goto LBL_ERROR;
+		}
+
+		/* if we got here, the key was found */
+
 		TRACE("re-writing record");
 		/* found - need to update */
 
@@ -210,11 +217,6 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 		ret = DEHT_STATUS_NOT_NEEDED;
 		
 		break;
-
-	default:
-	case DEHT_STATUS_FAIL:
-		/* internal error */
-		goto LBL_ERROR;
 	}
 
 	goto LBL_CLEANUP;	
@@ -226,6 +228,7 @@ LBL_ERROR:
 LBL_CLEANUP:
 	FREE(tempKeyBlock);
 
+	TRACE_FUNC_EXIT();
 	return ret;
 }
 
@@ -242,7 +245,6 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	ulong_t freeIndex = 0;
 
 	KeyFilePair_t * targetRec = NULL;
-	
 
 	TRACE_FUNC_ENTRY();
 
@@ -251,15 +253,16 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	CHECK(NULL != data);
 
 	/* calc hash for key */
+	CHECK(NULL != ht->hashFunc);
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);
-	TRACE_FPRINTF(stderr, "%s: bucket index=%#x\n", __FUNCTION__, hashTableIndex);
+	TRACE_FPRINTF(stderr, "TRACE: %s: bucket index=%#x\n", __FUNCTION__, hashTableIndex);
 
 	blockContent = malloc(KEY_FILE_BLOCK_SIZE(ht));
 	CHECK(NULL != blockContent);
-	CHECK(DEHT_findEmptyLocationInBucket(ht, hashTableIndex, blockContent, KEY_FILE_BLOCK_SIZE(ht),
+	CHECK(DEHT_allocEmptyLocationInBucket(ht, hashTableIndex, blockContent, KEY_FILE_BLOCK_SIZE(ht),
 					     &keyBlockOffset, &freeIndex));
 
-	TRACE_FPRINTF(stderr, "%s: using block at %#x, index=%lu\n", __FUNCTION__, (uint_t) keyBlockOffset, freeIndex);
+	TRACE_FPRINTF(stderr, "TRACE: %s: using block at %#x, index=%lu\n", __FUNCTION__, (uint_t) keyBlockOffset, freeIndex);
 
 	targetRec = GET_N_REC_PTR_IN_BLOCK(ht, blockContent, freeIndex);
 
@@ -286,6 +289,7 @@ LBL_ERROR:
 LBL_CLEANUP:
 	FREE(blockContent);
 
+	TRACE_FUNC_EXIT();
 	return ret;
 }
 
@@ -307,11 +311,11 @@ int query_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	CHECK(NULL != key);
 	CHECK(NULL != data);
 
-	/* allocate a buffer for DEHT_query_internal */
+	/* allocate a buffer for DEHT_queryInternal */
 	tempKeyBlock = malloc(KEY_FILE_BLOCK_SIZE(ht));
 	CHECK(NULL != tempKeyBlock);
 	
-	ret = DEHT_query_internal(ht, key, keyLength, data, dataMaxAllowedLength, tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht), 
+	ret = DEHT_queryInternal(ht, key, keyLength, data, dataMaxAllowedLength, tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht), 
 				  &keyBlockDiskOffset, &keyIndex, &lastKeyBlockDiskOffset);
 
 	goto LBL_CLEANUP;	
@@ -323,6 +327,7 @@ LBL_ERROR:
 LBL_CLEANUP:
 	FREE(tempKeyBlock);
 
+	TRACE_FUNC_EXIT();
 	return ret;
 }
 
@@ -330,7 +335,7 @@ LBL_CLEANUP:
 
 
 
-int DEHT_query_internal(DEHT *ht, const unsigned char *key, int keyLength, const unsigned char *data, int dataMaxAllowedLength,
+int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const unsigned char *data, int dataMaxAllowedLength,
 			byte_t * keyBlockOut, ulong_t keyBlockSize, DEHT_DISK_PTR * keyBlockDiskOffset, ulong_t * keyIndex, DEHT_DISK_PTR * lastKeyBlockDiskOffset)
 {
 	int ret = DEHT_STATUS_FAIL;
@@ -355,7 +360,8 @@ int DEHT_query_internal(DEHT *ht, const unsigned char *key, int keyLength, const
 	CHECK(NULL != keyBlockDiskOffset);
 	CHECK(NULL != keyIndex);
 	CHECK(NULL != lastKeyBlockDiskOffset);
-	
+
+	fprintf(stderr, "88888 DEHT_queryInternal: key=%02X %s\n", key[0], key+1);
 
 	/* calc hash for key */
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);
@@ -393,6 +399,7 @@ int DEHT_query_internal(DEHT *ht, const unsigned char *key, int keyLength, const
 
 		/* scan this block */
 		for(*keyIndex = 0;  *keyIndex < ht->header.nPairsPerBlock;  ++*keyIndex) {
+
 			currPair = GET_N_REC_PTR_IN_BLOCK(ht, keyBlockOut, *keyIndex);
 
 			if (0 == memcmp(currPair->key, validationKey, ht->header.nBytesPerValidationKey)) {
@@ -411,7 +418,7 @@ int DEHT_query_internal(DEHT *ht, const unsigned char *key, int keyLength, const
 		*keyBlockDiskOffset = *( (DEHT_DISK_PTR *) (keyBlockOut + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR)) );
 		TRACE_FPRINTF(stderr, "%s: next ptr from disk: %#x\n", __FUNCTION__, (uint_t) *keyBlockDiskOffset);
 
-		/*! TODO: update last block cache if present !*/
+		/*! TODO: update last block cache if present? !*/
 	}
 
 	dataBlockOffset = 0;
@@ -425,13 +432,12 @@ int DEHT_query_internal(DEHT *ht, const unsigned char *key, int keyLength, const
 	}
 
 	bytesRead = 0;
-	if (DEHT_readDataAtOffset(ht, dataBlockOffset, (byte_t *) data, dataMaxAllowedLength, &bytesRead)) {
-		ret = bytesRead;
-		goto LBL_CLEANUP;
-	}
-	else {
-		goto LBL_ERROR;	
-	}
+	CHECK(DEHT_readDataAtOffset(ht, dataBlockOffset, (byte_t *) data, dataMaxAllowedLength, &bytesRead));
+
+	TRACE("found one!");
+
+	ret = bytesRead;
+	goto LBL_CLEANUP;
 	
 LBL_ERROR:
 	ret = DEHT_STATUS_FAIL;
@@ -439,8 +445,9 @@ LBL_ERROR:
 
 LBL_CLEANUP:
 	FREE(validationKey);
-	return ret;
 
+	TRACE_FUNC_EXIT();
+	return ret;
 }
 
 
@@ -478,6 +485,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
 	return ret;
 }
 
@@ -505,6 +513,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
 	return ret;
 
 }
@@ -540,7 +549,56 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
 	return ret;
+}
+
+
+DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex)
+{
+	DEHT_DISK_PTR blockOffset = 0;
+	
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != ht);
+	CHECK(bucketIndex < ht->header.numEntriesInHashTable);
+
+	if (NULL != ht->hashTableOfPointersImageInMemory) {
+		blockOffset = ht->hashTableOfPointersImageInMemory[bucketIndex];
+	}
+	else {
+		CHECK(pfread(ht->keyFP, sizeof(ht->header) + bucketIndex * sizeof(DEHT_DISK_PTR), &blockOffset, sizeof(blockOffset)));
+	}
+
+	/* if this is the very first block, alloc a new one */
+	if (0 == blockOffset) {
+		blockOffset = DEHT_allocKeyBlock(ht);
+		CHECK(0 != blockOffset);
+
+		/* if present, update first & last block caches */
+		if (NULL != ht->hashTableOfPointersImageInMemory) {
+			/* update cache ptr */
+			ht->hashTableOfPointersImageInMemory[bucketIndex] = blockOffset;
+		}
+		else {
+			/* update on-disk ptr */
+			CHECK(pfwrite(ht->keyFP, sizeof(ht->header) + bucketIndex * sizeof(DEHT_DISK_PTR), &blockOffset, sizeof(blockOffset)));
+		}
+
+		if (NULL != ht->hashPointersForLastBlockImageInMemory) {
+			ht->hashPointersForLastBlockImageInMemory[bucketIndex] = blockOffset;
+		}
+	}
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	blockOffset = 0;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return blockOffset;
 }
 
 
@@ -552,34 +610,21 @@ DEHT_DISK_PTR DEHT_findLastBlockForBucketDumb(DEHT * ht, ulong_t bucketIndex)
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != ht);
-	CHECK(DEHT_STATUS_FAIL != read_DEHT_pointers_table(ht));
+	CHECK(bucketIndex < ht->header.numEntriesInHashTable);
 
+	blockOffset = DEHT_findFirstBlockForBucket(ht, bucketIndex);
+	CHECK(0 != blockOffset);
 
-	blockOffset = ht->hashTableOfPointersImageInMemory[bucketIndex];
 	lastBlockOffset = blockOffset;
+	/* scan chain */
 	while (0 != blockOffset) {
 		lastBlockOffset = blockOffset;
 		
 		/* read the offset to the next block from disk */
 		CHECK(pfread(ht->keyFP, blockOffset + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR), &blockOffset, sizeof(blockOffset)));
-
 	}
 
-	if (0 == lastBlockOffset) {
-		/* this is the first block - use the end of the file */
-		CHECK(0 == fseek(ht->keyFP, SEEK_END, 0));
-		lastBlockOffset = ftell(ht->keyFP);
-		
-		/* write an empty block */
-		
-		/* assign it to the bucket */		
-		ht->hashTableOfPointersImageInMemory[bucketIndex] = lastBlockOffset;
-	}
-
-	/* Update cache if present */
-	if (NULL != ht->hashPointersForLastBlockImageInMemory) {
-		ht->hashPointersForLastBlockImageInMemory[bucketIndex] = lastBlockOffset;
-	}
+	CHECK(0 != lastBlockOffset);
 
 	goto LBL_CLEANUP;
 
@@ -588,6 +633,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
 	return lastBlockOffset;
 }
 
@@ -598,21 +644,27 @@ DEHT_DISK_PTR DEHT_findLastBlockForBucket(DEHT * ht, ulong_t bucketIndex)
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != ht);
+	CHECK(bucketIndex < ht->header.numEntriesInHashTable);
 
-	if (NULL != ht->hashPointersForLastBlockImageInMemory) {
-		return ht->hashPointersForLastBlockImageInMemory[bucketIndex];
+	if ((NULL == ht->hashPointersForLastBlockImageInMemory) ||
+	    (0 == ht->hashPointersForLastBlockImageInMemory[bucketIndex]) ) {
+		TRACE("scanning chain");
+
+		return DEHT_findLastBlockForBucketDumb(ht, bucketIndex);
 	}
 	else {
-		return DEHT_findLastBlockForBucketDumb(ht, bucketIndex);
+		TRACE("using cache");
+		return ht->hashPointersForLastBlockImageInMemory[bucketIndex];
 	}
 
 LBL_ERROR:
 	TRACE_FUNC_ERROR();
 	return 0;
 
+
 }
 
-bool_t DEHT_findEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
+bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 					     byte_t * blockDataOut, ulong_t blockDataLen,
 					     DEHT_DISK_PTR * blockDiskPtr, ulong_t * firstFreeIndex)
 {
@@ -620,44 +672,39 @@ bool_t DEHT_findEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 
 	DEHT_DISK_PTR newBlock = 0;
 
-	byte_t * emptyPair = NULL;
-
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != ht);
+	CHECK(bucketIndex < ht->header.numEntriesInHashTable);
 	CHECK(NULL != blockDataOut);
 	CHECK(KEY_FILE_BLOCK_SIZE(ht) <= blockDataLen);
 	CHECK(NULL != blockDiskPtr);
 	CHECK(NULL != firstFreeIndex);
 
-
-
 	*blockDiskPtr = DEHT_findLastBlockForBucket(ht, bucketIndex);
+	CHECK(0 != *blockDiskPtr);
 
 	/* read it */
 	CHECK(pfread(ht->keyFP, *blockDiskPtr, blockDataOut, KEY_FILE_BLOCK_SIZE(ht)));
 
-	/* alloc a dummy empty key-data pair */
-	emptyPair = malloc(KEY_FILE_RECORD_SIZE(ht));
-	CHECK(NULL != emptyPair);
-	memset(emptyPair, 0, KEY_FILE_RECORD_SIZE(ht));
-
-	/* scan the block, looking for an empty pair */
-	for (*firstFreeIndex = 0;   *firstFreeIndex < ht->header.nPairsPerBlock;  ++*firstFreeIndex) {
-		if (0 == memcmp(emptyPair, blockDataOut + *firstFreeIndex * KEY_FILE_RECORD_SIZE(ht), KEY_FILE_RECORD_SIZE(ht))) {
-			/*! TODO: stricter checks / add block filled count !*/
-			break;
-		}
-	}
+	/* get the current used block count */
+	*firstFreeIndex = GET_USED_RECORD_COUNT(blockDataOut);
+	/*!fprintf(stderr, "%s: used records count=%d\n", __FUNCTION__, *firstFreeIndex);!*/
 	
-	/* see if we've reached the end of the block */
+	/* see if this block is full */
 	if (*firstFreeIndex >= ht->header.nPairsPerBlock) {
+	
 		newBlock = DEHT_allocKeyBlock(ht);
 		CHECK(0 != newBlock);
 
 		/* update old block */
 		SET_NEXT_BLOCK_PTR(ht, blockDataOut, newBlock);
-
+	
+		/* update last block reference if cache is present */
+		if (NULL != ht->hashPointersForLastBlockImageInMemory) {
+			ht->hashPointersForLastBlockImageInMemory[bucketIndex] = newBlock;
+		}
+		
 		CHECK(pfwrite(ht->keyFP, *blockDiskPtr, blockDataOut, KEY_FILE_BLOCK_SIZE(ht)));
 		
 		/* now, just return the reference to the start of the new block */
@@ -666,16 +713,20 @@ bool_t DEHT_findEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 		*firstFreeIndex = 0;
 	}
 
+	/* increase used pairs count by one. If & when the user will update the block on disk, this will be updated as well */
+	SET_USED_RECORD_COUNT(blockDataOut, GET_USED_RECORD_COUNT(blockDataOut) + 1);
+
 	ret = TRUE;
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
 	*blockDiskPtr = 0;
 	*firstFreeIndex = 0;
+	ret = FALSE;
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
-		
+	TRACE_FUNC_EXIT();
 	return ret;
 }
 
@@ -683,23 +734,18 @@ LBL_CLEANUP:
 DEHT_DISK_PTR DEHT_allocKeyBlock(DEHT * ht)
 {
 	DEHT_DISK_PTR newBlock  = 0;
-	DEHT_DISK_PTR * tempBlockContent = NULL;
 
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != ht);
 
 	/* this is the first block - use the end of the file */
-	CHECK(0 == fseek(ht->keyFP, SEEK_END, 0));
+	(void) fflush(ht->keyFP);
+	CHECK(0 == fseek(ht->keyFP, 0, SEEK_END));
 	newBlock = ftell(ht->keyFP);
 	
 	/* alloc an empty block (init to NULLs) */
-	tempBlockContent = malloc(KEY_FILE_BLOCK_SIZE(ht));
-	CHECK(NULL != tempBlockContent);
-	memset(tempBlockContent, 0, KEY_FILE_BLOCK_SIZE(ht));
-
-	/* write to disk */
-	CHECK(1 == fwrite(tempBlockContent, KEY_FILE_BLOCK_SIZE(ht), 1, ht->keyFP));
+	CHECK(growFile(ht->keyFP, KEY_FILE_BLOCK_SIZE(ht)));
 
 	goto LBL_CLEANUP;
 
@@ -708,8 +754,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
-	FREE(tempBlockContent);
-
+	TRACE_FUNC_EXIT();
 	return newBlock;
 }
 
@@ -730,7 +775,7 @@ bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 
 	CHECK(pfread(ht->dataFP, dataBlockOffset, &dataLen, sizeof(dataLen)));
 
-	TRACE_FPRINTF(stderr, "%s: key size is %d\n", __FUNCTION__, dataLen);
+	TRACE_FPRINTF(stderr, "%s: data size is %d\n", __FUNCTION__, dataLen);
 
 	*bytesRead = fread(data, 1, dataMaxAllowedLength, ht->dataFP);
 	CHECK(0 < *bytesRead);
@@ -744,6 +789,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
 	return ret;
 
 }
@@ -762,8 +808,11 @@ bool_t DEHT_writeData(DEHT * ht, const byte_t * data, ulong_t dataLen,
 	CHECK(NULL != newDataOffset);
 	*newDataOffset = 0;
 
-	CHECK(0 == fseek(ht->dataFP, SEEK_END, 0));
+	(void) fflush(ht->keyFP);
+	CHECK(0 == fseek(ht->dataFP, 0, SEEK_END));
 	*newDataOffset = ftell(ht->dataFP);
+
+	CHECK(1 == fwrite(&dataLen, sizeof(byte_t), 1, ht->dataFP));
 	CHECK(1 == fwrite(data, dataLen, 1, ht->dataFP));
 
 	ret = TRUE;
@@ -775,6 +824,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
 	return ret;
 
 }
@@ -790,14 +840,11 @@ void lock_DEHT_files(DEHT *ht)
 	   we try to do as much as we can in spite of error for robustness */
 	(void) write_DEHT_pointers_table(ht);
 
-	fflush(ht->keyFP);
-	fflush(ht->dataFP);
-
-	DEHT_freeResources(ht);
+	DEHT_freeResources(ht, FALSE);
 }
        
 
-void DEHT_freeResources(DEHT * instance)
+void DEHT_freeResources(DEHT * instance, bool_t removeFiles)
 {
 	TRACE_FUNC_ENTRY();
 
@@ -809,6 +856,14 @@ void DEHT_freeResources(DEHT * instance)
 	/* free ht cache if present */
 	FREE(instance->hashTableOfPointersImageInMemory);
 	FREE(instance->hashPointersForLastBlockImageInMemory);
+
+	if (removeFiles) {
+		/* attempt to remove bad files. Errors are silenced */
+		(void) remove(instance->sKeyfileName);
+		(void) remove(instance->sDatafileName);
+	}
+
+	/* finally, free the instance itself */
 	FREE(instance);
 
 	goto LBL_CLEANUP;
@@ -819,6 +874,7 @@ LBL_ERROR:
 
 LBL_CLEANUP:
 	/* bye */
+	TRACE_FUNC_EXIT();
 	return;
 }
 

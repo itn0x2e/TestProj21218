@@ -22,16 +22,37 @@
 #define KEY_FILE_EXT (".key")
 #define DATA_FILE_EXT (".data")
 
-/*! This would have been so much simpler using a struct, but the specification demanded that everything here be dynamic... !*/
+/*! This would have all been so much simpler using a struct, but the specification demanded that everything here be dynamic... !*/
 #define KEY_FILE_RECORD_SIZE(ht) (ht->header.nBytesPerValidationKey + sizeof(DEHT_DISK_PTR))
-#define KEY_FILE_BLOCK_SIZE(ht) (ht->header.nPairsPerBlock * KEY_FILE_RECORD_SIZE(ht) + sizeof(DEHT_DISK_PTR))
 
-#define GET_N_REC_PTR_IN_BLOCK(ht, blockPtr, n) ((KeyFilePair_t *) (((byte_t *) blockPtr) + n * KEY_FILE_RECORD_SIZE(ht)))
+/* each block is structured in the following manner:
+ * uint_t blockUsedRecordsCount (0 <= blockUsedRecordsCount <= nPairsPerBlock)
+ * nPairsPerBlock elements of KEY_FILE_BLOCK_SIZE (easier access provided by cast to KeyFilePair_t)
+ * DEHT_DISK_PTR nextBlockPtr (0 == no next block)
+ */
+#define KEY_FILE_BLOCK_SIZE(ht) (sizeof(uint_t) + ht->header.nPairsPerBlock * KEY_FILE_RECORD_SIZE(ht) + sizeof(DEHT_DISK_PTR))
 
-#define GET_NEXT_BLOCK_PTR(ht, blockPtr) ( *((DEHT_DISK_PTR *) (((byte_t *) blockPtr) + ht->header.nPairsPerBlock * (ht->header.nBytesPerValidationKey + sizeof(DEHT_DISK_PTR)) + ht->header.nBytesPerValidationKey)) )
+/*! Not for direct use. !*/
+/* First element in the block is the used blocks count */
+#define __RECORD_COUNT_PTR(blockPtr) ((uint_t *) (blockPtr))
+
+#define GET_USED_RECORD_COUNT(blockPtr) ( *(__RECORD_COUNT_PTR(blockPtr)) )
+#define SET_USED_RECORD_COUNT(blockPtr, newCount) \
+	do { \
+		*(__RECORD_COUNT_PTR(blockPtr)) = newCount; \
+	} while (0)
+
+
+
+#define GET_N_REC_PTR_IN_BLOCK(ht, blockPtr, n) ((KeyFilePair_t *) (((byte_t *) blockPtr) + sizeof(uint_t) + n * KEY_FILE_RECORD_SIZE(ht)))
+
+/*! Not intended for direct use !*/
+#define __NEXT_BLOCK_PTR(ht, blockPtr) ((DEHT_DISK_PTR *) (((byte_t *) blockPtr) + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR)))
+
+#define GET_NEXT_BLOCK_PTR(ht, blockPtr) ( *(__NEXT_BLOCK_PTR(ht, blockPtr)) )
 #define SET_NEXT_BLOCK_PTR(ht, blockPtr, nextBlockPtr) \
 	do { \
-		*((DEHT_DISK_PTR *) (((byte_t *) blockPtr) + ht->header.nPairsPerBlock * (ht->header.nBytesPerValidationKey + sizeof(DEHT_DISK_PTR)) + ht->header.nBytesPerValidationKey)) = nextBlockPtr; \
+		*(__NEXT_BLOCK_PTR(ht, blockPtr)) = nextBlockPtr; \
 	} while (0)
 
 #define KEY_FILE_BUCKET_POINTERS_SIZE(ht) (ht->header.numEntriesInHashTable * sizeof(DEHT_DISK_PTR))
@@ -149,7 +170,7 @@ DEHT *load_DEHT_from_files(const char *prefix,
 /* utility functions for c'tors & d'tor */
 DEHT * DEHT_init_instance (const char * prefix, char * keyFileMode, char * dataFileMode, 
 			   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun);
-void DEHT_freeResources(DEHT * instance);
+void DEHT_freeResources(DEHT * instance, bool_t removeFiles);
 
 /********************************************************************************/
 /* Function insert_uniquely_DEHT inserts an ellement.                           */
@@ -229,10 +250,11 @@ int write_DEHT_pointers_table(DEHT *ht);
 /************************************************************************************/
 int calc_DEHT_last_block_per_bucket(DEHT *ht); 
 
+DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex);
 DEHT_DISK_PTR DEHT_findLastBlockForBucketDumb(DEHT * ht, ulong_t bucketIndex);
 DEHT_DISK_PTR DEHT_allocKeyBlock(DEHT * ht);
 
-bool_t DEHT_findEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
+bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 					     byte_t * blockDataOut, ulong_t blockDataLen,
 					     DEHT_DISK_PTR * blockDiskPtr, ulong_t * firstFreeIndex);
 
@@ -243,7 +265,7 @@ bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 			     byte_t * data, ulong_t dataMaxAllowedLength, ulong_t * bytesRead);
 
 
-int DEHT_query_internal(DEHT *ht, const unsigned char *key, int keyLength, const unsigned char *data, int dataMaxAllowedLength,
+int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const unsigned char *data, int dataMaxAllowedLength,
 			byte_t * keyBlockOut, ulong_t keyBlockSize, DEHT_DISK_PTR * keyBlockDiskOffset, ulong_t * keyIndex, DEHT_DISK_PTR * lastKeyBlockDiskOffset);
 
 /************************************************************************************/

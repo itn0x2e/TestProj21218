@@ -12,14 +12,14 @@
 #define MIN(a, b) ((a > b) ? b : a)
 #define MAX(a, b) ((a > b) ? a : b)
 
-#define ERROR(msg) fprintf(stderr, "ERROR: %s: %s\n", __FUNCTION__, msg); \
+#define ERROR(msg) fprintf(stderr, "ERROR: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg); \
 			if (0 != errno) { \
 		   		perror("possible error cause"); \
 			}
-#define WARN(msg) fprintf(stderr, "WARNING: %s: %s\n", __FUNCTION__, msg)
+#define WARN(msg) fprintf(stderr, "WARNING: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
 
 #ifdef DEBUG
-	#define TRACE(msg) fprintf(stderr, "TRACE: %s: %s\n", __FUNCTION__, msg)
+	#define TRACE(msg) fprintf(stderr, "TRACE: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
 	#define TRACE_FPRINTF fprintf
 #else
 	#define TRACE(msg) /* In release - do nothing for trace messages */
@@ -27,6 +27,7 @@
 #endif /* DEBUG */
 
 #define TRACE_FUNC_ENTRY() TRACE("entered")
+#define TRACE_FUNC_EXIT() TRACE("exiting")
 #define TRACE_FUNC_ERROR() TRACE("exiting due to error")
 
 #define ASSERT(x) \
@@ -57,6 +58,7 @@
 
 #define FCLOSE(x) \
 		if(NULL != x) { \
+			fflush(x); \
 			fclose(x); \
 			x = NULL; \
 		}

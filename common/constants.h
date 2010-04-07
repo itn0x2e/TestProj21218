@@ -6,4 +6,6 @@
 
 #define MAX_LINE_LEN (MAX_USERNAME_LEN + MAX_PASSWORD_LEN + 2)
 
+#define WRITE_BUF_SIZE (4096)
+
 #endif /* __CONSTANTS_H__ */
