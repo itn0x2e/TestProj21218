@@ -30,7 +30,19 @@
 #define KEY_FILE_EXT (".key")
 #define DATA_FILE_EXT (".data")
 
-/*! This would have all been so much simpler using a struct, but the specification demanded that everything here be dynamic... !*/
+
+
+/* On disk, the file layout is:
+ * DEHTpreferences - header
+ * array of first block ptrs
+ * blocks containing key + data ptr pairs
+ */
+#define KEY_FILE_OFFSET_TO_USER_BYTES(ht) (sizeof(ht->header))
+#define KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) (KEY_FILE_OFFSET_TO_USER_BYTES(ht))
+#define KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht) (ht->header.numEntriesInHashTable * sizeof(DEHT_DISK_PTR))
+#define KEY_FILE_OFFSET_TO_FIRST_BLOCK(ht) (KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht))
+
+
 #define KEY_FILE_RECORD_SIZE(ht) (ht->header.nBytesPerValidationKey + sizeof(DEHT_DISK_PTR))
 
 /* each block is structured in the following manner:
@@ -51,6 +63,9 @@
 	} while (0)
 
 
+/* user bytes are stored in the begining of the data file */
+#define DATA_FILE_OFFSET_TO_USER_BYTES (0)
+
 
 #define GET_N_REC_PTR_IN_BLOCK(ht, blockPtr, n) ((KeyFilePair_t *) (((byte_t *) blockPtr) + sizeof(uint_t) + n * KEY_FILE_RECORD_SIZE(ht)))
 
@@ -63,7 +78,7 @@
 		*(__NEXT_BLOCK_PTR(ht, blockPtr)) = nextBlockPtr; \
 	} while (0)
 
-#define KEY_FILE_BUCKET_POINTERS_SIZE(ht) (ht->header.numEntriesInHashTable * sizeof(DEHT_DISK_PTR))
+
 
 typedef struct KeyFilePair_s {
 	DEHT_DISK_PTR dataOffset;
@@ -71,15 +86,21 @@ typedef struct KeyFilePair_s {
 } KeyFilePair_t;
 
 
+
+#define DEHT_HEADER_MAGIC (0xDEADBABE)
+
 /******************************************************************/
 /* structure of "first level header" - basic preferences of a DEHT*/
 /******************************************************************/
 struct DEHTpreferences
 {
-    char sDictionaryName[16];  /*Name for identification, e.g. "MD5\0" */
-    int numEntriesInHashTable; /*typically few millions*/
-    int nPairsPerBlock;        /*typically few hundreds*/
-    int nBytesPerValidationKey;/*length of key to be compared into, 
+	/* a signiture to protect us against error and abuse */
+	ulong_t magic;
+
+	char sDictionaryName[16];  /*Name for identification, e.g. "MD5\0" */
+	int numEntriesInHashTable; /*typically few millions*/
+	int nPairsPerBlock;        /*typically few hundreds*/
+	int nBytesPerValidationKey;/*length of key to be compared into, 
 							    e.g. 8 means 64bit key for validation*/ 
 	int numUnrelatedBytesSaved; /*for example 4000 if you save 1000 ineteger*/
 	/*********************************************************/
@@ -132,19 +153,20 @@ typedef int (*hashKeyforEfficientComparisonFunctionPtr)(const unsigned char *,in
 /****************************************************************************/
 typedef struct /*This struct holds all needed during actual calls*/
 {
-    char sKeyfileName[80]; /*filename (as OS recognize) of .key */
-    char sDatafileName[80];/*filename (as OS recognize) of .data */
-    FILE *keyFP;           /*file pointer to the .key file as stdio recognize*/ 
-    FILE *dataFP;
-    struct DEHTpreferences header; 
-    hashKeyIntoTableFunctionPtr hashFunc;                          /*key to table of pointers*/
+	char sKeyfileName[80]; /*filename (as OS recognize) of .key */
+	char sDatafileName[80];/*filename (as OS recognize) of .data */
+	FILE *keyFP;           /*file pointer to the .key file as stdio recognize*/ 
+	FILE *dataFP;
+	struct DEHTpreferences header; 
+	hashKeyIntoTableFunctionPtr hashFunc;                          /*key to table of pointers*/
 	hashKeyforEfficientComparisonFunctionPtr comparisonHashFunc;   /*key to validation process (distinguish collision for real match*/
-    DEHT_DISK_PTR *hashTableOfPointersImageInMemory;      /*null or some copy of what in file in case we cache it - efficient to cache this and header only*/
+	DEHT_DISK_PTR *hashTableOfPointersImageInMemory;      /*null or some copy of what in file in case we cache it - efficient to cache this and header only*/
 	DEHT_DISK_PTR *hashPointersForLastBlockImageInMemory; /*null or some intermidiate to know whenever insert. It has no parallel on disk*/
 	int *anLastBlockSize; /*null or some intermidiate to know whenever insert. It has no parallel on disk. Block size to enable quick insert*/
-	/***YOU ARE ALLOWED TO ADD HERE EXTRA MEMBERS, BUT BE EFFICIENT**/
-	/***I don't think extra members are necessary                  **/
-}DEHT;
+
+	byte_t * userBuf;
+
+} DEHT;
 
 /********************************************************************************/
 /* Function create_empty_DEHT creates a new DEHT.                               */
@@ -157,10 +179,11 @@ typedef struct /*This struct holds all needed during actual calls*/
 /* Open them in RW permission (if exist then fail, do not overwrite).           */
 /* hashTableOfPointersImageInMemory, hashPointersForLastBlockImageInMemory:=NULL*/
 /********************************************************************************/
-DEHT *create_empty_DEHT(const char *prefix,/*add .key and .data to open two files return NULL if fail creation*/
+DEHT *create_empty_DEHT(const char *prefix,
                         hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun,
-                        const char *dictName,   /*e.g. MD5\0 */ 
-                        int numEntriesInHashTable, int nPairsPerBlock, int nBytesPerKey); /*optimization preferences*/
+                        const char *dictName,
+                        int numEntriesInHashTable, int nPairsPerBlock, int nBytesPerKey,
+			int nUserBytes);
 
 /********************************************************************************/
 /* Function load_DEHT_from_files importes files created by previously used DEHT */
@@ -176,7 +199,7 @@ DEHT *load_DEHT_from_files(const char *prefix,
 
 
 /* utility functions for c'tors & d'tor */
-DEHT * DEHT_init_instance (const char * prefix, char * keyFileMode, char * dataFileMode, 
+DEHT * DEHT_initInstance (const char * prefix, char * fileMode, 
 			   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun);
 void DEHT_freeResources(DEHT * instance, bool_t removeFiles);
 
