@@ -103,7 +103,7 @@ LBL_ERROR:
 		
 }
 
-bool_t printIni(const char ** keys, const char ** values, uint_t numKeys) {
+void printIni(const char ** keys, const char ** values, uint_t numKeys) {
 	uint_t i;
 	
 	for (i = 0; i < numKeys; ++i) {
