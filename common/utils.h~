@@ -13,7 +13,6 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 #define PERROR() perror("Error")
-
 #define ERROR(msg) fprintf(stderr, "ERROR: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg); \
 			if (0 != errno) { \
 		   		perror("possible error cause"); \
