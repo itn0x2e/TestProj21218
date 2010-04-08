@@ -34,12 +34,11 @@
 
 /* On disk, the file layout is:
  * DEHTpreferences - header
- * User bytes (numUnrelatedBytesSaved bytes in payload)
  * array of first block ptrs
  * blocks containing key + data ptr pairs
  */
-#define KEY_FILE_OFFSET_TO_USER_BYTES(ht) (sizeof(ht->header) + 0)
-#define KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) (KEY_FILE_OFFSET_TO_USER_BYTES(ht) + ht->header.numUnrelatedBytesSaved)
+#define KEY_FILE_OFFSET_TO_USER_BYTES(ht) (sizeof(ht->header))
+#define KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) (KEY_FILE_OFFSET_TO_USER_BYTES(ht))
 #define KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht) (ht->header.numEntriesInHashTable * sizeof(DEHT_DISK_PTR))
 #define KEY_FILE_OFFSET_TO_FIRST_BLOCK(ht) (KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht))
 
@@ -64,6 +63,10 @@
 	} while (0)
 
 
+/* user bytes are stored in the begining of the data file */
+#define DATA_FILE_OFFSET_TO_USER_BYTES (0)
+
+
 #define GET_N_REC_PTR_IN_BLOCK(ht, blockPtr, n) ((KeyFilePair_t *) (((byte_t *) blockPtr) + sizeof(uint_t) + n * KEY_FILE_RECORD_SIZE(ht)))
 
 /*! Not intended for direct use !*/
@@ -83,17 +86,23 @@ typedef struct KeyFilePair_s {
 } KeyFilePair_t;
 
 
+
+#define DEHT_HEADER_MAGIC (0xDEADBABE)
+
 /******************************************************************/
 /* structure of "first level header" - basic preferences of a DEHT*/
 /******************************************************************/
 struct DEHTpreferences
 {
-    char sDictionaryName[16];  /*Name for identification, e.g. "MD5\0" */
-    int numEntriesInHashTable; /*typically few millions*/
-    int nPairsPerBlock;        /*typically few hundreds*/
-    int nBytesPerValidationKey;/*length of key to be compared into, 
+	/* a signiture to protect us against error and abuse */
+	ulong_t magic;
+
+	char sDictionaryName[16];  /*Name for identification, e.g. "MD5\0" */
+	int numEntriesInHashTable; /*typically few millions*/
+	int nPairsPerBlock;        /*typically few hundreds*/
+	int nBytesPerValidationKey;/*length of key to be compared into, 
 							    e.g. 8 means 64bit key for validation*/ 
-    int numUnrelatedBytesSaved; /*for example 4000 if you save 1000 ineteger*/
+	int numUnrelatedBytesSaved; /*for example 4000 if you save 1000 ineteger*/
 	/*********************************************************/
 	/*It is completely OK to add several members of your own */
 	/*Just remember that this struct is saved "as is" to disk*/
@@ -190,7 +199,7 @@ DEHT *load_DEHT_from_files(const char *prefix,
 
 
 /* utility functions for c'tors & d'tor */
-DEHT * DEHT_init_instance (const char * prefix, char * keyFileMode, char * dataFileMode, 
+DEHT * DEHT_initInstance (const char * prefix, char * fileMode, 
 			   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun);
 void DEHT_freeResources(DEHT * instance, bool_t removeFiles);
 

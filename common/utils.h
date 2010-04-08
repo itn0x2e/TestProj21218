@@ -12,18 +12,25 @@
 #define MIN(a, b) (((a) > (b)) ? (b) : (a))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-#define ERROR(msg) fprintf(stderr, "ERROR: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg); \
-			if (0 != errno) { \
-		   		perror("possible error cause"); \
-			}
-#define WARN(msg) fprintf(stderr, "WARNING: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
+
 
 #ifdef DEBUG
 	#define TRACE(msg) fprintf(stderr, "TRACE: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
 	#define TRACE_FPRINTF fprintf
+
+	#define ERROR(msg) fprintf(stderr, "ERROR: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg); \
+				if (0 != errno) { \
+			   		perror("possible error cause"); \
+				}
+	#define WARN(msg) fprintf(stderr, "WARNING: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
+
 #else
 	#define TRACE(msg) /* In release - do nothing for trace messages */
 	#define TRACE_FPRINTF sizeof
+
+	#define ERROR(msg) perror("ERROR: " msg ". Possible error cause")
+	#define WARN(msg) perror("WARNING: " msg)
+
 #endif /* DEBUG */
 
 #define TRACE_FUNC_ENTRY() TRACE("entered")

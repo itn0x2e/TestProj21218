@@ -124,5 +124,18 @@ const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc);
 
 unsigned int getHashFunDigestLength(BasicHashFunctionPtr hashFunc);
 
+
+
+int MD5SeededHash(byte_t * outBuf, 
+		   const byte_t * seed, ulong_t seedLen, 
+		   const byte_t * data, ulong_t dataLen);
+int SHA1SeededHash(byte_t * outBuf, 
+		   const byte_t * seed, ulong_t seedLen, 
+		   const byte_t * data, ulong_t dataLen);
+
+int miniHash(byte_t * output, ulong_t outputLen,
+		const byte_t * seed, ulong_t seedLen,
+		const byte_t * data, int dataLen);
+
 #endif
 /**********************  EOF (misc.h) *********************/

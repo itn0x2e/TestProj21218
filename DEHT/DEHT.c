@@ -24,25 +24,26 @@ DEHT *create_empty_DEHT(const char *prefix,
 	CHECK(0 != nPairsPerBlock);
 	CHECK(0 != nBytesPerKey);
 
-
-	instance = DEHT_init_instance(prefix, "w+b", "w+b", hashfun, validfun);
+	instance = DEHT_initInstance(prefix, "c+b", hashfun, validfun);
 	CHECK(NULL != instance);
 
 	/* Do extra inits */
+	instance->header.magic = DEHT_HEADER_MAGIC;
 	SAFE_STRNCPY(instance->header.sDictionaryName, dictName, sizeof(instance->header.sDictionaryName));
 	instance->header.numEntriesInHashTable = numEntriesInHashTable;
 	instance->header.nPairsPerBlock = nPairsPerBlock;
 	instance->header.nBytesPerValidationKey = nBytesPerKey;
 	instance->header.numUnrelatedBytesSaved = nUserBytes;
+	instance->header.magic = DEHT_HEADER_MAGIC;
 
 	/* write header to disk */
 	CHECK(1 == fwrite(&(instance->header), sizeof(instance->header), 1, instance->keyFP));
 
-	/* write (empty) user data to disk */
-	CHECK(growFile(instance->keyFP, ht->header.numUnrelatedBytesSaved));
-
 	/* write (empty) pointer table to disk */
 	CHECK(growFile(instance->keyFP, sizeof(DEHT_DISK_PTR) * numEntriesInHashTable));
+
+	/* write (empty) user data to disk */
+	CHECK(growFile(instance->dataFP, instance->header.numUnrelatedBytesSaved));
 
 
 
@@ -74,12 +75,13 @@ DEHT * load_DEHT_from_files(const char *prefix, hashKeyIntoTableFunctionPtr hash
 
 	TRACE_FUNC_ENTRY();
 
-	instance = DEHT_init_instance(prefix, "r+b", "r+b", hashfun, validfun);
+	instance = DEHT_initInstance(prefix, "r+b", hashfun, validfun);
 	CHECK(NULL != instance);
-
 
 	/* load dict settings from file */
 	CHECK(1 == fread(&(instance->header), sizeof(instance->header), 1, instance->keyFP));
+	CHECK(DEHT_HEADER_MAGIC == instance->header.magic);
+
 
 	goto LBL_CLEANUP;	
 
@@ -103,18 +105,21 @@ LBL_CLEANUP:
 
 
 
-DEHT * DEHT_init_instance (const char * prefix, char * keyFileMode, char * dataFileMode, 
+DEHT * DEHT_initInstance (const char * prefix, char * fileMode, 
 			   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun)
 {
 	bool_t errorState = TRUE;
+	bool_t deleteFilesOnError = FALSE;
+
 	DEHT * instance = NULL;
+
+	char tempFileMode[10] = {0};
 
 	TRACE_FUNC_ENTRY();
 
 	/* sanity */
 	CHECK(NULL != prefix);
-	CHECK(NULL != keyFileMode);
-	CHECK(NULL != dataFileMode);
+	CHECK(NULL != fileMode);
 	CHECK(NULL != hashfun);
 	CHECK(NULL != validfun);
 
@@ -129,11 +134,35 @@ DEHT * DEHT_init_instance (const char * prefix, char * keyFileMode, char * dataF
 	SAFE_STRNCPY(instance->sDatafileName, prefix, sizeof(instance->sKeyfileName));
 	SAFE_STRNCAT(instance->sDatafileName, DATA_FILE_EXT, sizeof(instance->sKeyfileName));
 
-	instance->keyFP = fopen(instance->sKeyfileName, keyFileMode);
+	/* Open key file. If file mode begins with 'c', first check that the file does not exist */
+	SAFE_STRNCPY(tempFileMode, fileMode, sizeof(tempFileMode));
+	if ('c' == tempFileMode[0]) {
+		/* we were asked to make sure the files weren't already present first */
+		instance->keyFP = fopen(instance->sKeyfileName, "rb");
+		if (NULL != instance->keyFP) {
+			deleteFilesOnError = FALSE;
+			FAIL("key file already exists!");
+		}
+
+		instance->dataFP = fopen(instance->sDatafileName, "rb");
+		if (NULL != instance->dataFP) {
+			deleteFilesOnError = FALSE;
+			FAIL("data file already exists!");
+		}
+
+		/* that check passed. Now modify the file mode back to a standard one */
+		tempFileMode[0] = 'w';
+		/* From now on, if we fail, we'd like to clean up the files */
+		deleteFilesOnError = TRUE;
+	}
+
+	/* Open key file */
+	instance->keyFP = fopen(instance->sKeyfileName, tempFileMode);
 	CHECK(NULL != instance->keyFP);
 	/*! CHECK(0 == setvbuf(instance->keyFP, NULL, _IOFBF, 256)); !*/
 
-	instance->dataFP = fopen(instance->sDatafileName, dataFileMode);
+	/* Open data file */
+	instance->dataFP = fopen(instance->sDatafileName, tempFileMode);
 	CHECK(NULL != instance->dataFP);
 	/*! CHECK(0 == setvbuf(instance->dataFP, NULL, _IOFBF, 256)); !*/
 	
@@ -153,7 +182,9 @@ LBL_ERROR:
 
 LBL_CLEANUP:
 	if (errorState) {
-		FREE(instance);
+		if (NULL != instance) {
+			DEHT_freeResources(instance, deleteFilesOnError);
+		}
 		instance = NULL;
 	}
 
@@ -263,20 +294,21 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	/* calc hash for key */
 	CHECK(NULL != ht->hashFunc);
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);
-	TRACE_FPRINTF(stderr, "TRACE: %s: bucket index=%#x\n", __FUNCTION__, hashTableIndex);
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): bucket index=%#x\n", __FILE__, __LINE__, __FUNCTION__, hashTableIndex);
 
 	blockContent = malloc(KEY_FILE_BLOCK_SIZE(ht));
 	CHECK(NULL != blockContent);
 	CHECK(DEHT_allocEmptyLocationInBucket(ht, hashTableIndex, blockContent, KEY_FILE_BLOCK_SIZE(ht),
 					     &keyBlockOffset, &freeIndex));
 
-	TRACE_FPRINTF(stderr, "TRACE: %s: using block at %#x, index=%lu\n", __FUNCTION__, (uint_t) keyBlockOffset, freeIndex);
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): using block at %#x, index=%lu\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockOffset, freeIndex);
 
 	targetRec = GET_N_REC_PTR_IN_BLOCK(ht, blockContent, freeIndex);
 
 	/* calc validation key and fill in record */
 	/*! Note: return value isn't checked since the spec failed to include details regarding the key 
 		  validation function interface */
+	CHECK(NULL != ht->comparisonHashFunc);
 	(void) ht->comparisonHashFunc(key, keyLength, targetRec->key);
 
 	/* write payload to data file */
@@ -370,17 +402,18 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 	CHECK(NULL != lastKeyBlockDiskOffset);
 
 	/* calc hash for key */
+	CHECK(NULL != ht->hashFunc);
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);
-	TRACE_FPRINTF(stderr, "%s: bucket index=%#x\n", __FUNCTION__, hashTableIndex);
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): bucket index=%#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) hashTableIndex);
 
 	if (NULL != ht->hashTableOfPointersImageInMemory) {
 		*keyBlockDiskOffset = ht->hashTableOfPointersImageInMemory[hashTableIndex];
-		TRACE_FPRINTF(stderr, "%s: first ptr from cache: %#x\n", __FUNCTION__, (uint_t) *keyBlockDiskOffset);
+		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): first ptr (from cache): %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset);
 	}
 	else {
 		/* no cache - read from disk */
 		CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + hashTableIndex * sizeof(DEHT_DISK_PTR), (byte_t *) keyBlockDiskOffset, sizeof(*keyBlockDiskOffset)));
-		TRACE_FPRINTF(stderr, "%s: first ptr from disk: %#x\n", __FUNCTION__, (uint_t) *keyBlockDiskOffset);
+		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): first ptr (from disk): %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset);
 	}
 	*lastKeyBlockDiskOffset = *keyBlockDiskOffset;
 
@@ -397,6 +430,7 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 
 	/*! Note: return value isn't checked since the spec failed to include details regarding the key 
 		  validation function interface */
+	CHECK(NULL != ht->comparisonHashFunc);
 	(void) ht->comparisonHashFunc(key, keyLength, validationKey);
 
 	while (0 != *keyBlockDiskOffset) {
@@ -422,7 +456,7 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 
 		/* disk offset of the next pointer is the last element in the block */
 		*keyBlockDiskOffset = *( (DEHT_DISK_PTR *) (keyBlockOut + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR)) );
-		TRACE_FPRINTF(stderr, "%s: next ptr from disk: %#x\n", __FUNCTION__, (uint_t) *keyBlockDiskOffset);
+		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): next ptr from disk: %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset);
 
 		/*! TODO: update last block cache if present? !*/
 	}
@@ -434,13 +468,14 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 	else {
 		/* we scanned everything, but found no matching key */
 		ret = DEHT_STATUS_NOT_NEEDED;
+		TRACE("key not found");
 		goto LBL_CLEANUP;
 	}
 
 	bytesRead = 0;
 	CHECK(DEHT_readDataAtOffset(ht, dataBlockOffset, (byte_t *) data, dataMaxAllowedLength, &bytesRead));
 
-	TRACE("found one!");
+	TRACE("key found");
 
 	ret = bytesRead;
 	goto LBL_CLEANUP;
@@ -480,7 +515,7 @@ bool_t readUserBytes(DEHT * ht, void ** bufPtr, ulong_t * bufSize)
 	ht->userBuf = malloc(ht->header.numUnrelatedBytesSaved);
 	CHECK(NULL != ht->userBuf);
 
-	CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_USER_BYTES(ht), ht->userBuf, ht->header.numUnrelatedBytesSaved));
+	CHECK(pfread(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved));
 	*bufSize = ht->header.numUnrelatedBytesSaved;
 
 	ret = TRUE;
@@ -514,7 +549,7 @@ bool_t writeUserBytes(DEHT * ht)
 		goto LBL_CLEANUP;
 	}
 
-	CHECK(pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_USER_BYTES(ht), ht->userBuf, ht->header.numUnrelatedBytesSaved));
+	CHECK(pfwrite(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved));
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
@@ -536,7 +571,6 @@ int read_DEHT_pointers_table(DEHT *ht)
 {
 	int ret = DEHT_STATUS_FAIL;
 	size_t rawTableSize = 0;
-	int oldFp = 0;
 
 	TRACE_FUNC_ENTRY();
 
@@ -568,7 +602,6 @@ LBL_CLEANUP:
 int write_DEHT_pointers_table(DEHT *ht)
 {
 	int ret = DEHT_STATUS_FAIL;
-	int oldFp = 0;
 
 	TRACE_FUNC_ENTRY();
 
@@ -765,7 +798,6 @@ bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 
 	/* get the current used block count */
 	*firstFreeIndex = GET_USED_RECORD_COUNT(blockDataOut);
-	/*!fprintf(stderr, "%s: used records count=%d\n", __FUNCTION__, *firstFreeIndex);!*/
 	
 	/* see if this block is full */
 	if (*firstFreeIndex >= ht->header.nPairsPerBlock) {
@@ -851,7 +883,7 @@ bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 
 	CHECK(pfread(ht->dataFP, dataBlockOffset, &dataLen, sizeof(dataLen)));
 
-	TRACE_FPRINTF(stderr, "%s: data size is %d\n", __FUNCTION__, dataLen);
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): data size is %d\n", __FILE__, __LINE__, __FUNCTION__, dataLen);
 
 	*bytesRead = fread(data, 1, dataMaxAllowedLength, ht->dataFP);
 	CHECK(0 < *bytesRead);

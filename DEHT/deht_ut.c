@@ -1,8 +1,42 @@
 
 #include <time.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "../common/utils.h"
 #include "DEHT.h"
+#include "hash_funcs.h"
+
+#define TABLE_SIZE (16)
+#define BLOCK_SIZE (1000)
+#define USER_BYTES (1337)
+
+/*
+ * Real world setup
+ */
+/*#define KEY_SIZE (8)
+#define TABLE_INDEX_FUNC (DEHT_keyToTableIndexHasher)
+#define VALID_KEY_FUNC (DEHT_keyToValidationKeyHasher64)
+*/
+#define KEY_SIZE (32)
+#define TABLE_INDEX_FUNC (DEHT_keyToTableIndexHasher)
+#define VALID_KEY_FUNC (DEHT_keyToValidationKeyHasher128)
+
+
+/*
+ * DEBUG config - simplifies collision creation and post-mortem investigation
+ */
+/*
+#define KEY_SIZE (100)
+#define TABLE_INDEX_FUNC (hashKeyIntoTableFunction)
+#define VALID_KEY_FUNC (hashKeyforEfficientComparisonFunction)
+*/
+
+
+#define TORTURE_ELEM_COUNT (2)
+/* #define TORTURE_ELEM_COUNT (BLOCK_SIZE - 1) */
+/* #define TORTURE_ELEM_COUNT (BLOCK_SIZE * 20) */
+
 
 
 
@@ -21,13 +55,9 @@ typedef bool_t (* BucketTesterFunc_t) (DEHT * ht, byte_t bucketId, TestParams_t 
 int hashKeyIntoTableFunction(const unsigned char * key, int keySize, int tableSize)
 {
 	int cksum = 0;
-/*	int i = 0;
-	for (i = 0; i < keySize; ++i) {
-		cksum = cksum ^ key[i];
-	}
-*/
+
 	/* to simplify collision creation, the buckets are chosen only by the first char */
-	cksum = key[0];
+	cksum = key[0] * (TABLE_SIZE / 255);
 	return (cksum  % tableSize);
 
 
@@ -36,20 +66,24 @@ int hashKeyIntoTableFunction(const unsigned char * key, int keySize, int tableSi
 int hashKeyforEfficientComparisonFunction(const unsigned char * key,int keySize, unsigned char * resBuf)
 {
 	memcpy(resBuf, key, keySize);
+
+	return 0;
 }
 
 
 
 
-bool_t createEmptyTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableLastBlockCache)
+
+
+bool_t createTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableLastBlockCache)
 {
 	bool_t ret = FALSE;
 	
 	CHECK(NULL != ht);
 
-	*ht = create_empty_DEHT("test", hashKeyIntoTableFunction, hashKeyforEfficientComparisonFunction, 
+	*ht = create_empty_DEHT("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
 			       "test_dict",
-				255, 5, 100, 0);
+				TABLE_SIZE, BLOCK_SIZE, KEY_SIZE, USER_BYTES);
 	CHECK(NULL != *ht);
 
 	if (enableFirstBlockCache) {
@@ -70,6 +104,8 @@ LBL_CLEANUP:
 	
 	return ret;
 }
+
+
 
 
 bool_t openTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableLastBlockCache)
@@ -78,7 +114,7 @@ bool_t openTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableLastBloc
 	
 	CHECK(NULL != ht);
 
-	*ht = load_DEHT_from_files("test", hashKeyIntoTableFunction, hashKeyforEfficientComparisonFunction);
+	*ht = load_DEHT_from_files("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC);
 	CHECK(NULL != *ht);
 
 	if (enableFirstBlockCache) {
@@ -103,15 +139,15 @@ LBL_CLEANUP:
 
 
 
-bool_t createAndCloseEmptyTable(void)
+bool_t createAndCloseTable(void)
 {
 	bool_t ret = FALSE;
 	
 	DEHT * ht = NULL;
 
-	ht = create_empty_DEHT("test", hashKeyIntoTableFunction, hashKeyforEfficientComparisonFunction, 
+	ht = create_empty_DEHT("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
 			       "test_dict",
-				255, 5, 100, 0);
+				TABLE_SIZE, BLOCK_SIZE, KEY_SIZE, USER_BYTES);
 
 	CHECK(NULL != ht);
 
@@ -139,7 +175,7 @@ bool_t openAndCloseTable(void)
 	
 	DEHT * ht = NULL;
 
-	ht = load_DEHT_from_files("test", hashKeyIntoTableFunction, hashKeyforEfficientComparisonFunction);
+	ht = load_DEHT_from_files("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC);
 	CHECK(NULL != ht);
 
 	ret = TRUE;
@@ -161,6 +197,144 @@ LBL_CLEANUP:
 
 
 
+bool_t removeKeyFile(void)
+{
+	return (0 == remove("test.key"));
+}
+
+bool_t removeDataFile(void)
+{
+	return (0 == remove("test.data"));
+}
+
+
+bool_t removeFiles(void)
+{
+	bool_t ret = TRUE;
+
+	/* try doing both anyway */	
+	ret &= removeKeyFile();
+	ret &= removeDataFile();
+
+	return ret;
+}
+
+
+bool_t testCreateTableFileStates(void)
+{
+	bool_t ret = FALSE;
+
+	TRACE_FUNC_ENTRY();
+
+	/* begin from a clean state */
+	(void) removeFiles();
+
+	printf(">>>>>> creating a table with no prior files. Should create successfully\n");
+	CHECK(createAndCloseTable());
+
+	printf(">>>>>> creating a table with both prior files. Should fail miserably\n");
+	CHECK(!createAndCloseTable());
+
+	(void) removeDataFile();
+	printf(">>>>>> creating a table with key file existing. Should fail miserably\n");
+	CHECK(!createAndCloseTable());
+
+
+	/* cleanup and state reconstruction */
+	(void) removeFiles();
+	CHECK(createAndCloseTable());
+
+	(void) removeKeyFile();	
+	printf(">>>>>> creating a table with data file existing. Should fail miserably\n");
+	CHECK(!createAndCloseTable());
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+
+bool_t testOpenTableFileStates(void)
+{
+	bool_t ret = FALSE;
+
+	TRACE_FUNC_ENTRY();
+
+	/* begin from a clean state */
+	(void) removeFiles();
+
+	printf(">>>>>> opening a table with no prior files. Should fail miserably\n");
+	CHECK(!openAndCloseTable());
+
+
+	CHECK(createAndCloseTable());
+	printf(">>>>>> opening a table with both prior files. Should create successfully\n");
+	CHECK(openAndCloseTable());
+
+	(void) removeDataFile();
+	printf(">>>>>> creating a table without data file. Should fail miserably\n");
+	CHECK(!openAndCloseTable());
+
+	/* cleanup and state reconstruction */
+	(void) removeFiles();
+	CHECK(createAndCloseTable());
+
+	(void) removeKeyFile();	
+	printf(">>>>>> creating a table with no key file. Should fail miserably\n");
+	CHECK(!openAndCloseTable());
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+
+bool_t testUserBytes(void)
+{
+	bool_t ret = FALSE;
+	
+	DEHT * ht = NULL;
+
+	ht = create_empty_DEHT("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
+			       "test_dict",
+				TABLE_SIZE, BLOCK_SIZE, KEY_SIZE, USER_BYTES);
+	CHECK(NULL != ht);
+
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+
+	if (NULL != ht) {
+		lock_DEHT_files(ht);
+		ht = NULL;
+	}
+	
+	return ret;
+
+}
+
+
+
 
 
 
@@ -174,7 +348,9 @@ bool_t testEntireTable(DEHT * ht, BucketTesterFunc_t func, TestParams_t * params
 	CHECK(NULL != ht);
 	CHECK(NULL != func);
 
-	for (bucketId = 0; bucketId < ht->header.numEntriesInHashTable; ++bucketId) {
+	/*! Changed to simplify collision creation !*/
+	/*! for (bucketId = 0; bucketId < ht->header.numEntriesInHashTable; ++bucketId) { !*/
+	for (bucketId = 0; bucketId < MIN(255, ht->header.numEntriesInHashTable); ++bucketId) {
 		CHECK(func(ht, bucketId, params));
 	}
 	
@@ -224,6 +400,7 @@ bool_t massiveInsertIntoBucket(DEHT * ht, byte_t bucketId, TestParams_t * params
 LBL_ERROR:
 	ret = FALSE;
 	TRACE_FUNC_ERROR();
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key);
 
 LBL_CLEANUP:
 	return ret;
@@ -264,6 +441,7 @@ bool_t massiveUpdateBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 LBL_ERROR:
 	ret = FALSE;
 	TRACE_FUNC_ERROR();
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key);
 
 LBL_CLEANUP:
 	return ret;
@@ -296,17 +474,17 @@ bool_t massiveQueryBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 		snprintf(expectedData, sizeof(expectedData), params->dataFormatStr, elemCount);
 
 		CHECK(0 < query_DEHT(ht, key, sizeof(key), tempData, sizeof(tempData)));
-		CHECK(0 == memcmp(tempData, expectedData, strlen(expectedData)));
+		CHECK(0 == memcmp(tempData, expectedData, sizeof(expectedData)));
 	}
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
-	printf("expectedData=%s, tempData=%s\n", expectedData, tempData);
-
 	ret = FALSE;
 	TRACE_FUNC_ERROR();
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key);
+	printf("expectedData=%s, tempData=%s\n", expectedData, tempData);
 
 LBL_CLEANUP:
 	return ret;
@@ -325,7 +503,7 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 	CHECK(NULL != ht);
 
 
-	params.testDepth = 4;
+	params.testDepth = TORTURE_ELEM_COUNT;
 	params.keyFormatStr = "this_is_my_key_0123456789ABCDEF0123456789ABCDEF %lu";
 
 	switch (state) {
@@ -343,7 +521,6 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 
 
 	case 1:
-	LBL_CASE_1:
 		params.dataFormatStr = "this_is_my_new_data_0123456789ABCDEF0123456789ABCDEF %lu";
 
 		printf("state=1: assuming table is filled with state=1 values. doing many queries, then many updates to state=0 values\n");
@@ -412,7 +589,7 @@ bool_t testCreatedTable(bool_t enableFirstBlockCache, bool_t enableLastBlockCach
 
 	printf("\n\ntestCreatedTable started\n");
 
-	CHECK(createEmptyTable(&ht, enableFirstBlockCache, enableLastBlockCache));
+	CHECK(createTable(&ht, enableFirstBlockCache, enableLastBlockCache));
 
 	CHECK(tortureTable(ht, 0));
 
@@ -486,22 +663,22 @@ int main(void)
 	bool_t enableFirstBlockCache = FALSE;
 	bool_t enableLastBlockCache = FALSE;
 
-	DEHT * ht = NULL;
-
 	time_t beginTime;
 	time_t endTime;
 
-	CHECK(createAndCloseEmptyTable());
-	printf(">>> createAndCloseEmptyTable - passed.\n");
+	CHECK(testCreateTableFileStates());
+	printf(">>> testCreateTableFileStates - passed.\n");
 
-	CHECK(openAndCloseTable());
-		printf(">>> openAndCloseTable - passed.\n");
+	CHECK(testOpenTableFileStates());
+	printf(">>> testOpenTableFileStates - passed.\n");
 
 	for (enableFirstBlockCache = 0; enableFirstBlockCache < 2; ++enableFirstBlockCache) {
 		for (enableLastBlockCache = 0; enableLastBlockCache < 2; ++enableLastBlockCache) {
 			printf("\n>>> testing table for enableFirstBlockCache=%s, enableLastBlockCache=%s\n", enableFirstBlockCache ? "True" : "False", enableLastBlockCache ? "True" : "False");
 
 			beginTime = time(NULL);
+
+			(void) removeFiles();
 
 			CHECK(testCreatedTable(enableFirstBlockCache, enableLastBlockCache));
 			printf(">>>>>>>> testCreatedTable - passed.\n");
@@ -515,12 +692,6 @@ int main(void)
 
 	}
 
-	/*
-	CHECK(createEmptyTable());
-	printf("createEmptyTable passed\n");
-	CHECK(openEmptyTable());
-	printf("openEmptyTable passed\n");
-*/
 	printf("\n>>> All tests passed!\n");
 
 	ret = 0;
