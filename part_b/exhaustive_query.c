@@ -3,13 +3,14 @@
 #include "../common/ui.h"
 #include "../common/utils.h"
 #include "../DEHT/DEHT.h"
+#include "../rainbow_table/rainbow_table.h"
 
 int main(int argc, char** argv);
 bool_t exhaustive_query(const char * prefix);
-void commandLoop(DEHT * deht);
-DEHT * initializeExaustiveTable(const char * prefix);
-void finalizeExaustiveTable(DEHT * deht); /* TODO: this func should tolerate NULL as arg, and ignore it */
-bool_t queryExaustiveTable(DEHT * deht, const byte_t * hash, int hashSize, char * password); /* TODO: should receive size allocated for password? */
+void commandLoop(RainbowTable_t * rainbowTable);
+RainbowTable_t * initializeExaustiveTable(const char * prefix);
+void finalizeExaustiveTable(RainbowTable_t * rainbowTable); /* TODO: this func should tolerate NULL as arg, and ignore it */
+bool_t queryExaustiveTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, char * password, ulong_t passwordLen); /* TODO: should receive size allocated for password? */
 
 int main(int argc, char** argv) {
 	if (2 != argc) {
@@ -26,25 +27,25 @@ int main(int argc, char** argv) {
 
 bool_t exhaustive_query(const char * prefix) {
 	bool_t  ret = FALSE;
-	DEHT * deht = NULL;
+	RainbowTable_t * rainbowTable = NULL;
 	
 	CHECK(verifyDEHTExists(prefix));
-	
+	printf("1\n");
 	CHECK(NULL != initializeExaustiveTable(prefix));
-	
-	commandLoop(deht);
-	
+	printf("2\n");
+	commandLoop(rainbowTable);
+	printf("3\n");
 	ret = TRUE;
 	
 LBL_ERROR:
-	finalizeExaustiveTable(deht);
+	finalizeExaustiveTable(rainbowTable);
 	return ret;
 }
 
-void commandLoop(DEHT * deht) {
+void commandLoop(RainbowTable_t * rainbowTable) {
 	char line[MAX_LINE_LEN] = {0};
 	byte_t hash[MAX_LINE_LEN] = {0}; /* The hash is never longer than its string representation */
-	int hashSize = 0;
+	uint_t hashLen = 0;		
 	char password[1000] = {0}; /* TODO: determine constant value */
 
 	/* Treat the user's submitted requests until told to quit */
@@ -53,13 +54,13 @@ void commandLoop(DEHT * deht) {
 			return;
 		}
 
-		hashSize = hexa2binary(line, hash, sizeof(hash));
-		if (-1 == hashSize) {
+		hashLen = (uint_t) hexa2binary(line, hash, sizeof(hash));
+		if (-1 == hashLen) {
 			fprintf(stderr, "Non hexa\n");
 			continue;
 		}
 		
-		if (queryExaustiveTable(deht, hash, hashSize, password)) {
+		if (queryExaustiveTable(rainbowTable, hash, hashLen, password, sizeof(password))) {
 			printf("Try to login with password \"%s\"\n", password);
 		} else {
 			printf("Sorry but this hash doesn't appears in pre-processing\n");
@@ -67,19 +68,19 @@ void commandLoop(DEHT * deht) {
 	}
 }
 
-DEHT * initializeExaustiveTable(const char * prefix) {
-	/* TODO: dummy */
-	return (DEHT * ) 1;
+RainbowTable_t * initializeExaustiveTable(const char * prefix) {
+	return RT_open(NULL, NULL, prefix, FALSE, FALSE);
 }
 
-void finalizeExaustiveTable(DEHT * deht) {
-	/* TODO: dummy */
+void finalizeExaustiveTable(RainbowTable_t * rainbowTable) {
+	RT_close(rainbowTable);
 }
 
-bool_t queryExaustiveTable(DEHT * deht, const byte_t * hash, int hashSize, char * password) {
-	/* TODO: dummy */
+bool_t queryExaustiveTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, char * password, ulong_t passwordLen) {
 	char s[1000];
-	binary2hexa(hash, hashSize, s, sizeof(s));
+	binary2hexa(hash, (int) hashLen, s, sizeof(s));
 	printf("%s\n", s);
-	return TRUE;
+	
+	return RT_query(rainbowTable, 
+		hash, hashLen, (/*TODO: tmppppppppppp*/ byte_t *) password, passwordLen);
 }

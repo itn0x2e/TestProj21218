@@ -5,6 +5,7 @@
 #include "dictionary.h"
 
 static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextLen);
+static bool_t isWordChar(char c);
 static void strToLower(char * buf, uint_t len);
 static void strToUpper(char * buf, uint_t len);
 
@@ -90,7 +91,7 @@ static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextL
 	uint_t i = 0;
 
 	/* Skip any loose terminators in the string's beginning */
-	while (('\0' != *rawDict) && !isgraph(*rawDict)) {
+	while (('\0' != *rawDict) && !isWordChar(*rawDict)) {
 		++rawDict;
 	}
 
@@ -99,10 +100,8 @@ static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextL
 		return FALSE;
 	}
 
-	/* Scan the string, looking for the word's ending.
-	 * Since ' ' is considered a valid symbol in passwords, it is also considered
-	 * a valid symbol in the middle or ending of a dictionary entry. */
-	for (i = 0; ('\0' != rawDict[i]) && (isgraph(rawDict[i]) || (' ' == rawDict[i])); ++i) {
+	/* Scan the string, looking for the word's ending. */
+	for (i = 0; isWordChar(rawDict[i]); ++i) {
 		/* Do nothing here */
 	}
 
@@ -110,6 +109,10 @@ static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextL
 	*nextLen = i;
 
 	return TRUE;
+}
+
+static bool_t isWordChar(char c) {
+	return (isgraph(c) || (' ' == c) || ('\t' == c));
 }
 
 static void strToLower(char * buf, uint_t len) {
