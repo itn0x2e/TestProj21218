@@ -456,7 +456,7 @@ bool_t massiveQueryBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 	bool_t ret = FALSE;
 	
 	ulong_t elemCount = 0;
-	byte_t key[80] = {0};
+	byte_t key[100] = {0};
 	byte_t expectedData[100] = {0};
 	byte_t tempData[200] = {0};
 
@@ -667,6 +667,32 @@ int main(void)
 
 	time_t beginTime;
 	time_t endTime;
+
+
+	
+/*
+	byte_t tempHash[255]  = {0};
+	byte_t tempStr[255] = {0};
+	miniHash(tempHash, 8,
+		 "abc", 3, "def", 3);
+
+	binary2hexa(tempHash, 16, tempStr, 33);
+	printf("abc+def=%s\n", tempStr);
+
+	miniHash(tempHash, 8,
+		 "abc", 3, "fef", 3);
+
+	binary2hexa(tempHash, 16, tempStr, 33);
+	printf("abc+fef=%s\n", tempStr);
+	
+	miniHash(tempHash, 8,
+		 "abc", 3, "def", 3);
+
+	binary2hexa(tempHash, 16, tempStr, 33);
+	printf("abc+def=%s\n", tempStr);
+
+	return 0;
+*/	
 
 	CHECK(testCreateTableFileStates());
 	printf(">>> testCreateTableFileStates - passed.\n");

@@ -401,6 +401,8 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 	CHECK(NULL != keyIndex);
 	CHECK(NULL != lastKeyBlockDiskOffset);
 
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): key=%s\n", __FILE__, __LINE__, __FUNCTION__, key);
+
 	/* calc hash for key */
 	CHECK(NULL != ht->hashFunc);
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);

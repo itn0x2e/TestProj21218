@@ -48,7 +48,7 @@ int MD5SeededHash(byte_t * outBuf,
 		   const byte_t * data, ulong_t dataLen)
 {
 	/*! TODO: restore !*/
-	MD5_CTX mdContext;/*! = {0};!*/
+	MD5_CTX mdContext = {0};
 
 	TRACE_FUNC_ENTRY();
 
@@ -65,6 +65,7 @@ int MD5SeededHash(byte_t * outBuf,
 	}
 
 	MD5Update (&mdContext, (unsigned char *)data, dataLen);
+
 	MD5Final (&mdContext);
 
 	memcpy(outBuf,mdContext.digest, sizeof(mdContext.digest));
@@ -86,9 +87,8 @@ int SHA1SeededHash(byte_t * outBuf,
 		   const byte_t * seed, ulong_t seedLen, 
 		   const byte_t * data, ulong_t dataLen)
 {
-	/* when you want to compute SH!, first, declere the next struct */
 	/*! TODO: restore !*/
-	SHA1Context hashCtx;/*! = {0};!*/
+	SHA1Context hashCtx = {0};
 
 	TRACE_FUNC_ENTRY();
 
@@ -106,6 +106,7 @@ int SHA1SeededHash(byte_t * outBuf,
 	}
 
 	SHA1Input(&hashCtx, (unsigned char *) data, dataLen);
+
 	SHA1Result(&hashCtx);
 
 	/* hashCtx.Message_Digest is an array of u16's. Since we want to output an array of u8's,
@@ -142,8 +143,8 @@ int miniHash(byte_t * output, ulong_t outputLen,
 	/* first, calculate the proper hash value for the seed and data (use SHA1 to increase hash quality) */
 	hashSize = MD5SeededHash(properHash, seed, seedLen, data, dataLen);
 	if (0 == hashSize) {
-		ERROR("sha1SeededHash failed");
-		return 0;
+		ERROR("MD5SeededHash failed");
+		goto LBL_ERROR;
 	}
 
 	/*! TODO: remove / restore !*/
@@ -153,10 +154,6 @@ int miniHash(byte_t * output, ulong_t outputLen,
 	}
 */
 	memcpy(output, properHash, MIN(outputLen, sizeof(properHash)));
-
-	/*! TODO: remove debug code !*/
-	binary2hexa(output, outputLen, (char *) tempData, sizeof(tempData));
-	TRACE_FPRINTF(stderr, "111111111111111111 miniHash=%s\n", tempData);
 
 	ret = outputLen;
 	goto LBL_CLEANUP;

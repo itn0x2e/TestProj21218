@@ -9,6 +9,10 @@
 #define SYMBOL2NIBBLE(symbol) ((((symbol) >= 'a') * 9) + ((symbol) & 0xf))
 #define NIBBLE2SYMBOL(nibble) (('0' + (((nibble) >= 10) * ('a' - '0')) + ((nibble) % 10)))
 
+
+
+
+
 LONG_INDEX_PROJ pseudo_random_generator_proj(int step)
 {
 	LONG_INDEX_PROJ hashedBuffer[MD5_OUTPUT_LENGTH_IN_BYTES/sizeof(LONG_INDEX_PROJ)];
@@ -24,24 +28,44 @@ LONG_INDEX_PROJ pseudo_random_generator_proj(int step)
 
 int cryptHash(BasicHashFunctionPtr cryptHashPtr, const char *passwd, unsigned char *outBuf )
 {
+	if (NULL == cryptHashPtr) {
+		TRACE_FUNC_ERROR();
+	}
+
 	return cryptHashPtr ((const unsigned char *) passwd, strlen(passwd) , outBuf) ; 
 }
 
+
 int MD5BasicHash(const unsigned char *in, int len, unsigned char *outBuf)
 {
-	/* when you want to compute MD5, first, declere the next struct */
-	/*! TODO: restore !*/
-	MD5_CTX mdContext;/*! = {0};!*/
+	return MD5SeededHash(outBuf, 
+			     NULL, 0, 
+			     in, len);
+}
 
-	if ((NULL == in) || (NULL == outBuf)) {
+int MD5SeededHash(byte_t * outBuf, 
+		   const byte_t * seed, ulong_t seedLen, 
+		   const byte_t * data, ulong_t dataLen)
+{
+	/*! TODO: restore !*/
+	MD5_CTX mdContext = {0};
+
+	TRACE_FUNC_ENTRY();
+
+	if ((NULL == outBuf) || (NULL == data)) {
+		TRACE_FUNC_ERROR();
 		return 0;
 	}
 
 	/* then, init it before the first use */
 	MD5Init (&mdContext);
 
-	/* compute your string's hash using the next to calls */
-	MD5Update (&mdContext, (unsigned char *)in, len);
+	if (NULL != seed) {
+		MD5Update (&mdContext, (unsigned char *)seed, seedLen);
+	}
+
+	MD5Update (&mdContext, (unsigned char *)data, dataLen);
+
 	MD5Final (&mdContext);
 
 	memcpy(outBuf,mdContext.digest, sizeof(mdContext.digest));
@@ -49,13 +73,27 @@ int MD5BasicHash(const unsigned char *in, int len, unsigned char *outBuf)
 	return sizeof(mdContext.digest);
 }
 
+
+
 int SHA1BasicHash ( const unsigned char *in,int len, unsigned char *outBuf)
 {
-	/* when you want to compute SH!, first, declere the next struct */
-	/*! TODO: restore !*/
-	SHA1Context hashCtx;/*! = {0};!*/
+	return SHA1SeededHash(outBuf, 
+			      NULL, 0,
+			      in, len);
+}
 
-	if ((NULL == in) || (NULL == outBuf)) {
+
+int SHA1SeededHash(byte_t * outBuf, 
+		   const byte_t * seed, ulong_t seedLen, 
+		   const byte_t * data, ulong_t dataLen)
+{
+	/*! TODO: restore !*/
+	SHA1Context hashCtx = {0};
+
+	TRACE_FUNC_ENTRY();
+
+	if ((NULL == outBuf) || (NULL == data)) {
+		TRACE_FUNC_ERROR();
 		return 0;
 	}
 
@@ -63,15 +101,82 @@ int SHA1BasicHash ( const unsigned char *in,int len, unsigned char *outBuf)
 	SHA1Reset(&hashCtx);
 
 	/* compute your string's hash using the next to calls */
-	SHA1Input(&hashCtx, (unsigned char *) in, len);
+	if (NULL != seed) {
+		SHA1Input(&hashCtx, (unsigned char *) seed, seedLen);
+	}
+
+	SHA1Input(&hashCtx, (unsigned char *) data, dataLen);
+
 	SHA1Result(&hashCtx);
 
 	/* hashCtx.Message_Digest is an array of u16's. Since we want to output an array of u8's,
 	   anything we do will be sort of a hack, so this one will do */
 	memcpy(outBuf, (unsigned char *) hashCtx.Message_Digest, sizeof(hashCtx.Message_Digest));
 
+	TRACE_FUNC_EXIT();
 	return sizeof(hashCtx.Message_Digest);
 }
+
+
+int miniHash(byte_t * output, ulong_t outputLen,
+	     const byte_t * seed, ulong_t seedLen,
+	     const byte_t * data, int dataLen)
+{
+	byte_t tempData[255];
+
+	int ret = 0;
+
+	/*! TODO: restore !*/
+	byte_t properHash[MD5_OUTPUT_LENGTH_IN_BYTES]; /*! = {0}; !*/
+
+	uint_t i = 0;
+	size_t hashSize = 0;
+
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != output);
+	CHECK(NULL != seed);
+	CHECK(NULL != data);
+
+
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): data=%s, seed=%s\n", __FILE__, __LINE__, __FUNCTION__, data, seed);
+
+
+	memset(output, 0, outputLen);
+
+	/* first, calculate the proper hash value for the seed and data (use SHA1 to increase hash quality) */
+	hashSize = MD5SeededHash(properHash, seed, seedLen, data, dataLen);
+	if (0 == hashSize) {
+		ERROR("MD5SeededHash failed");
+		goto LBL_ERROR;
+	}
+
+	/*! TODO: remove / restore !*/
+	/* now, shrink it by a xor rolling */
+/*	for (i = 0;  i < hashSize; ++i) {
+		output[i % outputLen] = output[i % outputLen] ^ properHash[i];
+	}
+*/
+	memcpy(output, properHash, MIN(outputLen, sizeof(properHash)));
+
+	/*! TODO: remove debug code !*/
+	binary2hexa(output, outputLen, (char *) tempData, sizeof(tempData));
+	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): hash=%s\n", __FILE__, __LINE__, __FUNCTION__, tempData);
+
+
+	ret = outputLen;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = 0;
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+
 
 int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen) {
 	int lengthIn = strlen(strIn);
@@ -97,23 +202,7 @@ int hexa2binary(const char *strIn, unsigned char *outBuf, int outMaxLen) {
 int binary2hexa(const unsigned char *bufIn, int lengthIn,
 				char *outStr, int outMaxLen) {
 	int i;
-	
-	
-	
-	
-	unsigned int c = 0;
-	for(;c<0xff;++c){
-		if (0x10>(SYMBOL2NIBBLE(c))) {
-			printf("%02X ==> %02x", c, SYMBOL2NIBBLE(c));
-		}
-	}
-	
-	
-	
-	
-	
-	
-	
+
 	if ((2 * lengthIn + 1) > outMaxLen) {
 		/* outStr is null terminated even in case of failure */
 		*outStr = '\0';
