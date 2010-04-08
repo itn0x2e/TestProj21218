@@ -12,17 +12,7 @@
 #define MIN(a, b) (((a) > (b)) ? (b) : (a))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-<<<<<<< HEAD:common/utils.h
-
-=======
-#define PERROR() perror("Error")
-
-#define ERROR(msg) fprintf(stderr, "ERROR: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg); \
-			if (0 != errno) { \
-		   		perror("possible error cause"); \
-			}
-#define WARN(msg) fprintf(stderr, "WARNING: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
->>>>>>> 3a31eba30cc6b1c18f9079c69ec60288c6a19d8f:common/utils.h
+#define PERROR() perror()
 
 #ifdef DEBUG
 	#define TRACE(msg) fprintf(stderr, "TRACE: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
