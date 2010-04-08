@@ -62,7 +62,7 @@ bool_t exhaustive_table_generator(const char * rule,
 	
 	CHECK(validateRule(rule));
 	CHECK(parseHashFunName(&hashFunc, hashName));
-	CHECK(validateDEHTPrefix(prefix));
+	CHECK(verifyDEHTNotExist(prefix));
 	CHECK(parseFlag(flag, &all, &n));
 	CHECK(readDictionaryFromFile(&dictionary, dictionaryFilename));
 	

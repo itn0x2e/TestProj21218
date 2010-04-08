@@ -16,7 +16,7 @@ bool_t create_authentication(char * filename, const char * hashFuncName, bool_t 
 	FILE * file = NULL;
 
 	/* Validate arguments */
-	if (!parseHashFunName(&hashFunc, hashFuncName) || !validateFileNotExist(filename)) {
+	if (!parseHashFunName(&hashFunc, hashFuncName) || !verifyFileNotExist(filename)) {
 		return FALSE;
 	}
 

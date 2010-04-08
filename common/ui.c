@@ -22,7 +22,7 @@ bool_t validateRule(const char * rule) {
 	return TRUE;
 }
 
-bool_t validateDEHTPrefix(const char * prefix) {
+bool_t verifyDEHTNotExist(const char * prefix) {
 	bool_t ret = FALSE;
 	uint_t prefixLen = strlen(prefix);
 	uint_t numFilenameBufChars = prefixLen + MAX(strlen(KEY_FILE_EXT), strlen(DATA_FILE_EXT)) + 1;
@@ -34,10 +34,10 @@ bool_t validateDEHTPrefix(const char * prefix) {
 	
 	strcpy(filename, prefix);
 	strcat(filename, KEY_FILE_EXT);
-	CHECK(validateFileNotExist(filename));
+	CHECK(verifyFileNotExist(filename));
 	
 	strcpy(filename + prefixLen, DATA_FILE_EXT);
-	CHECK(validateFileNotExist(filename));
+	CHECK(verifyFileNotExist(filename));
 	
 	ret = TRUE;
 	
@@ -46,7 +46,7 @@ LBL_ERROR:
 	return ret;
 }
 
-bool_t validateFileNotExist(const char * filename) {
+bool_t verifyFileNotExist(const char * filename) {
 	if (doesFileExist(filename)) {
 		fprintf(stderr, "Error: File \"%s\" already exist\n", filename);
 		return FALSE;

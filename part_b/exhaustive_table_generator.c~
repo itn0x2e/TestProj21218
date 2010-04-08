@@ -35,8 +35,7 @@ bool_t generateExaustiveTable(passwordEnumerator_t * enumerator,
 
 int main(int argc, char** argv) {
 	if (6 != argc) {
-		fprintf(stderr, "Error: Usage exhaustive_table_generator <rule> <dictionary> "
-				"<hash> <filenames prefix> <\"all\" or number of random password>\n");
+		printUsage();
 		return 1;
 	}
 	
@@ -126,7 +125,7 @@ bool_t parseFlag(const char * flag, bool_t * all, ulong_t * n) {
 		*all = FALSE;
 		return TRUE;
 	}
-	
+	printUsage();
 	return FALSE;
 }
 
