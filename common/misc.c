@@ -48,7 +48,7 @@ int MD5SeededHash(byte_t * outBuf,
 		   const byte_t * data, ulong_t dataLen)
 {
 	/*! TODO: restore !*/
-	MD5_CTX mdContext = {0};
+	MD5_CTX mdContext;/*! = {0}; !*/
 
 	TRACE_FUNC_ENTRY();
 
@@ -88,7 +88,7 @@ int SHA1SeededHash(byte_t * outBuf,
 		   const byte_t * data, ulong_t dataLen)
 {
 	/*! TODO: restore !*/
-	SHA1Context hashCtx = {0};
+	SHA1Context hashCtx; /*! = {0}; !*/
 
 	TRACE_FUNC_ENTRY();
 

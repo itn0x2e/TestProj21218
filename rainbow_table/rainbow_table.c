@@ -11,13 +11,33 @@
 #include "../common/rand_utils.h"
 
 
-bool_t buildChain(RainbowTableConfig_t * rainbowConfig, 
+
+static bool_t buildChain(bool_t crackingMode,
+
+		         RainbowSeed_t * seeds, ulong_t chainLenght, 
 			 BasicHashFunctionPtr hashFunc,
 
-			 byte_t * firstPassword, int firstPasswordLen,
 			 const passwordGenerator_t * passGenerator, byte_t * generatorPassword,
 
-			 byte_t * resultHash, ulong_t resultHashLen)
+			 byte_t * firstPassword, ulong_t firstPasswordLen,
+			 byte_t * hashBuf, ulong_t hashBufLen,
+
+			 byte_t * passwordOut, ulong_t passwordOutLen);
+
+
+
+
+static bool_t buildChain(bool_t crackingMode,
+
+		         RainbowSeed_t * seeds, ulong_t chainLength, 
+			 BasicHashFunctionPtr hashFunc,
+
+			 const passwordGenerator_t * passGenerator, byte_t * generatorPassword,
+
+			 byte_t * firstPassword, ulong_t firstPasswordLen,
+			 byte_t * hashBuf, ulong_t hashBufLen,
+
+			 byte_t * passwordOut, ulong_t passwordOutLen)
 {
 	bool_t ret = FALSE;
 
@@ -32,24 +52,34 @@ bool_t buildChain(RainbowTableConfig_t * rainbowConfig,
 
 	TRACE_FUNC_ENTRY();
 
-	CHECK(NULL != rainbowConfig);
-	CHECK(NULL != firstPassword);
+	CHECK(NULL != seeds);
+
 	CHECK(NULL != passGenerator);
 	CHECK(NULL != generatorPassword);
-	CHECK(NULL != resultHash);
+
+	CHECK(NULL != hashBuf);
 
 
-	/* calc first hash */
-	hashLen = hashFunc(firstPassword, firstPasswordLen, currHash);
-	CHECK(0 != hashLen);
-	CHECK(hashLen <= resultHashLen);
+	if (crackingMode) {
+		/* We were asked to crack a password - so we must start with the supplied hash */
+		memcpy(hashBuf, currHash, MIN(sizeof(currHash), hashBufLen));
+		hashLen = hashBufLen;
+	}
+	else {
+		/* chain creation mode - start with the first password */
+		CHECK(NULL != firstPassword);
+
+		hashLen = hashFunc(firstPassword, firstPasswordLen, currHash);
+		CHECK(0 != hashLen);
+		CHECK(hashLen <= hashBufLen);
+	}
 
 	/* perform the steps detailed in the project specification to compute the chain for this start point */
-	for (inChainIndex = 0; inChainIndex < rainbowConfig->chainLength; ++inChainIndex) {
+	for (inChainIndex = 0; inChainIndex < chainLength; ++inChainIndex) {
 
 		/* PRNG using the current hash and the seed corresponding to the current inChainIndex */
 		CHECK(0 != miniHash((byte_t *) &nextPasswordIndex, sizeof(nextPasswordIndex),
-				    (byte_t *) (rainbowConfig->seeds + inChainIndex), sizeof(rainbowConfig->seeds[0]), 
+				    (byte_t *) (seeds + inChainIndex), sizeof(seeds[0]), 
 				    currHash, hashLen));
 
 		/* wrap-around the password space size */
@@ -60,10 +90,16 @@ bool_t buildChain(RainbowTableConfig_t * rainbowConfig,
 		
 
 		/* calc next hash */
-		CHECK(0 != hashFunc(generatorPassword, strlen((char *) generatorPassword), currHash));
+		CHECK(0 != hashFunc(generatorPassword, strlen((char *) generatorPassword) + 1, currHash));
 	}
 
-	memcpy(resultHash, currHash, resultHashLen);
+	/* copy result hash to user */
+	memcpy(hashBuf, currHash, hashBufLen);
+
+	/* If we were asked to, supply the password as well. The string is always null terminated */
+	if (NULL != passwordOut) {
+		SAFE_STRNCPY((char *) passwordOut, (char *) generatorPassword, passwordOutLen);
+	}
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
@@ -78,8 +114,7 @@ LBL_CLEANUP:
 }
 
 
-bool_t generateRainbowTable(
-			passwordEnumerator_t * passEnumerator,
+bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 			const passwordGenerator_t * passGenerator,
 
 			char * enumeratorPassword,
@@ -153,15 +188,19 @@ bool_t generateRainbowTable(
 	for (chainIndex = 1;  passwordEnumeratorCalculateNextPassword(passEnumerator);  ++chainIndex) {
 		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): working on chain %lu\r", __FILE__, __LINE__, __FUNCTION__, chainIndex);
 
-		CHECK(buildChain(rainbowConfig, hashFunc,
-				 (byte_t *) enumeratorPassword, strlen(enumeratorPassword),
+		CHECK(buildChain(FALSE,
+				 rainbowConfig->seeds, rainbowConfig->chainLength,
+				 hashFunc,
 			 	 passGenerator, (byte_t *) generatorPassword,
-				 chainHash, sizeof(chainHash)));
+				 (byte_t *) enumeratorPassword, strlen(enumeratorPassword) + 1,
+				 chainHash, sizeof(chainHash),
+				 NULL, 0));
 
 		/* Insert resulting hash as the key and the initial password as the value */
+		/* Inserting with terminating null due to the limited DEHT interface */
 		CHECK(DEHT_STATUS_FAIL != insert_uniquely_DEHT(ht, 
 							       chainHash, chainHashLen,
-							       (byte_t *) enumeratorPassword, strlen(enumeratorPassword)));
+							       (byte_t *) enumeratorPassword, strlen(enumeratorPassword) + 1));
 	}
 
 	TRACE("chain building complete");
@@ -176,6 +215,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	/*! TODO: CLEAN DEHT FILES ON ERROR? !*/
 	if (NULL != ht) {
 		lock_DEHT_files(ht);
 		ht = NULL;
@@ -186,72 +226,199 @@ LBL_CLEANUP:
 	return ret;
 }
 
-/*
 
-bool_t openRainbowTable(RainbowTable_t * instance,
+RainbowTable_t * RT_open(
 			const passwordGenerator_t * passGenerator,
 			char * generatorPassword,
-
-			BasicHashFunctionPtr hashFunc,
-
-			ulong_t rainbowChainLen,
 
 			const char * hashTableFilePrefix,
 			bool_t enableFirstBlockCache,
 			bool_t enableLastBlockCache)
 {
-	bool_t ret = FALSE;
+	RainbowTable_t * ret = NULL;
 
-	DEHT * ht = NULL;
+	RainbowTable_t * self = NULL;
 
-	ulong_t chainIndex = 0;
-	ulong_t inChainIndex = 0;
-
-	RainbowTableConfig_t * rainbowConfig = NULL;
 	ulong_t userBytesSize = 0;
-
-	ulong_t hashLen = 0;
-	byte_t currHash[MAX_DIGEST_LEN];
-
-	/* "k" */
-/*	ulong_t nextPasswordIndex = 0;
-
 
 	TRACE_FUNC_ENTRY();
 
+	CHECK(NULL != self);
 	CHECK(NULL != passGenerator);
-	CHECK(NULL != enumeratorPassword);
 	CHECK(NULL != generatorPassword);
-	CHECK(NULL != hashFunc);
+
 	CHECK(NULL != hashTableFilePrefix);
 
-	ht = create_empty_DEHT(hashTableFilePrefix, 
-			       DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64, 
-			       getNameFromHashFun(hashFunc), 
-			       nHashTableEntries, nPairsPerBlock, sizeof(ulong_t), sizeof(RainbowTableConfig_t) + sizeof(RainbowSeed_t) * rainbowChainLen);
-	CHECK(NULL != ht);
+	self = (RainbowTable_t *) malloc(sizeof(RainbowTable_t));
+	CHECK(NULL != self);
+
+	/* init */
+	memset(self, 0, sizeof(RainbowTable_t));
+
+	self->passGenerator = passGenerator;
+	self->generatorPassword = (byte_t *) generatorPassword;
+
+	self->hashTable = load_DEHT_from_files(hashTableFilePrefix, 
+			       DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64);
+	CHECK(NULL != self->hashTable);
 
 	if (enableFirstBlockCache) {
-		CHECK(DEHT_STATUS_FAIL != read_DEHT_pointers_table(ht));
+		CHECK(DEHT_STATUS_FAIL != read_DEHT_pointers_table(self->hashTable));
 	}
 	if (enableLastBlockCache) {
-		CHECK(DEHT_STATUS_FAIL != calc_DEHT_last_block_per_bucket(ht));
+		CHECK(DEHT_STATUS_FAIL != calc_DEHT_last_block_per_bucket(self->hashTable));
 	}
 
+	/* find the hash type */
+	self->hashFunc = getHashFunFromName(self->hashTable->header.sDictionaryName);
+	CHECK(NULL != self->hashFunc);
+
+	/* load user bytes buffer */
+	CHECK(DEHT_STATUS_FAIL != DEHT_readUserBytes(self->hashTable, (void **) &(self->config), &userBytesSize));
+	CHECK(NULL != self->config);
+	CHECK(userBytesSize == sizeof(RainbowTableConfig_t) + self->config->chainLength * sizeof(RainbowSeed_t));
+
+
+	ret = self;
+	goto LBL_CLEANUP;
 	
+	
+LBL_ERROR:
+	ret = NULL;
+	TRACE_FUNC_ERROR();
 
-
-	/* load user bytes buffer (even though it should be empty right now, this will allow us to use the table's buffer, which gets saved to disk automagically) */
-/*	CHECK(readUserBytes(ht, &seeds, &userBytesSize));
-	CHECK(NULL != seeds);
-	CHECK(userBytesSize == rainbowChainLen * sizeof(RainbowSeed_t));
-	/* generate seeds, store in ht */
-/*	for (inChainIndex = 0;  inChainIndex < rainbowChainLen; ++inChainIndex) {
-		seeds[inChainIndex] = getRandomULong();
+LBL_CLEANUP:
+	if (NULL == ret) {
+		if (NULL != self) {
+			RT_close(self);
+			self = NULL;
+		}
 	}
 
+	TRACE_FUNC_EXIT();
 
+	return ret;
 }
 
-bool_t closeRainbowTable(RainbowTable_t * instance);
-*/
+
+
+
+void RT_close(RainbowTable_t * self)
+{
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != self);
+
+	if (NULL != self->hashTable) {
+		lock_DEHT_files(self->hashTable);
+		self->hashTable = NULL;
+	}
+	/* No need to free config - is handled by hashTable */
+	self->config = NULL;
+
+	/* No need to free passGenerator - handled by whoever supplied it */
+	self->passGenerator = NULL;
+
+	FREE(self);
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	
+LBL_CLEANUP:
+	return;	
+}
+
+
+
+
+bool_t RT_query(RainbowTable_t * self, 
+		byte_t * hash, ulong_t hashLen,
+		byte_t * resPassword, ulong_t resPasswordLen)
+{
+	bool_t ret = FALSE;
+
+	ulong_t j = 0;
+	byte_t currHash[MAX_DIGEST_LEN];
+
+	byte_t foundChainBeginPassword[MAX_PASSWORD_LEN];
+	byte_t foundPassword[MAX_PASSWORD_LEN];
+	byte_t foundHash[MAX_DIGEST_LEN];
+
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != self);
+	CHECK(NULL != hash);
+	CHECK(NULL != resPassword);
+
+	/* init currPass to the given hash */
+	memcpy(currHash, hash, MIN(hashLen, sizeof(currHash)));
+
+	for (j = 0;  j < self->config->chainLength;  ++j) {
+		/* in each step, we procceed one step down the chain (using the appropriate seed) */
+		CHECK(buildChain(TRUE,
+				 self->config->seeds + j, 1,
+				 self->hashFunc,
+			 	 self->passGenerator, self->generatorPassword,
+				 NULL, 0,
+				 currHash, hashLen,
+				 NULL, 0));
+		
+		/* Now we have a hash that may be in the rainbow table - try looking for it */
+		if (DEHT_STATUS_SUCCESS != query_DEHT(self->hashTable, 
+						      currHash, hashLen, 
+						      foundChainBeginPassword, sizeof(foundChainBeginPassword))) {
+			/* no dice - continue to the next chain depth */
+			TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): no DEHT match for chain depth=%lu\n", __FILE__, __LINE__, __FUNCTION__, j);
+			continue;
+		}
+
+		/* If we got here, we got a perliminary match, but it could still be a false alarm - step through the chain and look for a complete match */
+		CHECK(buildChain(FALSE,
+				 self->config->seeds, self->config->chainLength - j,
+				 self->hashFunc,
+			 	 self->passGenerator, self->generatorPassword,
+				 foundChainBeginPassword, strlen((char *) foundChainBeginPassword) + 1,
+				 currHash, hashLen,
+				 foundPassword, sizeof(foundPassword)));
+
+		if (0 != memcmp(foundHash, hash, hashLen)) {
+			TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): password %s was a false alarm (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j);
+		}
+		else {
+			TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): password %s matched! (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j);
+			SAFE_STRNCPY((char *) resPassword, (char *) foundPassword, resPasswordLen);
+
+			ret = TRUE;
+			goto LBL_CLEANUP;
+		}
+
+	}
+
+	TRACE("exhaused search options. No match found.");
+	goto LBL_ERROR;
+	
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

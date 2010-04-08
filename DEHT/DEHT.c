@@ -15,7 +15,7 @@ DEHT *create_empty_DEHT(const char *prefix,
 {
 	bool_t errorState = FALSE;
 
-	DEHT * instance = NULL;
+	DEHT * ht = NULL;
 
 	TRACE_FUNC_ENTRY();
 
@@ -24,26 +24,26 @@ DEHT *create_empty_DEHT(const char *prefix,
 	CHECK(0 != nPairsPerBlock);
 	CHECK(0 != nBytesPerKey);
 
-	instance = DEHT_initInstance(prefix, "c+b", hashfun, validfun);
-	CHECK(NULL != instance);
+	ht = DEHT_initInstance(prefix, "c+b", hashfun, validfun);
+	CHECK(NULL != ht);
 
 	/* Do extra inits */
-	instance->header.magic = DEHT_HEADER_MAGIC;
-	SAFE_STRNCPY(instance->header.sDictionaryName, dictName, sizeof(instance->header.sDictionaryName));
-	instance->header.numEntriesInHashTable = numEntriesInHashTable;
-	instance->header.nPairsPerBlock = nPairsPerBlock;
-	instance->header.nBytesPerValidationKey = nBytesPerKey;
-	instance->header.numUnrelatedBytesSaved = nUserBytes;
-	instance->header.magic = DEHT_HEADER_MAGIC;
+	ht->header.magic = DEHT_HEADER_MAGIC;
+	SAFE_STRNCPY(ht->header.sDictionaryName, dictName, sizeof(ht->header.sDictionaryName));
+	ht->header.numEntriesInHashTable = numEntriesInHashTable;
+	ht->header.nPairsPerBlock = nPairsPerBlock;
+	ht->header.nBytesPerValidationKey = nBytesPerKey;
+	ht->header.numUnrelatedBytesSaved = nUserBytes;
+	ht->header.magic = DEHT_HEADER_MAGIC;
 
 	/* write header to disk */
-	CHECK(1 == fwrite(&(instance->header), sizeof(instance->header), 1, instance->keyFP));
+	CHECK(1 == fwrite(&(ht->header), sizeof(ht->header), 1, ht->keyFP));
 
 	/* write (empty) pointer table to disk */
-	CHECK(growFile(instance->keyFP, sizeof(DEHT_DISK_PTR) * numEntriesInHashTable));
+	CHECK(growFile(ht->keyFP, sizeof(DEHT_DISK_PTR) * numEntriesInHashTable));
 
 	/* write (empty) user data to disk */
-	CHECK(growFile(instance->dataFP, instance->header.numUnrelatedBytesSaved));
+	CHECK(growFile(ht->dataFP, ht->header.numUnrelatedBytesSaved));
 
 
 
@@ -55,15 +55,15 @@ LBL_ERROR:
 
 LBL_CLEANUP:
 	if (errorState) {
-		if (NULL != instance) {
-			DEHT_freeResources(instance, TRUE);
-			instance = NULL;
+		if (NULL != ht) {
+			DEHT_freeResources(ht, TRUE);
+			ht = NULL;
 		}
 	}
 
 	TRACE_FUNC_EXIT();
 
-	return instance;
+	return ht;
 }
 
 
@@ -71,16 +71,16 @@ DEHT * load_DEHT_from_files(const char *prefix, hashKeyIntoTableFunctionPtr hash
 {
 	bool_t errorState = FALSE;
 
-	DEHT * instance = NULL;
+	DEHT * ht = NULL;
 
 	TRACE_FUNC_ENTRY();
 
-	instance = DEHT_initInstance(prefix, "r+b", hashfun, validfun);
-	CHECK(NULL != instance);
+	ht = DEHT_initInstance(prefix, "r+b", hashfun, validfun);
+	CHECK(NULL != ht);
 
 	/* load dict settings from file */
-	CHECK(1 == fread(&(instance->header), sizeof(instance->header), 1, instance->keyFP));
-	CHECK(DEHT_HEADER_MAGIC == instance->header.magic);
+	CHECK(1 == fread(&(ht->header), sizeof(ht->header), 1, ht->keyFP));
+	CHECK(DEHT_HEADER_MAGIC == ht->header.magic);
 
 
 	goto LBL_CLEANUP;	
@@ -91,15 +91,15 @@ LBL_ERROR:
 
 LBL_CLEANUP:
 	if (errorState) {
-		if (NULL != instance) {
-			DEHT_freeResources(instance, FALSE);
-			instance = NULL;
+		if (NULL != ht) {
+			DEHT_freeResources(ht, FALSE);
+			ht = NULL;
 		}
 	}
 
 	TRACE_FUNC_EXIT();
 
-	return instance;
+	return ht;
 }
 
 
@@ -111,7 +111,7 @@ DEHT * DEHT_initInstance (const char * prefix, char * fileMode,
 	bool_t errorState = TRUE;
 	bool_t deleteFilesOnError = FALSE;
 
-	DEHT * instance = NULL;
+	DEHT * ht = NULL;
 
 	char tempFileMode[10] = {0};
 
@@ -123,29 +123,29 @@ DEHT * DEHT_initInstance (const char * prefix, char * fileMode,
 	CHECK(NULL != hashfun);
 	CHECK(NULL != validfun);
 
-	instance = malloc(sizeof(DEHT));
-	CHECK(NULL != instance);
+	ht = malloc(sizeof(DEHT));
+	CHECK(NULL != ht);
 
-	memset(instance, 0, sizeof(DEHT));
+	memset(ht, 0, sizeof(DEHT));
 
-	SAFE_STRNCPY(instance->sKeyfileName, prefix, sizeof(instance->sKeyfileName));
-	SAFE_STRNCAT(instance->sKeyfileName, KEY_FILE_EXT, sizeof(instance->sKeyfileName));
+	SAFE_STRNCPY(ht->sKeyfileName, prefix, sizeof(ht->sKeyfileName));
+	SAFE_STRNCAT(ht->sKeyfileName, KEY_FILE_EXT, sizeof(ht->sKeyfileName));
 
-	SAFE_STRNCPY(instance->sDatafileName, prefix, sizeof(instance->sKeyfileName));
-	SAFE_STRNCAT(instance->sDatafileName, DATA_FILE_EXT, sizeof(instance->sKeyfileName));
+	SAFE_STRNCPY(ht->sDatafileName, prefix, sizeof(ht->sKeyfileName));
+	SAFE_STRNCAT(ht->sDatafileName, DATA_FILE_EXT, sizeof(ht->sKeyfileName));
 
 	/* Open key file. If file mode begins with 'c', first check that the file does not exist */
 	SAFE_STRNCPY(tempFileMode, fileMode, sizeof(tempFileMode));
 	if ('c' == tempFileMode[0]) {
 		/* we were asked to make sure the files weren't already present first */
-		instance->keyFP = fopen(instance->sKeyfileName, "rb");
-		if (NULL != instance->keyFP) {
+		ht->keyFP = fopen(ht->sKeyfileName, "rb");
+		if (NULL != ht->keyFP) {
 			deleteFilesOnError = FALSE;
 			FAIL("key file already exists!");
 		}
 
-		instance->dataFP = fopen(instance->sDatafileName, "rb");
-		if (NULL != instance->dataFP) {
+		ht->dataFP = fopen(ht->sDatafileName, "rb");
+		if (NULL != ht->dataFP) {
 			deleteFilesOnError = FALSE;
 			FAIL("data file already exists!");
 		}
@@ -157,20 +157,20 @@ DEHT * DEHT_initInstance (const char * prefix, char * fileMode,
 	}
 
 	/* Open key file */
-	instance->keyFP = fopen(instance->sKeyfileName, tempFileMode);
-	CHECK(NULL != instance->keyFP);
-	/*! CHECK(0 == setvbuf(instance->keyFP, NULL, _IOFBF, 256)); !*/
+	ht->keyFP = fopen(ht->sKeyfileName, tempFileMode);
+	CHECK(NULL != ht->keyFP);
+	/*! CHECK(0 == setvbuf(ht->keyFP, NULL, _IOFBF, 256)); !*/
 
 	/* Open data file */
-	instance->dataFP = fopen(instance->sDatafileName, tempFileMode);
-	CHECK(NULL != instance->dataFP);
-	/*! CHECK(0 == setvbuf(instance->dataFP, NULL, _IOFBF, 256)); !*/
+	ht->dataFP = fopen(ht->sDatafileName, tempFileMode);
+	CHECK(NULL != ht->dataFP);
+	/*! CHECK(0 == setvbuf(ht->dataFP, NULL, _IOFBF, 256)); !*/
 	
-	instance->hashTableOfPointersImageInMemory = NULL;
-	instance->hashPointersForLastBlockImageInMemory = NULL;
+	ht->hashTableOfPointersImageInMemory = NULL;
+	ht->hashPointersForLastBlockImageInMemory = NULL;
 
-	instance->hashFunc = hashfun;
-	instance->comparisonHashFunc = validfun;
+	ht->hashFunc = hashfun;
+	ht->comparisonHashFunc = validfun;
 
 	errorState = FALSE;
 	goto LBL_CLEANUP;
@@ -182,14 +182,14 @@ LBL_ERROR:
 
 LBL_CLEANUP:
 	if (errorState) {
-		if (NULL != instance) {
-			DEHT_freeResources(instance, deleteFilesOnError);
+		if (NULL != ht) {
+			DEHT_freeResources(ht, deleteFilesOnError);
 		}
-		instance = NULL;
+		ht = NULL;
 	}
 
 	TRACE_FUNC_EXIT();
-	return instance;
+	return ht;
 }
 
 
@@ -959,27 +959,27 @@ void lock_DEHT_files(DEHT *ht)
 }
        
 
-void DEHT_freeResources(DEHT * instance, bool_t removeFiles)
+void DEHT_freeResources(DEHT * ht, bool_t removeFiles)
 {
 	TRACE_FUNC_ENTRY();
 
-	CHECK (NULL != instance);
+	CHECK (NULL != ht);
 
-	FCLOSE(instance->keyFP);
-	FCLOSE(instance->dataFP);
+	FCLOSE(ht->keyFP);
+	FCLOSE(ht->dataFP);
 
 	/* free ht cache if present */
-	FREE(instance->hashTableOfPointersImageInMemory);
-	FREE(instance->hashPointersForLastBlockImageInMemory);
+	FREE(ht->hashTableOfPointersImageInMemory);
+	FREE(ht->hashPointersForLastBlockImageInMemory);
 
 	if (removeFiles) {
 		/* attempt to remove bad files. Errors are silenced */
-		(void) remove(instance->sKeyfileName);
-		(void) remove(instance->sDatafileName);
+		(void) remove(ht->sKeyfileName);
+		(void) remove(ht->sDatafileName);
 	}
 
-	/* finally, free the instance itself */
-	FREE(instance);
+	/* finally, free the ht itself */
+	FREE(ht);
 
 	goto LBL_CLEANUP;
 

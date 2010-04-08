@@ -12,7 +12,7 @@
 #define MIN(a, b) (((a) > (b)) ? (b) : (a))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-#define PERROR() perror()
+#define PERROR() perror("Error")
 
 #ifdef DEBUG
 	#define TRACE(msg) fprintf(stderr, "TRACE: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
@@ -73,8 +73,8 @@
 
 /* wrapper for strncpy - assures null termination */
 #define SAFE_STRNCPY(dst, src, total_size) \
-	strncpy(dst, src, total_size - strlen(dst)); \
-	dst[total_size - 1] = '\0'
+	strncpy(dst, src, total_size); \
+	(dst)[total_size - 1] = '\0'
 
 /* wrapper for strncat - makes safe use of strncat bareable */
 #define SAFE_STRNCAT(dst, src, total_size) \

@@ -73,13 +73,13 @@
 
 /* wrapper for strncpy - assures null termination */
 #define SAFE_STRNCPY(dst, src, total_size) \
-	strncpy(dst, src, total_size - strlen(dst)); \
-	dst[total_size - 1] = '\0'
+	strncpy(dst, src, total_size); \
+	(dst)[total_size - 1] = '\0'
 
 /* wrapper for strncat - makes safe use of strncat bareable */
 #define SAFE_STRNCAT(dst, src, total_size) \
 	strncat(dst, src, total_size - strlen(dst)); \
-	dst[total_size - 1] = '\0'
+	(dst)[total_size - 1] = '\0'
 
 
 
