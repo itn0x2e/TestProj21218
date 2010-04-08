@@ -251,9 +251,6 @@ RainbowTable_t * RT_open(
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != self);
-	CHECK(NULL != passGenerator);
-	CHECK(NULL != generatorPassword);
-
 	CHECK(NULL != hashTableFilePrefix);
 
 	self = (RainbowTable_t *) malloc(sizeof(RainbowTable_t));
@@ -284,6 +281,12 @@ RainbowTable_t * RT_open(
 	CHECK(DEHT_STATUS_FAIL != DEHT_readUserBytes(self->hashTable, (void **) &(self->config), &userBytesSize));
 	CHECK(NULL != self->config);
 	CHECK(userBytesSize == sizeof(RainbowTableConfig_t) + self->config->chainLength * sizeof(RainbowSeed_t));
+
+	/* if chain length is 0, we will not require a password generator (otherwise, one is neccessary) */
+	if (0 != self->config->chainLength) {
+		CHECK(NULL != passGenerator);
+		CHECK(NULL != generatorPassword);
+	}
 
 
 	ret = self;
@@ -361,7 +364,9 @@ bool_t RT_query(RainbowTable_t * self,
 	/* init currPass to the given hash */
 	memcpy(currHash, hash, MIN(hashLen, sizeof(currHash)));
 
-	for (j = 0;  j < self->config->chainLength;  ++j) {
+	/* walk the chain corresponding to the given hash, trying to find a match */
+	/* (j runs between 0 to chainLength + 1, since 0 means regular hashing, 1 is a chain of 1 cycle, etc...) */
+	for (j = 0;  j < self->config->chainLength + 1;  ++j) {
 		/* in each step, we procceed one step down the chain (using the appropriate seed) */
 		CHECK(buildChain(TRUE,
 				 self->config->seeds + j, 1,
