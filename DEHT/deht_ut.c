@@ -7,21 +7,23 @@
 #include "DEHT.h"
 #include "hash_funcs.h"
 
-#define TABLE_SIZE (16)
+#define TABLE_SIZE (1)
 #define BLOCK_SIZE (1000)
 #define USER_BYTES (1337)
 
 /*
  * Real world setup
  */
-/*#define KEY_SIZE (8)
+
+#define KEY_SIZE (8)
 #define TABLE_INDEX_FUNC (DEHT_keyToTableIndexHasher)
 #define VALID_KEY_FUNC (DEHT_keyToValidationKeyHasher64)
-*/
+
+/*
 #define KEY_SIZE (32)
 #define TABLE_INDEX_FUNC (DEHT_keyToTableIndexHasher)
 #define VALID_KEY_FUNC (DEHT_keyToValidationKeyHasher128)
-
+*/
 
 /*
  * DEBUG config - simplifies collision creation and post-mortem investigation
