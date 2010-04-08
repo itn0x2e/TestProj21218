@@ -90,7 +90,7 @@ static bool_t buildChain(bool_t crackingMode,
 		
 
 		/* calc next hash */
-		CHECK(0 != hashFunc(generatorPassword, strlen((char *) generatorPassword) + 1, currHash));
+		CHECK(0 != hashFunc(generatorPassword, strlen((char *) generatorPassword), currHash));
 	}
 
 	/* copy result hash to user */
@@ -199,7 +199,7 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 				 rainbowConfig->seeds, rainbowConfig->chainLength,
 				 hashFunc,
 			 	 passGenerator, (byte_t *) generatorPassword,
-				 (byte_t *) enumeratorPassword, strlen(enumeratorPassword) + 1,
+				 (byte_t *) enumeratorPassword, strlen(enumeratorPassword),
 				 chainHash, sizeof(chainHash),
 				 NULL, 0));
 
@@ -207,7 +207,7 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 		/* Inserting with terminating null due to the limited DEHT interface */
 		CHECK(DEHT_STATUS_FAIL != insert_uniquely_DEHT(ht, 
 							       chainHash, chainHashLen,
-							       (byte_t *) enumeratorPassword, strlen(enumeratorPassword) + 1));
+							       (byte_t *) enumeratorPassword, strlen(enumeratorPassword)));
 	}
 
 	TRACE("chain building complete");
@@ -344,7 +344,7 @@ LBL_CLEANUP:
 
 bool_t RT_query(RainbowTable_t * self, 
 		byte_t * hash, ulong_t hashLen,
-		byte_t * resPassword, ulong_t resPasswordLen)
+		char * resPassword, ulong_t resPasswordLen)
 {
 	bool_t ret = FALSE;
 
@@ -352,6 +352,7 @@ bool_t RT_query(RainbowTable_t * self,
 	byte_t currHash[MAX_DIGEST_LEN];
 
 	byte_t foundChainBeginPassword[MAX_PASSWORD_LEN];
+	int foundChainBeginPasswordLen = 0;
 	byte_t foundPassword[MAX_PASSWORD_LEN];
 	byte_t foundHash[MAX_DIGEST_LEN];
 
@@ -377,9 +378,13 @@ bool_t RT_query(RainbowTable_t * self,
 				 NULL, 0));
 		
 		/* Now we have a hash that may be in the rainbow table - try looking for it */
-		if (DEHT_STATUS_SUCCESS != query_DEHT(self->hashTable, 
-						      currHash, hashLen, 
-						      foundChainBeginPassword, sizeof(foundChainBeginPassword))) {
+		foundChainBeginPasswordLen = query_DEHT(self->hashTable, 
+							currHash, hashLen, 
+							foundChainBeginPassword, sizeof(foundChainBeginPassword));
+		/* null terminate */		
+		foundChainBeginPassword[MIN(foundChainBeginPasswordLen, sizeof(foundChainBeginPassword) - 1)] = 0x00;
+
+		if (DEHT_STATUS_SUCCESS > foundChainBeginPasswordLen) {
 			/* no dice - continue to the next chain depth */
 			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): no DEHT match for chain depth=%lu\n", __FILE__, __LINE__, __FUNCTION__, j));
 			continue;
@@ -390,7 +395,7 @@ bool_t RT_query(RainbowTable_t * self,
 				 self->config->seeds, self->config->chainLength - j,
 				 self->hashFunc,
 			 	 self->passGenerator, self->generatorPassword,
-				 foundChainBeginPassword, strlen((char *) foundChainBeginPassword) + 1,
+				 foundChainBeginPassword, strlen((char *) foundChainBeginPassword),
 				 currHash, hashLen,
 				 foundPassword, sizeof(foundPassword)));
 
