@@ -12,6 +12,8 @@
 #define TABLE_OF_POINTERS_ENTRIES (65536) /* 2^16 */
 /* TODO: what about the 16-bit hash function???????????? [Use 65536 (2^16) entries in the table-of-pointers (i.e. 16-bit hash function).] */
 
+int main(int argc, char** argv);
+
 bool_t exhaustive_table_generator(const char * rule,
 				  const char * dictionaryFilename,
 				  const char * hashName,
@@ -20,7 +22,7 @@ bool_t exhaustive_table_generator(const char * rule,
 
 void printUsage();
 
-void initializePasswordEnumerator(passwordEnumerator_t * enumerator,
+passwordEnumerator_t * createPasswordEnumerator(
 				  const passwordGenerator_t * generator,
 				  char * password,
 				  bool_t all,
@@ -29,7 +31,9 @@ void initializePasswordEnumerator(passwordEnumerator_t * enumerator,
 bool_t parseFlag(const char * flag, bool_t * all, ulong_t * n);
 
 bool_t generateExaustiveTable(passwordEnumerator_t * enumerator,
-			      char * password,
+			      const passwordGenerator_t * generator,
+			      char * enumeratorPassword,
+			      char * generatorPassword,
 			      BasicHashFunctionPtr hashFunc,
 			      const char * prefix);
 
@@ -57,12 +61,14 @@ bool_t exhaustive_table_generator(const char * rule,
 	ulong_t n;
 	dictionary_t dictionary;
 	passwordGenerator_t passwordGenerator;
-	char * password = NULL;
+	ulong_t maxPasswordLength;
+	char * enumeratorPassword = NULL;
+	char * generatorPassword = NULL;
 	passwordEnumerator_t * passwordEnumerator = NULL;
 	
 	CHECK(validateRule(rule));
 	CHECK(parseHashFunName(&hashFunc, hashName));
-	CHECK(validateDEHTPrefix(prefix));
+	CHECK(verifyDEHTNotExist(prefix));
 	CHECK(parseFlag(flag, &all, &n));
 	CHECK(readDictionaryFromFile(&dictionary, dictionaryFilename));
 	
@@ -70,30 +76,40 @@ bool_t exhaustive_table_generator(const char * rule,
 		goto LBL_CLEANUP_DICTIONARY;
 	}
 	
-	password = (char *) malloc((passwordGeneratorGetMaxLength(&passwordGenerator) + 1) * sizeof(char));
-	if (NULL == password) {
+	maxPasswordLength = passwordGeneratorGetMaxLength(&passwordGenerator);
+	
+	enumeratorPassword = (char *) malloc((maxPasswordLength + 1) * sizeof(char));
+	if (NULL == enumeratorPassword) {
 		PERROR();
 		goto LBL_CLEANUP_GENERATOR;
 	}
 	
-	passwordEnumerator = (passwordEnumerator_t *) malloc(all ? sizeof(allPasswordEnumerator_t) :
-								   sizeof(randomPasswordEnumerator_t));
+	generatorPassword = (char *) malloc((maxPasswordLength + 1) * sizeof(char));
+	if (NULL == generatorPassword) {
+		PERROR();
+		goto LBL_CLEANUP_GENERATOR;
+	}
+	
+	passwordEnumerator = createPasswordEnumerator(&passwordGenerator, enumeratorPassword, all, n);
 	if (NULL == passwordEnumerator) {
-		PERROR();
 		goto LBL_CLEANUP_GENERATOR;
 	}
 	
-	initializePasswordEnumerator(passwordEnumerator, &passwordGenerator, password, all, n);
-	
-	ret = generateExaustiveTable(passwordEnumerator, password, hashFunc, prefix);
+	ret = generateExaustiveTable(passwordEnumerator,
+				     &passwordGenerator,
+				     enumeratorPassword,
+				     generatorPassword,
+				     hashFunc,
+				     prefix);
 
 LBL_CLEANUP_GENERATOR:
 	passwordGeneratorFinalize(&passwordGenerator);
 LBL_CLEANUP_DICTIONARY:
 	dictionaryFinalize(&dictionary);
 LBL_ERROR:
-	FREE(password);
 	FREE(passwordEnumerator);
+	FREE(generatorPassword);
+	FREE(enumeratorPassword);
 	return ret;;
 }
 
@@ -102,16 +118,28 @@ void printUsage() {
 			"<hash> <filenames prefix> <\"all\" or number of random password>\n");
 }
 
-void initializePasswordEnumerator(passwordEnumerator_t * enumerator,
-				  const passwordGenerator_t * generator,
-				  char * password,
-				  bool_t all,
-				  ulong_t n) {
+passwordEnumerator_t * createPasswordEnumerator(
+		const passwordGenerator_t * generator,
+		char * password,
+		bool_t all,
+		ulong_t n) {
+	
+	/* Allocate memory for the password enumerator */
+	passwordEnumerator_t * enumerator = (passwordEnumerator_t *)
+		malloc(all ? sizeof(allPasswordEnumerator_t) : sizeof(randomPasswordEnumerator_t));
+	if (NULL == enumerator) {
+		PERROR();
+		return FALSE;
+	}
+	
+	/* Initialize it to the specified type */
 	if (all) {
 		allPasswordEnumeratorInitialize((allPasswordEnumerator_t *) enumerator, generator, password);
 	} else {
 		randomPasswordEnumeratorInitialize((randomPasswordEnumerator_t *) enumerator, generator, password, n);
 	}
+	
+	return enumerator;
 }
 
 bool_t parseFlag(const char * flag, bool_t * all, ulong_t * n) {
@@ -130,10 +158,15 @@ bool_t parseFlag(const char * flag, bool_t * all, ulong_t * n) {
 }
 
 bool_t generateExaustiveTable(passwordEnumerator_t * enumerator,
-			      char * password,
+			      const passwordGenerator_t * generator,
+			      char * enumeratorPassword,
+			      char * generatorPassword,
 			      BasicHashFunctionPtr hashFunc,
 			      const char * prefix) {
 	/* TODO: dummy */
 	while(passwordEnumeratorCalculateNextPassword(enumerator)) printf("%s\n", password);
+	
+	
+	
 	return TRUE;
 }
