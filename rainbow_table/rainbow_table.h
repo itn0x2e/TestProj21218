@@ -8,7 +8,10 @@
 bool_t createRainbowTable(
 			const passwordEnumerator_t * passEnumerator,
 			const passwordGenerator_t * passwordGenerator;
-			char * generatedPassword,
+
+			char * enumeratorPassword,
+			char * generatorPassword,
+
 			BasicHashFunctionPtr hashFunc,
 			ulong_t rainbowChainLen,
 			const char * hashTableFilePrefix,
