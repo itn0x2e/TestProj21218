@@ -146,11 +146,18 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != passEnumerator);
-	CHECK(NULL != passGenerator);
 	CHECK(NULL != enumeratorPassword);
-	CHECK(NULL != generatorPassword);
+
 	CHECK(NULL != hashFunc);
 	CHECK(NULL != hashTableFilePrefix);
+
+	if (0 == rainbowChainLen) {
+		TRACE("exhaustive search mode");
+	}
+	else {
+		CHECK(NULL != generatorPassword);
+		CHECK(NULL != passGenerator);
+	}
 
 	ht = create_empty_DEHT(hashTableFilePrefix, 
 			       DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64, 
