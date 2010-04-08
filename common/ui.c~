@@ -34,13 +34,15 @@ bool_t validateDEHTPrefix(const char * prefix) {
 	
 	strcpy(filename, prefix);
 	strcat(filename, KEY_FILE_EXT);
-	ret = validateFileNotExist(filename);
+	CHECK(validateFileNotExist(filename));
 	
-	strcat(filename, DATA_FILE_EXT);
-	ret = (ret && validateFileNotExist(filename));
+	strcpy(filename + prefixLen, DATA_FILE_EXT);
+	CHECK(validateFileNotExist(filename));
 	
+	ret = TRUE;
+	
+LBL_ERROR:
 	FREE(filename);
-	
 	return ret;
 }
 

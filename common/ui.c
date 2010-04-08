@@ -36,7 +36,7 @@ bool_t validateDEHTPrefix(const char * prefix) {
 	strcat(filename, KEY_FILE_EXT);
 	CHECK(validateFileNotExist(filename));
 	
-	strcat(filename, DATA_FILE_EXT);
+	strcpy(filename + prefixLen, DATA_FILE_EXT);
 	CHECK(validateFileNotExist(filename));
 	
 	ret = TRUE;

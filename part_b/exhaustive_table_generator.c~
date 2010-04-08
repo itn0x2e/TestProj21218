@@ -18,6 +18,8 @@ bool_t exhaustive_table_generator(const char * rule,
 				  const char * prefix,
 				  const char * flag);
 
+void printUsage();
+
 void initializePasswordEnumerator(passwordEnumerator_t * enumerator,
 				  const passwordGenerator_t * generator,
 				  char * password,
@@ -59,13 +61,13 @@ bool_t exhaustive_table_generator(const char * rule,
 	char * password = NULL;
 	passwordEnumerator_t * passwordEnumerator = NULL;
 	
-	printf("1\n");CHECK(validateRule(rule));
-	printf("2\n");CHECK(parseHashFunName(&hashFunc, hashName));
-	printf("3\n");CHECK(validateDEHTPrefix(prefix));
-	printf("4\n");CHECK(parseFlag(flag, &all, &n));
-	printf("5\n");CHECK(readDictionaryFromFile(&dictionary, dictionaryFilename));
+	CHECK(validateRule(rule));
+	CHECK(parseHashFunName(&hashFunc, hashName));
+	CHECK(validateDEHTPrefix(prefix));
+	CHECK(parseFlag(flag, &all, &n));
+	CHECK(readDictionaryFromFile(&dictionary, dictionaryFilename));
 	
-	printf("6\n");if (!passwordGeneratorInitialize(&passwordGenerator, rule, &dictionary)) {
+	if (!passwordGeneratorInitialize(&passwordGenerator, rule, &dictionary)) {
 		goto LBL_CLEANUP_DICTIONARY;
 	}
 	
@@ -81,9 +83,9 @@ bool_t exhaustive_table_generator(const char * rule,
 		PERROR();
 		goto LBL_CLEANUP_GENERATOR;
 	}
-	printf("7\n");
+	
 	initializePasswordEnumerator(passwordEnumerator, &passwordGenerator, password, all, n);
-	printf("8\n");
+	
 	ret = generateExaustiveTable(passwordEnumerator, password, hashFunc, prefix);
 
 LBL_CLEANUP_GENERATOR:
@@ -94,6 +96,11 @@ LBL_ERROR:
 	FREE(password);
 	FREE(passwordEnumerator);
 	return ret;;
+}
+
+void printUsage() {
+	fprintf(stderr, "Error: Usage exhaustive_table_generator <rule> <dictionary> "
+			"<hash> <filenames prefix> <\"all\" or number of random password>\n");
 }
 
 void initializePasswordEnumerator(passwordEnumerator_t * enumerator,

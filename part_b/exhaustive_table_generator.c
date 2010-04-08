@@ -18,6 +18,8 @@ bool_t exhaustive_table_generator(const char * rule,
 				  const char * prefix,
 				  const char * flag);
 
+void printUsage();
+
 void initializePasswordEnumerator(passwordEnumerator_t * enumerator,
 				  const passwordGenerator_t * generator,
 				  char * password,
@@ -33,8 +35,7 @@ bool_t generateExaustiveTable(passwordEnumerator_t * enumerator,
 
 int main(int argc, char** argv) {
 	if (6 != argc) {
-		fprintf(stderr, "Error: Usage exhaustive_table_generator <rule> <dictionary> "
-				"<hash> <filenames prefix> <\"all\" or number of random password>\n");
+		printUsage();
 		return 1;
 	}
 	
@@ -96,6 +97,11 @@ LBL_ERROR:
 	return ret;;
 }
 
+void printUsage() {
+	fprintf(stderr, "Error: Usage exhaustive_table_generator <rule> <dictionary> "
+			"<hash> <filenames prefix> <\"all\" or number of random password>\n");
+}
+
 void initializePasswordEnumerator(passwordEnumerator_t * enumerator,
 				  const passwordGenerator_t * generator,
 				  char * password,
@@ -119,7 +125,7 @@ bool_t parseFlag(const char * flag, bool_t * all, ulong_t * n) {
 		*all = FALSE;
 		return TRUE;
 	}
-	
+	printUsage();
 	return FALSE;
 }
 
