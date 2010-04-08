@@ -22,7 +22,7 @@ bool_t validateRule(const char * rule) {
 	return TRUE;
 }
 
-bool_t verifyDEHTPrefix(const char * prefix) {
+bool_t verifyDEHTNotExist(const char * prefix) {
 	bool_t ret = FALSE;
 	uint_t prefixLen = strlen(prefix);
 	uint_t numFilenameBufChars = prefixLen + MAX(strlen(KEY_FILE_EXT), strlen(DATA_FILE_EXT)) + 1;
@@ -101,6 +101,14 @@ LBL_ERROR:
 	fprintf(stderr, "Error: configuration file corruption\n");
 	return FALSE;
 		
+}
+
+bool_t printIni(const char ** keys, const char ** values, uint_t numKeys) {
+	uint_t i;
+	
+	for (i = 0; i < numKeys; ++i) {
+		printf("%s = %s\n", keys[i], values[i]);
+	}
 }
 
 bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name) {

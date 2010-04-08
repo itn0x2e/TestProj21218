@@ -103,6 +103,14 @@ LBL_ERROR:
 		
 }
 
+bool_t printIni(const char ** keys, const char ** values, uint_t numKeys) {
+	uint_t i;
+	
+	for (i = 0; i < numKeys; ++i) {
+		printf("%s = %s\n", keys[i], values[i]);
+	}
+}
+
 bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name) {
 	*hashFunc = getHashFunFromName(name);
 	if (NULL == *hashFunc) {
