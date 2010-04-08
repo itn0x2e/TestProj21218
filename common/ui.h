@@ -6,7 +6,9 @@
 #include "../password/dictionary.h"
 
 bool_t validateRule(const char * rule);
+bool_t verifyDEHTExists(const char * prefix);
 bool_t verifyDEHTNotExist(const char * prefix);
+bool_t verifyFileExists(const char * filename);
 bool_t verifyFileNotExist(const char * filename);
 
 bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys);
