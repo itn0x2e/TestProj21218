@@ -3,10 +3,16 @@
 
 #include "misc.h"
 #include "types.h"
+#include "../password/dictionary.h"
 
 bool_t validateRule(const char * rule);
-bool_t validateFileNotExist(const char * filename);
+bool_t verifyDEHTNotExist(const char * prefix);
+bool_t verifyFileNotExist(const char * filename);
+
+bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys);
+void printIni(const char ** keys, const char ** values, uint_t numKeys); /* TODO: use this in text_export_rainbow_table */
 bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name);
+bool_t readDictionaryFromFile(dictionary_t * dictionary, const char * filename);
 
 /**
  * @param line
@@ -16,6 +22,5 @@ bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name);
  */
 bool_t readPrompt(char * line);
 
-bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys);
 
 #endif /* __UI_H__ */

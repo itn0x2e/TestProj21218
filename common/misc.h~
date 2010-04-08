@@ -9,6 +9,9 @@
 #include "utils.h"
 #include "types.h"
 
+#define SYMBOL2NIBBLE(symbol) ((((symbol) >= 'a') * 9) + ((symbol) & 0xf))
+#define NIBBLE2SYMBOL(nibble) (('0' + (((nibble) >= 10) * ('a' - '0')) + ((nibble) % 10)))
+
 /*************************************************************************/
 /* typedef BasicHashFunctionPtr:                                         */
 /* A cryptographic hash function performs many bitic operation on a      */
@@ -120,19 +123,6 @@ BasicHashFunctionPtr getHashFunFromName(const char * name);
 const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc);
 
 unsigned int getHashFunDigestLength(BasicHashFunctionPtr hashFunc);
-
-
-
-int MD5SeededHash(byte_t * outBuf, 
-		   const byte_t * seed, ulong_t seedLen, 
-		   const byte_t * data, ulong_t dataLen);
-int SHA1SeededHash(byte_t * outBuf, 
-		   const byte_t * seed, ulong_t seedLen, 
-		   const byte_t * data, ulong_t dataLen);
-
-int miniHash(byte_t * output, ulong_t outputLen,
-		const byte_t * seed, ulong_t seedLen,
-		const byte_t * data, int dataLen);
 
 #endif
 /**********************  EOF (misc.h) *********************/

@@ -3,11 +3,15 @@
 #include <string.h>
 #include "constants.h"
 #include "io.h"
+#include "utils.h"
+#include "../DEHT/DEHT.h"
 #include "ui.h"
 
 static bool_t isRuleValid(const char * rule);
 static const char * skipRangeRepresentation(const char * str);
 static const char * skipNumRepresentation(const char * str);
+static bool_t setIniKey(const char ** keys, const char ** values, uint_t numKeys, const char * key, const char * value);
+static bool_t areAllIniValuesSet(const char ** keys, const char ** values, uint_t numValues);
 
 bool_t validateRule(const char * rule) {
 	if (!isRuleValid(rule)) {
@@ -18,13 +22,93 @@ bool_t validateRule(const char * rule) {
 	return TRUE;
 }
 
-bool_t validateFileNotExist(const char * filename) {
+bool_t verifyDEHTNotExist(const char * prefix) {
+	bool_t ret = FALSE;
+	uint_t prefixLen = strlen(prefix);
+	uint_t numFilenameBufChars = prefixLen + MAX(strlen(KEY_FILE_EXT), strlen(DATA_FILE_EXT)) + 1;
+	char * filename = (char *) malloc (sizeof(char) * numFilenameBufChars);
+	if (NULL == filename) {
+		PERROR();
+		return FALSE;
+	}
+	
+	strcpy(filename, prefix);
+	strcat(filename, KEY_FILE_EXT);
+	CHECK(verifyFileNotExist(filename));
+	
+	strcpy(filename + prefixLen, DATA_FILE_EXT);
+	CHECK(verifyFileNotExist(filename));
+	
+	ret = TRUE;
+	
+LBL_ERROR:
+	FREE(filename);
+	return ret;
+}
+
+bool_t verifyFileNotExist(const char * filename) {
 	if (doesFileExist(filename)) {
 		fprintf(stderr, "Error: File \"%s\" already exist\n", filename);
 		return FALSE;
 	}
 	
 	return TRUE;
+}
+
+bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys) {
+	char * key = content;
+	const char * delimeter = " = ";
+	
+	/* Initially set all pointers to NULL */
+	memset(values, '\0', numKeys * sizeof(*values));
+	
+	while ('\0' != *key) {
+		char * value;
+		
+		/* Find the end of the key representation */
+		value = strchr(key, delimeter[0]);
+		CHECK(NULL != value);
+		CHECK(0 == strncmp(value, delimeter, strlen(delimeter)));
+		
+		/* Make the key representation null-terminated */
+		*value = '\0';
+		
+		/* The value appears after the delimeter */
+		value += strlen(delimeter);
+		
+		/* Set the value which matches the key */
+		CHECK(setIniKey(keys, values, numKeys, key, value));
+		
+		/* Move to end of line */
+		key = strchr(value, '\n');
+		if (NULL == key) {
+			/* Value is already null-terminated */
+			break;
+		}
+		
+		/* Make the value null-terminated and advance to the next key */
+		*key = '\0';
+		++key;
+	}
+	
+	if (!areAllIniValuesSet(keys, values, numKeys)) {
+		return FALSE;
+	}
+	
+	return TRUE;
+	
+LBL_ERROR:
+	fprintf(stderr, "Error: configuration file corruption\n");
+	return FALSE;
+		
+}
+
+void printIni(const char ** keys, const char ** values, uint_t numKeys) {
+	uint_t i;
+	
+	for (i = 0; i < numKeys; ++i) {
+		printf("%s = %s\n", keys[i], values[i]);
+	}
 }
 
 bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name) {
@@ -34,6 +118,18 @@ bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name) {
 		return FALSE;
 	}
 	return TRUE;
+}
+
+bool_t readDictionaryFromFile(dictionary_t * dictionary, const char * filename) {
+	bool_t ret = FALSE;
+	char * rawDictionary = readEntireTextFile(filename);
+	CHECK(NULL != rawDictionary);
+	CHECK(dictionaryInitialize(dictionary, rawDictionary));
+	ret = TRUE;
+
+LBL_ERROR:
+	FREE(rawDictionary);
+	return ret;	
 }
 
 bool_t readPrompt(char * line) {
@@ -47,14 +143,7 @@ bool_t readPrompt(char * line) {
 	
 	return TRUE;
 }
-/* TODO
-bool_t parseIni(char * content, const char ** keys, const char ** values, int_t numKeys) {
-	char * key = content;
-	
-	while (('\n' != *key) && ('\0' != *key)) {
-		
-}
- */
+
 static bool_t isRuleValid(const char * rule) {
 	uint_t rangeBegin, rangeEnd;
 	
@@ -104,4 +193,30 @@ static const char * skipNumRepresentation(const char * str) {
 	}
 	
 	return str;
+}
+
+static bool_t setIniKey(const char ** keys, const char ** values, uint_t numKeys, const char * key, const char * value) {
+	uint_t i;
+	
+	for(i = 0; i < numKeys; ++i) {
+		if (0 == strcmp(key, keys[i])) {
+			values[i] = value;
+			return TRUE;
+		}
+	}
+	
+	return FALSE;
+}
+
+static bool_t areAllIniValuesSet(const char ** keys, const char ** values, uint_t numValues) {
+	uint_t i;
+	
+	for(i = 0; i < numValues; ++i) {
+		if (NULL == values[i]) {
+			fprintf(stderr, "Error: key \"%s\" is missing from configuration file\n", keys[i]);
+			return FALSE;
+		}
+	}
+	
+	return TRUE;
 }
