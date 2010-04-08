@@ -6,6 +6,7 @@
 #include "../password/password_enumerator.h"
 #include "../password/password_generator.h"
 #include "../password/random_password_enumerator.h"
+#include "../rainbow_table/rainbow_table.h"
 
 #define PAIRS_PER_BLOCK (7)
 #define SIGNATURE_LENGTH_PER_KEY (8)
@@ -164,9 +165,15 @@ bool_t generateExaustiveTable(passwordEnumerator_t * enumerator,
 			      BasicHashFunctionPtr hashFunc,
 			      const char * prefix) {
 	/* TODO: dummy */
-	while(passwordEnumeratorCalculateNextPassword(enumerator)) printf("%s\n", password);
+	while(passwordEnumeratorCalculateNextPassword(enumerator)) printf("%s\n", enumeratorPassword);
 	
-	
-	
-	return TRUE;
+	return generateRainbowTable(enumerator,generator, enumeratorPassword, generatorPassword, hashFunc,
+			0 /*ulong_t rainbowChainLen*/,
+
+			prefix /*const char * hashTableFilePrefix*/,
+			TABLE_OF_POINTERS_ENTRIES/*ulong_t nHashTableEntries*/,
+			PAIRS_PER_BLOCK/*ulong_t nPairsPerBlock*/,
+			FALSE/*bool_t enableFirstBlockCache*/,
+			FALSE/*bool_t enableLastBlockCache*/
+			);
 }
