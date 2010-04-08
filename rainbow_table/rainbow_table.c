@@ -186,7 +186,7 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 	chainHashLen = getHashFunDigestLength(hashFunc);
 
 	for (chainIndex = 1;  passwordEnumeratorCalculateNextPassword(passEnumerator);  ++chainIndex) {
-		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): working on chain %lu\r", __FILE__, __LINE__, __FUNCTION__, chainIndex);
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): working on chain %lu\r", __FILE__, __LINE__, __FUNCTION__, chainIndex));
 
 		CHECK(buildChain(FALSE,
 				 rainbowConfig->seeds, rainbowConfig->chainLength,
@@ -369,7 +369,7 @@ bool_t RT_query(RainbowTable_t * self,
 						      currHash, hashLen, 
 						      foundChainBeginPassword, sizeof(foundChainBeginPassword))) {
 			/* no dice - continue to the next chain depth */
-			TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): no DEHT match for chain depth=%lu\n", __FILE__, __LINE__, __FUNCTION__, j);
+			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): no DEHT match for chain depth=%lu\n", __FILE__, __LINE__, __FUNCTION__, j));
 			continue;
 		}
 
@@ -383,10 +383,10 @@ bool_t RT_query(RainbowTable_t * self,
 				 foundPassword, sizeof(foundPassword)));
 
 		if (0 != memcmp(foundHash, hash, hashLen)) {
-			TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): password %s was a false alarm (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j);
+			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password %s was a false alarm (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
 		}
 		else {
-			TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): password %s matched! (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j);
+			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password %s matched! (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
 			SAFE_STRNCPY((char *) resPassword, (char *) foundPassword, resPasswordLen);
 
 			ret = TRUE;

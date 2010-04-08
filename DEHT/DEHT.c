@@ -241,7 +241,7 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 		}
 
 		/* if we got here, the key was found */
-		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): updating record at %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockDiskOffset);
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): updating record at %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockDiskOffset));
 
 		/* write the new data to the data file */
 		CHECK(DEHT_writeData(ht, data, dataLength, &newDataOffset));
@@ -294,14 +294,14 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	/* calc hash for key */
 	CHECK(NULL != ht->hashFunc);
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);
-	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): bucket index=%#x\n", __FILE__, __LINE__, __FUNCTION__, hashTableIndex);
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): bucket index=%#x\n", __FILE__, __LINE__, __FUNCTION__, hashTableIndex));
 
 	blockContent = malloc(KEY_FILE_BLOCK_SIZE(ht));
 	CHECK(NULL != blockContent);
 	CHECK(DEHT_allocEmptyLocationInBucket(ht, hashTableIndex, blockContent, KEY_FILE_BLOCK_SIZE(ht),
 					     &keyBlockOffset, &freeIndex));
 
-	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): using block at %#x, index=%lu\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockOffset, freeIndex);
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): using block at %#x, index=%lu\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockOffset, freeIndex));
 
 	targetRec = GET_N_REC_PTR_IN_BLOCK(ht, blockContent, freeIndex);
 
@@ -401,21 +401,21 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 	CHECK(NULL != keyIndex);
 	CHECK(NULL != lastKeyBlockDiskOffset);
 
-	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): key=%s\n", __FILE__, __LINE__, __FUNCTION__, key);
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): key=%s\n", __FILE__, __LINE__, __FUNCTION__, key));
 
 	/* calc hash for key */
 	CHECK(NULL != ht->hashFunc);
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);
-	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): bucket index=%#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) hashTableIndex);
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): bucket index=%#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) hashTableIndex));
 
 	if (NULL != ht->hashTableOfPointersImageInMemory) {
 		*keyBlockDiskOffset = ht->hashTableOfPointersImageInMemory[hashTableIndex];
-		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): first ptr (from cache): %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset);
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): first ptr (from cache): %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset));
 	}
 	else {
 		/* no cache - read from disk */
 		CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + hashTableIndex * sizeof(DEHT_DISK_PTR), (byte_t *) keyBlockDiskOffset, sizeof(*keyBlockDiskOffset)));
-		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): first ptr (from disk): %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset);
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): first ptr (from disk): %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset));
 	}
 	*lastKeyBlockDiskOffset = *keyBlockDiskOffset;
 
@@ -458,7 +458,7 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 
 		/* disk offset of the next pointer is the last element in the block */
 		*keyBlockDiskOffset = *( (DEHT_DISK_PTR *) (keyBlockOut + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR)) );
-		TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): next ptr from disk: %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset);
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): next ptr from disk: %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset));
 
 		/*! TODO: update last block cache if present? !*/
 	}
@@ -886,7 +886,7 @@ bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 
 	CHECK(pfread(ht->dataFP, dataBlockOffset, &dataLen, sizeof(dataLen)));
 
-	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): data size is %d\n", __FILE__, __LINE__, __FUNCTION__, dataLen);
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): data size is %d\n", __FILE__, __LINE__, __FUNCTION__, dataLen));
 
 	*bytesRead = fread(data, 1, dataMaxAllowedLength, ht->dataFP);
 	CHECK(0 < *bytesRead);

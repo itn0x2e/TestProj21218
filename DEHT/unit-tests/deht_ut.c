@@ -388,7 +388,7 @@ bool_t massiveInsertIntoBucket(DEHT * ht, byte_t bucketId, TestParams_t * params
 	/* in each round, we build the corresponding string for that value. they will all collide predictably, because the key
 	   hash func only depends on the first byte */
 	for (elemCount = 0; elemCount < params->testDepth; ++elemCount) {
-		TRACE_FPRINTF(stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth);
+		TRACE_FPRINTF((stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth));
 
 		snprintf(key+1, sizeof(key) - 1, params->keyFormatStr, elemCount);
 		snprintf(data, sizeof(data), params->dataFormatStr, elemCount);
@@ -402,7 +402,7 @@ bool_t massiveInsertIntoBucket(DEHT * ht, byte_t bucketId, TestParams_t * params
 LBL_ERROR:
 	ret = FALSE;
 	TRACE_FUNC_ERROR();
-	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key);
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key));
 
 LBL_CLEANUP:
 	return ret;
@@ -429,7 +429,7 @@ bool_t massiveUpdateBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 	/* in each round, we build the corresponding string for that value. they will all collide predictably, because the key
 	   hash func only depends on the first byte */
 	for (elemCount = 0; elemCount < params->testDepth; ++elemCount) {
-		TRACE_FPRINTF(stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth);
+		TRACE_FPRINTF((stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth));
 
 		snprintf(key+1, sizeof(key) - 1, params->keyFormatStr, elemCount);
 		snprintf(data, sizeof(data), params->dataFormatStr, elemCount);
@@ -443,7 +443,7 @@ bool_t massiveUpdateBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 LBL_ERROR:
 	ret = FALSE;
 	TRACE_FUNC_ERROR();
-	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key);
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key));
 
 LBL_CLEANUP:
 	return ret;
@@ -470,7 +470,7 @@ bool_t massiveQueryBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 	/* in each round, we build the corresponding string for that value. they will all collide predictably, because the key
 	   hash func only depends on the first byte */
 	for (elemCount = 0; elemCount < params->testDepth; ++elemCount) {
-		TRACE_FPRINTF(stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth);
+		TRACE_FPRINTF((stdout, "%s: %d/%d, %lu/%lu\r", __FUNCTION__, bucketId + 1, ht->header.numEntriesInHashTable, elemCount+1, params->testDepth));
 
 		snprintf(key+1, sizeof(key) - 1, params->keyFormatStr, elemCount);
 		snprintf(expectedData, sizeof(expectedData), params->dataFormatStr, elemCount);
@@ -485,7 +485,7 @@ bool_t massiveQueryBucket(DEHT * ht, byte_t bucketId, TestParams_t * params)
 LBL_ERROR:
 	ret = FALSE;
 	TRACE_FUNC_ERROR();
-	TRACE_FPRINTF(stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key);
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): last key was: %s\n", __FILE__, __LINE__, __FUNCTION__, key));
 	printf("expectedData=%s, tempData=%s\n", expectedData, tempData);
 
 LBL_CLEANUP:
