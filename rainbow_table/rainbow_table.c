@@ -10,7 +10,6 @@
 #include "../DEHT/hash_funcs.h"
 
 
-typedef ulong_t RainbowSeed_t;
 
 
 bool_t createRainbowTable(
@@ -37,7 +36,7 @@ bool_t createRainbowTable(
 	ulong_t chainIndex = 0;
 	ulong_t inChainIndex = 0;
 
-	RainbowSeed_t * seeds = NULL;
+	RainbowTableConfig_t * rainbowConfig = NULL;
 	ulong_t userBytesSize = 0;
 
 	ulong_t hashLen = 0;
@@ -59,7 +58,7 @@ bool_t createRainbowTable(
 	ht = create_empty_DEHT(hashTableFilePrefix, 
 			       DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64, 
 			       getNameFromHashFun(hashFunc), 
-			       nHashTableEntries, nPairsPerBlock, sizeof(ulong_t), sizeof(RainbowSeed_t) * rainbowChainLen);
+			       nHashTableEntries, nPairsPerBlock, sizeof(ulong_t), sizeof(RainbowTableConfig_t) + sizeof(RainbowSeed_t) * rainbowChainLen);
 	CHECK(NULL != ht);
 
 	if (enableFirstBlockCache) {
@@ -137,4 +136,20 @@ LBL_CLEANUP:
 
 	return ret;
 }
+
+
+
+bool_t openRainbowTable(RainbowTable_t * instance,
+			const passwordGenerator_t * passGenerator,
+			char * generatorPassword,
+
+			BasicHashFunctionPtr hashFunc,
+
+			ulong_t rainbowChainLen,
+
+			const char * hashTableFilePrefix,
+			bool_t enableFirstBlockCache,
+			bool_t enableLastBlockCache);
+
+bool_t closeRainbowTable(RainbowTable_t * instance);
 
