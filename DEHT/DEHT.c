@@ -497,9 +497,9 @@ LBL_CLEANUP:
 
 
 
-bool_t readUserBytes(DEHT * ht, void ** bufPtr, ulong_t * bufSize)
+int DEHT_readUserBytes(DEHT * ht, void ** bufPtr, ulong_t * bufSize)
 {
-	bool_t ret = FALSE;
+	int ret = DEHT_STATUS_FAIL;
 
 	TRACE_FUNC_ENTRY();
 	CHECK(NULL != ht);
@@ -510,7 +510,7 @@ bool_t readUserBytes(DEHT * ht, void ** bufPtr, ulong_t * bufSize)
 		*bufPtr = ht->userBuf;
 		*bufSize = ht->header.numUnrelatedBytesSaved;
 	
-		ret = TRUE;
+		ret = DEHT_STATUS_NOT_NEEDED;
 		goto LBL_CLEANUP;
 	}
 
@@ -518,13 +518,15 @@ bool_t readUserBytes(DEHT * ht, void ** bufPtr, ulong_t * bufSize)
 	CHECK(NULL != ht->userBuf);
 
 	CHECK(pfread(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved));
-	*bufSize = ht->header.numUnrelatedBytesSaved;
 
-	ret = TRUE;
+	*bufSize = ht->header.numUnrelatedBytesSaved;
+	*bufPtr = ht->userBuf;
+
+	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
-	ret = FALSE;
+	ret = DEHT_STATUS_FAIL;
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
@@ -539,25 +541,25 @@ LBL_CLEANUP:
 
 
 
-bool_t writeUserBytes(DEHT * ht)
+int DEHT_writeUserBytes(DEHT * ht)
 {
-	bool_t ret = FALSE;
+	bool_t ret = DEHT_STATUS_FAIL;
 
 	TRACE_FUNC_ENTRY();
 	CHECK(NULL != ht);
 
 	if (NULL == ht->userBuf) {
-		ret = TRUE;
+		ret = DEHT_STATUS_NOT_NEEDED;
 		goto LBL_CLEANUP;
 	}
 
 	CHECK(pfwrite(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved));
 
-	ret = TRUE;
+	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
-	ret = FALSE;
+	ret = DEHT_STATUS_FAIL;
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
@@ -572,7 +574,6 @@ LBL_CLEANUP:
 int read_DEHT_pointers_table(DEHT *ht)
 {
 	int ret = DEHT_STATUS_FAIL;
-	size_t rawTableSize = 0;
 
 	TRACE_FUNC_ENTRY();
 
@@ -947,8 +948,12 @@ void lock_DEHT_files(DEHT *ht)
 	TRACE_FUNC_ENTRY();
 
 	/* If present, serialize pointer table to disk. Errors are ignored -
-	   we try to do as much as we can in spite of error for robustness */
+	   we try to do as much as we can in spite of error in the name of robustness */
 	(void) write_DEHT_pointers_table(ht);
+
+	/* If present, serialize user data to disk. Errors are ignored -
+	   we try to do as much as we can in spite of error in the name of robustness */
+	(void) DEHT_writeUserBytes(ht);
 
 	DEHT_freeResources(ht, FALSE);
 }

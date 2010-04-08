@@ -5,7 +5,7 @@
 #include "../common/misc.h"
 #include "../password/password_enumerator.h"
 #include "../password/password_generator.h"
-
+#include "../DEHT/DEHT.h"
 
 
 typedef ulong_t RainbowSeed_t;
@@ -23,7 +23,7 @@ typedef struct RainbowTable_s {
 
 	BasicHashFunctionPtr hashFunc;
 
-	const passwordGenerator_t * passGenerator
+	const passwordGenerator_t * passGenerator;
 
 } RainbowTable_t;
 

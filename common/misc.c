@@ -122,14 +122,13 @@ int miniHash(byte_t * output, ulong_t outputLen,
 	     const byte_t * seed, ulong_t seedLen,
 	     const byte_t * data, int dataLen)
 {
-	byte_t tempData[255];
 
 	int ret = 0;
 
 	/*! TODO: restore !*/
 	byte_t properHash[MD5_OUTPUT_LENGTH_IN_BYTES]; /*! = {0}; !*/
 
-	uint_t i = 0;
+/*!	uint_t i = 0; !*/
 	size_t hashSize = 0;
 
 	TRACE_FUNC_ENTRY();
