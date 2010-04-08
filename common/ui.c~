@@ -25,29 +25,11 @@ bool_t validateRule(const char * rule) {
 }
 
 bool_t verifyDEHTExists(const char * prefix) {
+	return checkDEHTExistence(prefix, TRUE);
 }
+
 bool_t verifyDEHTNotExist(const char * prefix) {
-	bool_t ret = FALSE;
-	uint_t prefixLen = strlen(prefix);
-	uint_t numFilenameBufChars = prefixLen + MAX(strlen(KEY_FILE_EXT), strlen(DATA_FILE_EXT)) + 1;
-	char * filename = (char *) malloc (sizeof(char) * numFilenameBufChars);
-	if (NULL == filename) {
-		PERROR();
-		return FALSE;
-	}
-	
-	strcpy(filename, prefix);
-	strcat(filename, KEY_FILE_EXT);
-	CHECK(verifyFileNotExist(filename));
-	
-	strcpy(filename + prefixLen, DATA_FILE_EXT);
-	CHECK(verifyFileNotExist(filename));
-	
-	ret = TRUE;
-	
-LBL_ERROR:
-	FREE(filename);
-	return ret;
+	return checkDEHTExistence(prefix, FALSE);
 }
 
 bool_t verifyFileExists(const char * filename) {
@@ -204,13 +186,18 @@ LBL_ERROR:
 }
 
 static bool_t checkFileExistence(const char * filename, bool_t shouldExist)  {
+	printf("%s\n", filename);
 	if (doesFileExist(filename)) {
+		printf("doesFileExist%s\n", filename);
 		if (!shouldExist) {
+			printf("shouldExist%s\n", filename);
 			fprintf(stderr, "Error: File \"%s\" already exist\n", filename);
 			return FALSE;
 		}
 	} else {
+		printf("else%s\n", filename);
 		if (shouldExist) {
+			printf("shouldExist%s\n", filename);
 			fprintf(stderr, "Error: File \"%s\" does not exist\n", filename);
 			return FALSE;
 		}

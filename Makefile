@@ -1,10 +1,7 @@
-all: create_authentication create_salty_authentication authenticate salty_authenticate exhaustive_table_generator
+all: create_authentication create_salty_authentication authenticate salty_authenticate exhaustive_table_generator exhaustive_query
 
 clean:
-	-rm create_authentication create_salty_authentication authenticate salty_authenticate exhaustive_table_generator create_authentication.o create_salty_authentication.o authenticate.o salty_authenticate.o exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
-
-exhaustive_table_generator: exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
-	gcc -ansi -pedantic-errors -g -lm -o exhaustive_table_generator exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
+	-rm create_authentication create_salty_authentication authenticate salty_authenticate exhaustive_table_generator exhaustive_query create_authentication.o create_salty_authentication.o authenticate.o salty_authenticate.o exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
 
 create_authentication: create_authentication.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
 	gcc -ansi -pedantic-errors -g -lm -o create_authentication create_authentication.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
@@ -17,6 +14,12 @@ authenticate: authenticate.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_fil
 
 salty_authenticate: salty_authenticate.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
 	gcc -ansi -pedantic-errors -g -lm -o salty_authenticate salty_authenticate.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
+
+exhaustive_table_generator: exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
+	gcc -ansi -pedantic-errors -g -lm -o exhaustive_table_generator exhaustive_table_generator.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
+
+exhaustive_query: exhaustive_query.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
+	gcc -ansi -pedantic-errors -g -lm -o exhaustive_query exhaustive_query.o io.o md5.o misc.o rand_utils.o sha1.o ui.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o
 
 create_authentication.o: part_a/create_authentication.c
 	gcc -ansi -pedantic-errors -c -Wall -g -o create_authentication.o part_a/create_authentication.c
@@ -32,6 +35,9 @@ salty_authenticate.o: part_a/salty_authenticate.c
 
 exhaustive_table_generator.o: part_b/exhaustive_table_generator.c
 	gcc -ansi -pedantic-errors -c -Wall -g -o exhaustive_table_generator.o part_b/exhaustive_table_generator.c
+
+exhaustive_query.o: part_b/exhaustive_query.c
+	gcc -ansi -pedantic-errors -c -Wall -g -o exhaustive_query.o part_b/exhaustive_query.c
 
 io.o: common/io.c common/io.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o io.o common/io.c

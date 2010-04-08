@@ -25,7 +25,7 @@ bool_t validateRule(const char * rule) {
 }
 
 bool_t verifyDEHTExists(const char * prefix) {
-	return checkDEHTExistence(prefix, FALSE);
+	return checkDEHTExistence(prefix, TRUE);
 }
 
 bool_t verifyDEHTNotExist(const char * prefix) {
