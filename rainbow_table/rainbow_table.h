@@ -1,4 +1,3 @@
-
 #ifndef __RAINBOW_TABLE_H__
 #define __RAINBOW_TABLE_H__
 
@@ -7,14 +6,12 @@
 #include "../password/password_enumerator.h"
 
 bool_t createRainbowTable(
-			passwordEnumerator_t * passEnumerator,
+			const passwordEnumerator_t * passEnumerator,
+			const passwordGenerator_t * passwordGenerator;
 			char * generatedPassword,
-
 			BasicHashFunctionPtr hashFunc,
-
 			ulong_t rainbowChainLen,
-
-			char * hashTableFilePrefix,
+			const char * hashTableFilePrefix,
 			ulong_t nHashTableEntries,
 			ulong_t nPairsPerBlock,
 			bool_t enableFirstBlockCache,
