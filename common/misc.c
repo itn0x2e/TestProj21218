@@ -229,16 +229,18 @@ unsigned int getHashFunDigestLength(BasicHashFunctionPtr hashFunc) {
 	return 0;
 }
 
-/*
+
 const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc) {
-	switch(hashFunc) {
-	case MD5BasicHash:
+	
+	if (MD5BasicHash == hashFunc) {
 		return "MD5";
-	case SHA1BasicHash:
+	}
+	if (SHA1BasicHash == hashFunc) {
 		return "SHA1";
 	}
+
 	return NULL;
 }
-*/
+
 
 

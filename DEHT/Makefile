@@ -1,7 +1,7 @@
 all: deht_ut deht_ut_debug
 
-OBJS=DEHT.o deht_ut.o hash_funcs.o io.o md5.o sha1.o misc.o 
-DEBUG_OBJS=debug__DEHT.o debug__hash_funcs.o debug__deht_ut.o debug__io.o debug__md5.o debug__sha1.o debug__misc.o
+OBJS=DEHT.o unit-tests/deht_ut.o hash_funcs.o io.o md5.o sha1.o misc.o 
+DEBUG_OBJS=debug__DEHT.o debug__hash_funcs.o unit-tests/debug__deht_ut.o debug__io.o debug__md5.o debug__sha1.o debug__misc.o
 
 CFLAGS= -pedantic-errors -Wall -ansi -Os -c
 CFLAGS_DEBUG = -pedantic-errors -Wall -ansi -g -DDEBUG -c
@@ -23,10 +23,10 @@ deht_ut_debug: $(DEBUG_OBJS)
 DEHT.o:
 	gcc $(CFLAGS) -o DEHT.o DEHT.c
 
-deht_ut.o: deht_ut.c 
-	gcc $(CFLAGS) -o deht_ut.o deht_ut.c
+unit-tests/deht_ut.o: unit-tests/deht_ut.c 
+	gcc $(CFLAGS) -o unit-tests/deht_ut.o unit-tests/deht_ut.c
 
-hash_funcs.o: deht_ut.c 
+hash_funcs.o: hash_funcs.c 
 	gcc $(CFLAGS) -o hash_funcs.o hash_funcs.c
 
 
@@ -48,10 +48,10 @@ sha1.o: ../common/sha1.c ../common/sha1.h
 debug__DEHT.o:
 	gcc $(CFLAGS_DEBUG) -o debug__DEHT.o DEHT.c
 
-debug__deht_ut.o: deht_ut.c 
-	gcc $(CFLAGS_DEBUG) -o debug__deht_ut.o deht_ut.c
+unit-tests/debug__deht_ut.o: unit-tests/deht_ut.c 
+	gcc $(CFLAGS_DEBUG) -o unit-tests/debug__deht_ut.o unit-tests/deht_ut.c
 
-debug__hash_funcs.o: deht_ut.c 
+debug__hash_funcs.o: hash_funcs.c 
 	gcc $(CFLAGS) -o debug__hash_funcs.o hash_funcs.c
 
 

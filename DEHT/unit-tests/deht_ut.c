@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../common/utils.h"
-#include "DEHT.h"
-#include "hash_funcs.h"
+#include "../../common/utils.h"
+#include "../DEHT.h"
+#include "../hash_funcs.h"
 
 #define TABLE_SIZE (1)
 #define BLOCK_SIZE (1000)
