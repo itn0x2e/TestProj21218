@@ -193,7 +193,7 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 	chainHashLen = getHashFunDigestLength(hashFunc);
 
 	for (chainIndex = 1;  passwordEnumeratorCalculateNextPassword(passEnumerator);  ++chainIndex) {
-		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): working on chain %lu\r", __FILE__, __LINE__, __FUNCTION__, chainIndex));
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): working on chain %lu\n", __FILE__, __LINE__, __FUNCTION__, chainIndex));
 
 		CHECK(buildChain(FALSE,
 				 rainbowConfig->seeds, rainbowConfig->chainLength,
@@ -202,6 +202,8 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 				 (byte_t *) enumeratorPassword, strlen(enumeratorPassword),
 				 chainHash, sizeof(chainHash),
 				 NULL, 0));
+
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): inserting password \"%s\"\n", __FILE__, __LINE__, __FUNCTION__, enumeratorPassword));
 
 		/* Insert resulting hash as the key and the initial password as the value */
 		/* Inserting with terminating null due to the limited DEHT interface */
@@ -250,7 +252,6 @@ RainbowTable_t * RT_open(
 
 	TRACE_FUNC_ENTRY();
 
-	CHECK(NULL != self);
 	CHECK(NULL != hashTableFilePrefix);
 
 	self = (RainbowTable_t *) malloc(sizeof(RainbowTable_t));
