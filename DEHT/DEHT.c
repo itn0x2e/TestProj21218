@@ -374,7 +374,7 @@ LBL_CLEANUP:
 
 
 
-
+/*! TODO: remove lastKeyBlockDiskOffset? !*/
 int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const unsigned char *data, int dataMaxAllowedLength,
 			byte_t * keyBlockOut, ulong_t keyBlockSize, DEHT_DISK_PTR * keyBlockDiskOffset, ulong_t * keyIndex, DEHT_DISK_PTR * lastKeyBlockDiskOffset)
 {
@@ -408,15 +408,12 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 	hashTableIndex = ht->hashFunc(key, keyLength, ht->header.numEntriesInHashTable);
 	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): bucket index=%#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) hashTableIndex));
 
-	if (NULL != ht->hashTableOfPointersImageInMemory) {
-		*keyBlockDiskOffset = ht->hashTableOfPointersImageInMemory[hashTableIndex];
-		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): first ptr (from cache): %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset));
-	}
-	else {
-		/* no cache - read from disk */
-		CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + hashTableIndex * sizeof(DEHT_DISK_PTR), (byte_t *) keyBlockDiskOffset, sizeof(*keyBlockDiskOffset)));
-		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): first ptr (from disk): %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) *keyBlockDiskOffset));
-	}
+
+	*keyBlockDiskOffset = DEHT_findFirstBlockForBucketAndAlloc(ht, hashTableIndex);
+	CHECK(0 != *keyBlockDiskOffset);
+
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): first block for bucket %lu at offset=%#x\n", __FILE__, __LINE__, __FUNCTION__, hashTableIndex, (uint_t) *keyBlockDiskOffset));
+
 	*lastKeyBlockDiskOffset = *keyBlockDiskOffset;
 
 	/* If there is no block for this bucket, return with nothing */
@@ -644,6 +641,9 @@ int calc_DEHT_last_block_per_bucket(DEHT *ht)
 		return DEHT_STATUS_NOT_NEEDED;
 	}
 
+	/*! remove? !*/
+	(void) read_DEHT_pointers_table(ht);
+
 	/* alloc cache */
 	rawTableSize = ht->header.numEntriesInHashTable * sizeof(DEHT_DISK_PTR);
 	ht->hashPointersForLastBlockImageInMemory = malloc(rawTableSize);
@@ -682,6 +682,30 @@ DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex)
 		CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
 	}
 
+
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	blockOffset = 0;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return blockOffset;
+}
+
+DEHT_DISK_PTR DEHT_findFirstBlockForBucketAndAlloc(DEHT * ht, ulong_t bucketIndex)
+{
+	DEHT_DISK_PTR blockOffset = 0;
+	
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != ht);
+	CHECK(bucketIndex < ht->header.numEntriesInHashTable);
+
+
+	blockOffset = DEHT_findFirstBlockForBucket(ht, bucketIndex);
+
 	/* if this is the very first block, alloc a new one */
 	if (0 == blockOffset) {
 		blockOffset = DEHT_allocKeyBlock(ht);
@@ -697,6 +721,7 @@ DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex)
 			CHECK(pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
 		}
 
+		/* if present, update last block cache */
 		if (NULL != ht->hashPointersForLastBlockImageInMemory) {
 			ht->hashPointersForLastBlockImageInMemory[bucketIndex] = blockOffset;
 		}
@@ -712,6 +737,8 @@ LBL_CLEANUP:
 	TRACE_FUNC_EXIT();
 	return blockOffset;
 }
+
+
 
 
 DEHT_DISK_PTR DEHT_findLastBlockForBucketDumb(DEHT * ht, ulong_t bucketIndex)
@@ -794,7 +821,11 @@ bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 	CHECK(NULL != firstFreeIndex);
 
 	*blockDiskPtr = DEHT_findLastBlockForBucket(ht, bucketIndex);
-	CHECK(0 != *blockDiskPtr);
+	if (0 == *blockDiskPtr) {
+		/* if this is the first ever block, call DEHT_findFirstBlockForBucketAndAlloc() which will also alloc the first block */
+		*blockDiskPtr = DEHT_findFirstBlockForBucketAndAlloc(ht, bucketIndex);
+		CHECK(0 != *blockDiskPtr);
+	}
 
 	/* read it */
 	CHECK(pfread(ht->keyFP, *blockDiskPtr, blockDataOut, KEY_FILE_BLOCK_SIZE(ht)));

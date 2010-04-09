@@ -7,7 +7,7 @@
 #include "../DEHT.h"
 #include "../hash_funcs.h"
 
-#define TABLE_SIZE (1000)
+#define TABLE_SIZE (1000 * 1000)
 #define BLOCK_SIZE (1000)
 #define USER_BYTES (1337)
 
