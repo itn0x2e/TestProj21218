@@ -242,9 +242,7 @@ bool_t RT_print(FILE * file1, FILE * file2,
 		const passwordGenerator_t * passGenerator,
 		char * generatorPassword,
 
-		const char * hashTableFilePrefix,
-		bool_t enableFirstBlockCache,
-		bool_t enableLastBlockCache)
+		const char * hashTableFilePrefix)
 {
 	bool_t ret = FALSE;
 
@@ -260,7 +258,7 @@ bool_t RT_print(FILE * file1, FILE * file2,
 
 
 	rt = RT_open(passGenerator, generatorPassword, 
-		     hashTableFilePrefix, enableFirstBlockCache, enableLastBlockCache);
+		     hashTableFilePrefix);
 	CHECK(NULL != rt);
 
 	CHECK(printSeeds(rt, file1));
