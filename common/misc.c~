@@ -208,6 +208,15 @@ int binary2hexa(const unsigned char *bufIn, int lengthIn,
 	return (2 * lengthIn);
 }
 
+LONG_INDEX_PROJ pseudo_random_function(const unsigned char *x,int inputLength,LONG_INDEX_PROJ seed) {
+	LONG_INDEX_PROJ ret;
+	
+	ASSERT(MAX_DIGEST_LEN >= sizeof(ret));
+	
+	miniHash(&ret, sizeof(ret), &seed, sizeof(seed), x, inputLength);
+	return ret;
+}
+
 BasicHashFunctionPtr getHashFunFromName(const char * name) {
 	if (0 == strcmp(name, "MD5")) {
 		return MD5BasicHash;

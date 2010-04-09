@@ -33,7 +33,9 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   ulong_t rainbowChainLen,
 		   const char * hashTableFilePrefix,
 		   ulong_t nHashTableEntries,
-		   ulong_t nPairsPerBlock);
+		   ulong_t nPairsPerBlock,
+		   bool_t b1, /*! TODO: tmp */
+		   bool_t b2 /*! TODO: tmp */);
 
 RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 			 char * generatorPassword,

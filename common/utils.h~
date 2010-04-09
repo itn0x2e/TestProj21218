@@ -16,7 +16,7 @@
 
 #ifdef DEBUG
 	#define TRACE(msg) fprintf(stderr, "TRACE: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
-	#define TRACE_FPRINTF(params) fprintf(params)
+	#define TRACE_FPRINTF(params) fprintf params
 
 	#define ERROR(msg) fprintf(stderr, "ERROR: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg); \
 				if (0 != errno) { \

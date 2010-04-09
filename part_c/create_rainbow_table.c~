@@ -70,11 +70,6 @@ bool_t createRainbowTable(const char * hashName,
 		goto LBL_CLEANUP_DICTIONARY;
 	}
 	
-	if ((0 == passwordGeneratorGetSize(&passwordGenerator)) && (n > 0)) {
-		fprintf(stderr, "Error: No password matches the specified rule\n");
-		goto LBL_CLEANUP_DICTIONARY;
-	}
-		
 	maxPasswordLength = passwordGeneratorGetMaxLength(&passwordGenerator);
 	
 	generatorPassword = (char *) malloc((maxPasswordLength + 1) * sizeof(char));
@@ -93,7 +88,7 @@ bool_t createRainbowTable(const char * hashName,
 					   &passwordGenerator,
 					   enumeratorPassword,
 					   RANDOM_PASSWORD_NUM_FACTOR * passwordGeneratorGetSize(&passwordGenerator));
-	
+	printf("before\n");
 	ret = RT_generate((passwordEnumerator_t *) &randomPasswordEnumerator,
 			  &passwordGenerator,
 			  enumeratorPassword,
@@ -106,6 +101,7 @@ bool_t createRainbowTable(const char * hashName,
 			  TRUE, /* TODO: ? */
 			  TRUE /* TODO: ? */
 			  );
+	printf("after\n");
 
 LBL_CLEANUP_GENERATOR:
 	passwordGeneratorFinalize(&passwordGenerator);

@@ -42,12 +42,12 @@ bool_t verifyFileNotExist(const char * filename) {
 }
 
 bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys) {
-	parseIniCommon(content, keys, values, numKeys, TRUE);
+	return parseIniCommon(content, keys, values, numKeys, TRUE);
 		
 }
 
 bool_t parseIniPartial(char * content, const char ** keys, const char ** values, uint_t numKeys) {
-	parseIniCommon(content, keys, values, numKeys, FALSE);
+	return parseIniCommon(content, keys, values, numKeys, FALSE);
 }
 
 bool_t parseIniNum(const char * str, ulong_t * num) {

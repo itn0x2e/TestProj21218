@@ -168,9 +168,6 @@ bool_t generateExaustiveTable(passwordEnumerator_t * enumerator,
 			      char * generatorPassword,
 			      BasicHashFunctionPtr hashFunc,
 			      const char * prefix) {
-	/* TODO: dummy */
-	while(passwordEnumeratorCalculateNextPassword(enumerator)) printf("%s\n", enumeratorPassword);
-	
 	return RT_generate(enumerator,generator, enumeratorPassword, generatorPassword, hashFunc,
 			0 /*ulong_t rainbowChainLen*/,
 
