@@ -123,5 +123,5 @@ rule_segment.o: password/rule_segment.c password/rule_segment.h
 single_cased_dictionary_word_generator.o: password/single_cased_dictionary_word_generator.c password/single_cased_dictionary_word_generator.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o single_cased_dictionary_word_generator.o password/single_cased_dictionary_word_generator.c
 
-rainbow_table.o: rainbow_table/rainbow_table.c rainbow_table/rainbow_table.h 
-	gcc -ansi -pedantic-errors -c -Wall -g -o rainbow_table.o rainbow_table/rainbow_table.c
+rainbow_table.o: rainbow_table/my_rainbow_table.c rainbow_table/rainbow_table.h 
+	gcc -ansi -pedantic-errors -c -Wall -g -o rainbow_table.o rainbow_table/my_rainbow_table.c

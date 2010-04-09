@@ -8,7 +8,7 @@ byte_t getRandomByte() {
 	
 	if (!initialized) {
 		/* initialize random seed */
-		srand (time(NULL));
+		srand(time(NULL));
 		initialized = TRUE;
 	}
 	
@@ -17,6 +17,12 @@ byte_t getRandomByte() {
 
 ulong_t getRandomULong() {
 	ulong_t randNum;
+	randomizeBuffer((byte_t *) &randNum, sizeof(randNum));
+	return randNum;
+}
+
+LONG_INDEX_PROJ getRandomLongIndexProj() {
+	LONG_INDEX_PROJ randNum;
 	randomizeBuffer((byte_t *) &randNum, sizeof(randNum));
 	return randNum;
 }

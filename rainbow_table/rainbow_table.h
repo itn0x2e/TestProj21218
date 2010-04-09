@@ -32,25 +32,23 @@ typedef struct RainbowTable_s {
 
 
 /* only for generation - for queries, use the RT_open, RT_query interface */
-bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
-			const passwordGenerator_t * passGenerator,
+bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
+		   const passwordGenerator_t * passwordGenerator,
+		   char * enumeratorPassword,
+		   char * generatorPassword,
+		   BasicHashFunctionPtr hashFunc,
+		   ulong_t rainbowChainLen,
+		   const char * hashTableFilePrefix,
+		   ulong_t nHashTableEntries,
+		   ulong_t nPairsPerBlock,
+		   bool_t b1, /*! TODO: tmp */
+		   bool_t b2 /*! TODO: tmp */);
 
-			char * enumeratorPassword,
-			char * generatorPassword,
-
-			BasicHashFunctionPtr hashFunc,
-
-			ulong_t rainbowChainLen,
-
-			const char * hashTableFilePrefix,
-			ulong_t nHashTableEntries,
-			ulong_t nPairsPerBlock);
-
-RainbowTable_t * RT_open(
-			const passwordGenerator_t * passGenerator,
-			char * generatorPassword,
-
-			const char * hashTableFilePrefix);
+RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
+			 char * generatorPassword,
+			 const char * hashTableFilePrefix,
+			 bool_t b1, /*! TODO: tmp */
+			 bool_t b2 /*! TODO: tmp */);
 
 void RT_close(RainbowTable_t * self);
 

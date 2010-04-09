@@ -45,6 +45,4 @@ void RT_close(RainbowTable_t * self);
 
 bool_t RT_query(RainbowTable_t * self, byte_t * hash, ulong_t hashLen, char * resPassword, ulong_t resPasswordLen);
 
-
 #endif /* __RAINBOW_TABLE_H__ */
- 
