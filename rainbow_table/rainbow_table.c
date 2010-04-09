@@ -60,7 +60,6 @@ static bool_t buildChain(bool_t crackingMode,
 
 	CHECK(NULL != hashBuf);
 
-
 	if (crackingMode) {
 		/* We were asked to crack a password - so we must start with the supplied hash */
 		memcpy(currHash, hashBuf, MIN(sizeof(currHash), hashBufLen));
@@ -84,7 +83,7 @@ static bool_t buildChain(bool_t crackingMode,
 
 		TRACE_FPRINTF((stderr, "pass: %s, hash: %lu\n", generatorPassword, *((ulong_t *) currHash)));
 
-		/* PRNG using the current hash and the seed corresponding to the current inChainIndex */
+		/* PRNG using the seed corresponding to the current inChainIndex */
 		CHECK(0 != miniHash((byte_t *) &nextPasswordIndex, sizeof(nextPasswordIndex),
 				    (byte_t *) (seeds + inChainIndex), sizeof(seeds[0]), 
 				    currHash, hashLen));
@@ -99,6 +98,8 @@ static bool_t buildChain(bool_t crackingMode,
 		/* calc next hash */
 		CHECK(0 != hashFunc(generatorPassword, strlen((char *) generatorPassword), currHash));
 	}
+
+	TRACE_FPRINTF((stderr, "pass: %s, hash: %lu (final)\n", generatorPassword, *((ulong_t *) currHash)));
 
 	/* copy result hash to user */
 	memcpy(hashBuf, currHash, MIN(hashBufLen, sizeof(currHash)));
@@ -190,7 +191,8 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 
 	/* generate seeds, store in ht */
 	for (chainIndex = 0;  chainIndex < rainbowChainLen; ++chainIndex) {
-		rainbowConfig->seeds[chainIndex] = getRandomULong();
+		/*!rainbowConfig->seeds[chainIndex] = getRandomULong(); !*/
+		rainbowConfig->seeds[chainIndex] = 0;
 	}
 
 	/* dump to disk (will remain in mem until the ht is closed) */
@@ -403,6 +405,7 @@ bool_t RT_query(RainbowTable_t * self,
 		/* null terminate */		
 		foundChainBeginPassword[MIN(foundChainBeginPasswordLen, sizeof(foundChainBeginPassword) - 1)] = 0x00;
 
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): foundChainBeginPassword=%s\n", __FILE__, __LINE__, __FUNCTION__, foundChainBeginPassword));
 
 		SAFE_STRNCPY((char *) foundPassword, (char *) foundChainBeginPassword, sizeof(foundPassword));
 
@@ -421,7 +424,7 @@ bool_t RT_query(RainbowTable_t * self,
 		}
 		else {
 			/* special case for chain length = 0 */
-			if (0 == self->config->chainLength) {
+			if (0 == (self->config->chainLength - j)) {
 				SAFE_STRNCPY((char *) resPassword, (char *) foundChainBeginPassword, resPasswordLen);
 			}
 			else {
