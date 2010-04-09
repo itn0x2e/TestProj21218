@@ -1,7 +1,7 @@
-all: create_authentication create_salty_authentication authenticate salty_authenticate exhaustive_table_generator exhaustive_query create_rainbow_table
+all: create_authentication create_salty_authentication authenticate salty_authenticate exhaustive_table_generator exhaustive_query create_rainbow_table crack_using_rainbow_table text_export_rainbow_table
 
 clean:
-	-rm create_authentication create_salty_authentication authenticate salty_authenticate exhaustive_table_generator exhaustive_query  create_rainbow_table create_authentication.o create_salty_authentication.o authenticate.o salty_authenticate.o exhaustive_table_generator.o exhaustive_query.o create_rainbow_table.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
+	-rm create_authentication create_salty_authentication authenticate salty_authenticate exhaustive_table_generator exhaustive_query create_rainbow_table crack_using_rainbow_table text_export_rainbow_table create_authentication.o create_salty_authentication.o authenticate.o salty_authenticate.o exhaustive_table_generator.o exhaustive_query.o create_rainbow_table.o crack_using_rainbow_table.o text_export_rainbow_table.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
 
 create_authentication: create_authentication.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
 	gcc -ansi -pedantic-errors -g -lm -o create_authentication create_authentication.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
@@ -24,6 +24,12 @@ exhaustive_query: exhaustive_query.o io.o md5.o misc.o rand_utils.o sha1.o ui.o 
 create_rainbow_table: create_rainbow_table.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
 	gcc -ansi -pedantic-errors -g -lm -o create_rainbow_table create_rainbow_table.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
 
+crack_using_rainbow_table: crack_using_rainbow_table.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
+	gcc -ansi -pedantic-errors -g -lm -o crack_using_rainbow_table crack_using_rainbow_table.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
+
+text_export_rainbow_table: text_export_rainbow_table.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
+	gcc -ansi -pedantic-errors -g -lm -o text_export_rainbow_table text_export_rainbow_table.o io.o md5.o misc.o rand_utils.o sha1.o ui.o DEHT.o hash_funcs.o auth_file.o authenticate_common.o create_authentication_common.o all_password_enumerator.o alphabet_phrase_generator.o dictionary.o dictionary_word_generator.o mixed_cased_dictionary_word_generator.o password_enumerator.o password_generator.o password_part_generator.o random_password_enumerator.o rule_segment.o single_cased_dictionary_word_generator.o rainbow_table.o
+
 create_authentication.o: part_a/create_authentication.c
 	gcc -ansi -pedantic-errors -c -Wall -g -o create_authentication.o part_a/create_authentication.c
 
@@ -44,6 +50,12 @@ exhaustive_query.o: part_b/exhaustive_query.c
 
 create_rainbow_table.o: part_c/create_rainbow_table.c
 	gcc -ansi -pedantic-errors -c -Wall -g -o create_rainbow_table.o part_c/create_rainbow_table.c
+
+crack_using_rainbow_table.o: part_c/crack_using_rainbow_table.c
+	gcc -ansi -pedantic-errors -c -Wall -g -o crack_using_rainbow_table.o part_c/crack_using_rainbow_table.c
+
+text_export_rainbow_table.o: part_c/text_export_rainbow_table.c
+	gcc -ansi -pedantic-errors -c -Wall -g -o text_export_rainbow_table.o part_c/text_export_rainbow_table.c
 
 io.o: common/io.c common/io.h 
 	gcc -ansi -pedantic-errors -c -Wall -g -o io.o common/io.c

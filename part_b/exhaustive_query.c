@@ -26,20 +26,19 @@ int main(int argc, char** argv) {
 }
 
 bool_t exhaustive_query(const char * prefix) {
-	bool_t  ret = FALSE;
 	RainbowTable_t * rainbowTable = NULL;
 	
-	CHECK(verifyDEHTExists(prefix));
-	printf("1\n");
-	CHECK(NULL != initializeExaustiveTable(prefix));
-	printf("2\n");
-	commandLoop(rainbowTable);
-	printf("3\n");
-	ret = TRUE;
+	if (verifyDEHTExists(prefix)) {
+		rainbowTable = initializeExaustiveTable(prefix);
+		if (NULL != rainbowTable) {
+			commandLoop(rainbowTable);
+			
+			finalizeExaustiveTable(rainbowTable);
+			return TRUE;	
+		}
+	}
 	
-LBL_ERROR:
-	finalizeExaustiveTable(rainbowTable);
-	return ret;
+	return FALSE;
 }
 
 void commandLoop(RainbowTable_t * rainbowTable) {
@@ -81,6 +80,5 @@ bool_t queryExaustiveTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t 
 	binary2hexa(hash, (int) hashLen, s, sizeof(s));
 	printf("%s\n", s);
 	
-	return RT_query(rainbowTable, 
-		hash, hashLen, password, passwordLen);
+	return RT_query(rainbowTable, hash, hashLen, password, passwordLen);
 }

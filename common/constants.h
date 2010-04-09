@@ -8,7 +8,7 @@
 #define MAX_USERNAME_LEN (80)
 #define MAX_PASSWORD_LEN (80)
 
-#define MAX_LINE_LEN (MAX_USERNAME_LEN + MAX_PASSWORD_LEN + 2)
+#define MAX_LINE_LEN (256)
 
 #define SHA1_DIGEST_LEN (sizeof(((SHA1Context *) 0)->Message_Digest))
 #define MD5_DIGEST_LEN (sizeof(((MD5_CTX *) 0)->digest))

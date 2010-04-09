@@ -12,8 +12,9 @@ bool_t verifyFileExists(const char * filename);
 bool_t verifyFileNotExist(const char * filename);
 
 bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys);
+bool_t parseIniPartial(char * content, const char ** keys, const char ** values, uint_t numKeys);
 bool_t parseIniNum(const char * str, ulong_t * num);
-void printIni(const char ** keys, const char ** values, uint_t numKeys); /* TODO: use this in text_export_rainbow_table */
+void printIni(const char ** keys, const char ** values, uint_t numKeys);
 bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name);
 bool_t readDictionaryFromFile(dictionary_t * dictionary, const char * filename);
 
