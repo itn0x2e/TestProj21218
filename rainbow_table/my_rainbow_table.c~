@@ -60,7 +60,7 @@ static DEHT * createEmptyRainbowTable(const char *prefix,
 	return create_empty_DEHT(const char *prefix,
 				 NULL, /*!TODO: hashKeyIntoTableFunctionPtr hashfun,*/
 				 NULL, /*!TODO: hashKeyforEfficientComparisonFunctionPtr validfun,*/
-				 NULL, /*!TODO: const char *dictName, */
+				 dictName,
 				 (int) numEntriesInHashTable,
 				 (int) nPairsPerBlock,
 				 (int) nBytesPerKey,
@@ -133,7 +133,7 @@ static bool_t fillRainbowTable(passwordEnumerator_t * passwordEnumerator,
 			
 			/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
 			passwordGeneratorCalculatePassword(passwordGenerator, k, kthPass);
-			cryptHash(cryptHashPtr, get_password_64b(kthPass), 8);
+			cryptHash(cryptHashPtr, kthPass, 8); /*! TODO: get_password_64b(kthPass) rather than kthPass? */
 		/* end */
 		}
 		/* insert into disk embedded hash table the following pair: key=curHash, data=firstPass */
