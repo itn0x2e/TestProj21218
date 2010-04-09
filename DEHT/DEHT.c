@@ -888,7 +888,7 @@ bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 
 	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): data size is %d\n", __FILE__, __LINE__, __FUNCTION__, dataLen));
 
-	*bytesRead = fread(data, 1, dataMaxAllowedLength, ht->dataFP);
+	*bytesRead = fread(data, 1, MIN(dataMaxAllowedLength, dataLen), ht->dataFP);
 	CHECK(0 < *bytesRead);
 
 	ret = TRUE;

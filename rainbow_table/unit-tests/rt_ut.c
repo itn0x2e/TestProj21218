@@ -10,7 +10,7 @@
 
 
 #define HASH_FUNC_NAME ("MD5")
-#define RAINBOW_CHAIN_LEN (0)
+#define RAINBOW_CHAIN_LEN (1)
 #define HASH_TABLE_FILE_PREFIX ("rainbow_test")
 #define HASH_TABLE_ENTRIES 100
 #define HASH_TABLE_PAIRS_PER_BLOCK (100)
@@ -120,10 +120,9 @@ bool_t testCrackAllPasswordsInRange(RainbowTable_t * rt,
 	allPasswordEnumeratorInitialize(&passEnumerator, passGen, passBuf);
 
 	while(passwordEnumeratorCalculateNextPassword((passwordEnumerator_t *) &passEnumerator)) {
-		/*CHECK(testCrackPassword(rt, hashFunc, passBuf));*/
-		testCrackPassword(rt, hashFunc, passBuf);
-		/*testCrackPassword(rt, hashFunc, genPass);*/
-		/*printf(">>>>>> problematic password: \"%s\"\n", passBuf);*/
+		CHECK(testCrackPassword(rt, hashFunc, passBuf));
+/*		testCrackPassword(rt, hashFunc, passBuf);  */
+
 	}
 	
 	ret = TRUE;

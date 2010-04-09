@@ -49,8 +49,6 @@ static bool_t buildChain(bool_t crackingMode,
 	/* "k" */
 	ulong_t nextPasswordIndex = 0;
 
-	char tempHex[MAX_DIGEST_LEN * 2 + 1];
-
 
 	TRACE_FUNC_ENTRY();
 
@@ -63,16 +61,10 @@ static bool_t buildChain(bool_t crackingMode,
 	CHECK(NULL != hashBuf);
 
 
-	printf("chainLength=%lu\n", chainLength);
-
 	if (crackingMode) {
 		/* We were asked to crack a password - so we must start with the supplied hash */
 		memcpy(currHash, hashBuf, MIN(sizeof(currHash), hashBufLen));
 		hashLen = hashBufLen;
-/*
-		binary2hexa(currHash, hashLen, tempHexa);
-		printf("H=%s, ", firstPassword, tempHexa);
-*/
 	}
 	else {
 		/* chain creation mode - start with the first password */
@@ -81,15 +73,16 @@ static bool_t buildChain(bool_t crackingMode,
 		hashLen = hashFunc(firstPassword, firstPasswordLen, currHash);
 		CHECK(0 != hashLen);
 		CHECK(hashLen <= hashBufLen);
-/*
-		binary2hexa(currHash, hashLen, tempHexa);
-		printf("R=%s, H=%s, ", firstPassword, tempHexa);
-*/
+
+		if (NULL != passwordOut) {
+			SAFE_STRNCPY((char *) passwordOut, (char *) firstPassword, MIN(firstPasswordLen, passwordOutLen));
+		}
 	}
 
 	/* perform the steps detailed in the project specification to compute the chain for this start point */
 	for (inChainIndex = 0; inChainIndex < chainLength; ++inChainIndex) {
-		printf("inChainIndex=%lu\n", inChainIndex);
+
+		TRACE_FPRINTF((stderr, "pass: %s, hash: %lu\n", generatorPassword, *((ulong_t *) currHash)));
 
 		/* PRNG using the current hash and the seed corresponding to the current inChainIndex */
 		CHECK(0 != miniHash((byte_t *) &nextPasswordIndex, sizeof(nextPasswordIndex),
@@ -369,10 +362,7 @@ bool_t RT_query(RainbowTable_t * self,
 	byte_t foundChainBeginPassword[MAX_PASSWORD_LEN];
 	int foundChainBeginPasswordLen = 0;
 	byte_t foundPassword[MAX_PASSWORD_LEN];
-	byte_t foundHash[MAX_DIGEST_LEN];
 
-	char tempOrgHash[2 * MAX_DIGEST_LEN + 1];
-	char tempFoundHash[2 * MAX_DIGEST_LEN + 1];
 
 	TRACE_FUNC_ENTRY();
 
@@ -381,16 +371,16 @@ bool_t RT_query(RainbowTable_t * self,
 	CHECK(NULL != resPassword);
 
 
-
+	TRACE_FPRINTF((stderr, "target hash: %lu\n", *((ulong_t *) hash)));
 
 	/* walk the chain corresponding to the given hash, trying to find a match */
 	/* (j runs between 0 to chainLength + 1, since 0 means regular hashing, 1 is a chain of 1 cycle, etc...) */
 	for (j = 0;  j < self->config->chainLength + 1;  ++j) {
+
 		/* init currHash to the given hash */
 		memcpy(currHash, hash, MIN(hashLen, sizeof(currHash)));
 
 		/* in each step, we procceed one step down the chain (using the appropriate seed) */
-		printf("before=%lu, ", *((ulong_t *) currHash));
 		CHECK(buildChain(TRUE,
 				 self->config->seeds, j,
 				 self->hashFunc,
@@ -399,23 +389,25 @@ bool_t RT_query(RainbowTable_t * self,
 				 currHash, hashLen,
 				 NULL, 0));
 
-		printf("after=%lu\n", *((ulong_t *) currHash));
-
 		
 		/* Now we have a hash that may be in the rainbow table - try looking for it */
 		foundChainBeginPasswordLen = query_DEHT(self->hashTable, 
 							currHash, hashLen, 
 							foundChainBeginPassword, sizeof(foundChainBeginPassword));
-		/* null terminate */		
-		foundChainBeginPassword[MIN(foundChainBeginPasswordLen, sizeof(foundChainBeginPassword) - 1)] = 0x00;
-
 		if (DEHT_STATUS_SUCCESS > foundChainBeginPasswordLen) {
 			/* no dice - continue to the next chain depth */
 			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): no DEHT match for chain depth=%lu\n", __FILE__, __LINE__, __FUNCTION__, j));
 			continue;
 		}
 
-		/* If we got here, we got a perliminary match, but it could still be a false alarm - step through the chain and look for a complete match */
+		/* null terminate */		
+		foundChainBeginPassword[MIN(foundChainBeginPasswordLen, sizeof(foundChainBeginPassword) - 1)] = 0x00;
+
+
+		SAFE_STRNCPY((char *) foundPassword, (char *) foundChainBeginPassword, sizeof(foundPassword));
+
+		/* If we got here, we got a perliminary match (but it could still be a false alarm).
+		   To find a possible password, step through the chain and look for a match */
 		CHECK(buildChain(FALSE,
 				 self->config->seeds, self->config->chainLength - j,
 				 self->hashFunc,
@@ -424,24 +416,18 @@ bool_t RT_query(RainbowTable_t * self,
 				 currHash, hashLen,
 				 foundPassword, sizeof(foundPassword)));
 
-		/* calc hash of found password */
-		if (0 == self->hashFunc(foundPassword, strlen((char *) foundPassword), foundHash)) {
-
-			TRACE("error calculating hash!");
-
-			/* live to fight another day... */
-			continue;
-		}
-
-		if (0 != memcmp(foundHash, hash, hashLen)) {
+		if (0 != memcmp(currHash, hash, MIN(hashLen, sizeof(currHash)))) {
 			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password \"%s\" was a false alarm (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
-			binary2hexa(hash, hashLen, tempOrgHash, sizeof(tempOrgHash));
-			binary2hexa(foundHash, hashLen, tempFoundHash, sizeof(tempFoundHash));
-			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): orig=%s, found=%s\n", __FILE__, __LINE__, __FUNCTION__, tempOrgHash, tempFoundHash));
 		}
 		else {
-			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password \"%s\" matched! (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
-			SAFE_STRNCPY((char *) resPassword, (char *) foundPassword, resPasswordLen);
+			/* special case for chain length = 0 */
+			if (0 == self->config->chainLength) {
+				SAFE_STRNCPY((char *) resPassword, (char *) foundChainBeginPassword, resPasswordLen);
+			}
+			else {
+				SAFE_STRNCPY((char *) resPassword, (char *) foundPassword, resPasswordLen);
+			}
+			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password \"%s\" matched! (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, resPassword, j));
 
 			ret = TRUE;
 			goto LBL_CLEANUP;
