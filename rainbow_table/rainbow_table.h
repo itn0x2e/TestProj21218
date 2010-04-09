@@ -63,4 +63,20 @@ bool_t RT_query(RainbowTable_t * self,
 		char * resPassword, ulong_t resPasswordLen);
 
 
+
+static bool_t buildChain(bool_t crackingMode,
+
+		         RainbowSeed_t * seeds, ulong_t chainLenght, 
+			 BasicHashFunctionPtr hashFunc,
+
+			 const passwordGenerator_t * passGenerator, byte_t * generatorPassword,
+
+			 byte_t * firstPassword, ulong_t firstPasswordLen,
+			 byte_t * hashBuf, ulong_t hashBufLen,
+
+			 byte_t * passwordOut, ulong_t passwordOutLen,
+	
+			 FILE * outputFD);
+
+
 #endif /* __RAINBOW_TABLE_H__ */

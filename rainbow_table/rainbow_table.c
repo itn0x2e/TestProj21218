@@ -12,22 +12,11 @@
 
 
 
-static bool_t buildChain(bool_t crackingMode,
-
-		         RainbowSeed_t * seeds, ulong_t chainLenght, 
-			 BasicHashFunctionPtr hashFunc,
-
-			 const passwordGenerator_t * passGenerator, byte_t * generatorPassword,
-
-			 byte_t * firstPassword, ulong_t firstPasswordLen,
-			 byte_t * hashBuf, ulong_t hashBufLen,
-
-			 byte_t * passwordOut, ulong_t passwordOutLen);
 
 
 
 
-static bool_t buildChain(bool_t crackingMode,
+bool_t buildChain(bool_t crackingMode,
 
 		         RainbowSeed_t * seeds, ulong_t chainLength, 
 			 BasicHashFunctionPtr hashFunc,
@@ -37,7 +26,9 @@ static bool_t buildChain(bool_t crackingMode,
 			 byte_t * firstPassword, ulong_t firstPasswordLen,
 			 byte_t * hashBuf, ulong_t hashBufLen,
 
-			 byte_t * passwordOut, ulong_t passwordOutLen)
+			 byte_t * passwordOut, ulong_t passwordOutLen,
+
+			 FILE * outputFD)
 {
 	bool_t ret = FALSE;
 
@@ -45,6 +36,8 @@ static bool_t buildChain(bool_t crackingMode,
 
 	byte_t currHash[MAX_DIGEST_LEN];
 	ulong_t hashLen = 0;
+
+	char currHashStr[MAX_DIGEST_LEN * 2 + 1];
 
 	/* "k" */
 	ulong_t nextPasswordIndex = 0;
@@ -64,14 +57,28 @@ static bool_t buildChain(bool_t crackingMode,
 		/* We were asked to crack a password - so we must start with the supplied hash */
 		memcpy(currHash, hashBuf, MIN(sizeof(currHash), hashBufLen));
 		hashLen = hashBufLen;
+
+		if (NULL != outputFD) {
+			binary2hexa(currHash, hashLen, currHashStr, sizeof(currHashStr));
+			fprintf(outputFD, "%s\t", currHashStr);
+		}
 	}
 	else {
 		/* chain creation mode - start with the first password */
 		CHECK(NULL != firstPassword);
 
+		if (NULL != outputFD) {
+			fprintf(outputFD, "%s\t", firstPassword);
+		}
+
 		hashLen = hashFunc(firstPassword, firstPasswordLen, currHash);
 		CHECK(0 != hashLen);
 		CHECK(hashLen <= hashBufLen);
+
+		if (NULL != outputFD) {
+			binary2hexa(currHash, hashLen, currHashStr, sizeof(currHashStr));
+			fprintf(outputFD, "%s\t", currHashStr);
+		}
 
 		if (NULL != passwordOut) {
 			SAFE_STRNCPY((char *) passwordOut, (char *) firstPassword, MIN(firstPasswordLen, passwordOutLen));
@@ -93,10 +100,19 @@ static bool_t buildChain(bool_t crackingMode,
 
 		/* generate k-randomized password */
 		passwordGeneratorCalculatePassword(passGenerator, nextPasswordIndex, (char *) generatorPassword);
-		
+
+		if (NULL != outputFD) {
+			fprintf(outputFD, "%s\t", firstPassword);
+		}
 
 		/* calc next hash */
 		CHECK(0 != hashFunc(generatorPassword, strlen((char *) generatorPassword), currHash));
+
+		if (NULL != outputFD) {
+			binary2hexa(currHash, hashLen, currHashStr, sizeof(currHashStr));
+			fprintf(outputFD, "%s\t", currHashStr);
+		}
+
 	}
 
 	TRACE_FPRINTF((stderr, "pass: %s, hash: %lu (final)\n", generatorPassword, *((ulong_t *) currHash)));
@@ -210,7 +226,8 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 			 	 passGenerator, (byte_t *) generatorPassword,
 				 (byte_t *) enumeratorPassword, strlen(enumeratorPassword),
 				 chainHash, sizeof(chainHash),
-				 NULL, 0));
+				 NULL, 0,
+				 NULL));
 
 		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): inserting password \"%s\"\n", __FILE__, __LINE__, __FUNCTION__, enumeratorPassword));
 
@@ -389,7 +406,8 @@ bool_t RT_query(RainbowTable_t * self,
 			 	 self->passGenerator, self->generatorPassword,
 				 NULL, 0,
 				 currHash, hashLen,
-				 NULL, 0));
+				 NULL, 0,
+				 NULL));
 
 		
 		/* Now we have a hash that may be in the rainbow table - try looking for it */
@@ -417,7 +435,8 @@ bool_t RT_query(RainbowTable_t * self,
 			 	 self->passGenerator, self->generatorPassword,
 				 foundChainBeginPassword, strlen((char *) foundChainBeginPassword),
 				 currHash, hashLen,
-				 foundPassword, sizeof(foundPassword)));
+				 foundPassword, sizeof(foundPassword),
+				 NULL));
 
 		if (0 != memcmp(currHash, hash, MIN(hashLen, sizeof(currHash)))) {
 			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password \"%s\" was a false alarm (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
