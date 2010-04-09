@@ -73,7 +73,6 @@ RainbowTable_t * initializeExaustiveTable(const char * prefix) {
 
 void finalizeExaustiveTable(RainbowTable_t * rainbowTable) {
 	RT_close(rainbowTable);
-	FREE(rainbowTable);
 }
 
 bool_t queryExaustiveTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, char * password, ulong_t passwordLen) {
@@ -81,6 +80,5 @@ bool_t queryExaustiveTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t 
 	binary2hexa(hash, (int) hashLen, s, sizeof(s));
 	printf("%s\n", s);
 	
-	return RT_query(rainbowTable, 
-		hash, hashLen, password, passwordLen);
+	return RT_query(rainbowTable, hash, hashLen, password, passwordLen);
 }
