@@ -2,9 +2,8 @@
 
 static DEHT * createEmptyRainbowTable();
 static void closeRainbowTable(DEHT * rainbowTable);
-static LONG_INDEX_PROJ * createSeeds(DEHT * rainbowTable, ulong_t rainbowChainLen);
-static LONG_INDEX_PROJ * randomizeSeeds(ulong_t rainbowChainLen); 
-static bool_t storeSeeds(DEHT * rainbowTable, const LONG_INDEX_PROJ * seeds, ulong_t rainbowChainLen);
+static const LONG_INDEX_PROJ * createSeeds(DEHT * rainbowTable, ulong_t rainbowChainLen);
+static void randomizeSeeds(LONG_INDEX_PROJ * seeds, ulong_t rainbowChainLen)
 static bool_t fillRainbowTable(passwordEnumerator_t * passwordEnumerator,
 			       char * firstPass,
 			       BasicHashFunctionPtr cryptHashPtr,
@@ -23,7 +22,7 @@ bool_t rainbowTableGenerate(passwordEnumerator_t * passwordEnumerator,
 			    ulong_t nPairsPerBlock) {
 	bool_t ret = FALSE;
 	DEHT * rainbowTable = NULL;
-	LONG_INDEX_PROJ * seeds = NULL;
+	const LONG_INDEX_PROJ * seeds = NULL;
 	
 	/* Create an empty rainbow table */
 	CHECK(rainbowTable = createEmptyRainbowTable(hashTableFilePrefix,
@@ -86,7 +85,7 @@ static LONG_INDEX_PROJ * createSeeds(DEHT * rainbowTable, ulong_t rainbowChainLe
 	return seeds;
 }
 
-static bool_t storeSeeds(DEHT * rainbowTable, const LONG_INDEX_PROJ * seeds, ulong_t rainbowChainLen) {
+static const LONG_INDEX_PROJ * createSeeds(DEHT * rainbowTable, ulong_t rainbowChainLen) {
 	const ulong_t numBytesToWrite = rainbowChainLen * sizeof(*seeds);
 	void * buf = NULL;
 	ulong_t bufSize = 0;
@@ -95,32 +94,23 @@ static bool_t storeSeeds(DEHT * rainbowTable, const LONG_INDEX_PROJ * seeds, ulo
 	CHECK(DEHT_STATUS_FAIL != DEHT_readUserBytes(rainbowTable, &buf, &bufSize))
 	
 	/* Write the seeds into those bytes */
-	CHECK(bufSize >= numBytesToWrite);
-	memcpy(buf, seeds, numBytesToWrite);
+	CHECK(bufSize >= (rainbowChainLen * sizeof(LONG_INDEX_PROJ));
+	randomizeSeeds((LONG_INDEX_PROJ *) buf, rainbowChainLen);
 	
 	/* Store the user bytes */
 	CHECK(DEHT_STATUS_FAIL != DEHT_writeUserBytes(rainbowTable));
 	
-	return TRUE;
+	return buf;
 
 LBL_ERROR:
-	return FALSE;
+	return NULL;
 }
 
-static LONG_INDEX_PROJ * randomizeSeeds(ulong_t rainbowChainLen) {
-	ulong_t i;
-	LONG_INDEX_PROJ * seeds = malloc(rainbowChainLen * sizeof(LONG_INDEX_PROJ));
-	if (NULL == seeds) {
-		PERROR();
-		return NULL;
-	}
-	
+static void randomizeSeeds(LONG_INDEX_PROJ * seeds, ulong_t rainbowChainLen) {
 	for (i = 0; i < rainbowChainLen; ++i) {
 		seeds[i] = getRandomUlong(); /*! TODO: consider using pseudo_random_function */
 		printf(seeds[i]); /*! TODO: tmp */
 	}
-	
-	return seeds;
 }
 
 static bool_t fillRainbowTable(passwordEnumerator_t * passwordEnumerator,
@@ -129,7 +119,7 @@ static bool_t fillRainbowTable(passwordEnumerator_t * passwordEnumerator,
 			       char * kthPass,
 			       BasicHashFunctionPtr cryptHashPtr,
 			       ulong_t chainLength,
-			       LONG_INDEX_PROJ * seeds) {
+			       const LONG_INDEX_PROJ * seeds) {
 	/* Iterate many times (about 10 times size of S) */
 	while(passwordEnumeratorCalculateNextPassword()) {
 		/* Init curHash := cryptographic-hash(firstPass) */
