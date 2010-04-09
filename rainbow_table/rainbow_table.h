@@ -64,6 +64,17 @@ bool_t RT_query(RainbowTable_t * self,
 
 
 
+bool_t RT_print(FILE * file1, FILE * file2,
+
+		const passwordGenerator_t * passGenerator,
+		char * generatorPassword,
+
+		const char * hashTableFilePrefix,
+		bool_t enableFirstBlockCache,
+		bool_t enableLastBlockCache);
+
+
+
 static bool_t buildChain(bool_t crackingMode,
 
 		         RainbowSeed_t * seeds, ulong_t chainLenght, 
@@ -77,6 +88,8 @@ static bool_t buildChain(bool_t crackingMode,
 			 byte_t * passwordOut, ulong_t passwordOutLen,
 	
 			 FILE * outputFD);
+
+
 
 
 #endif /* __RAINBOW_TABLE_H__ */
