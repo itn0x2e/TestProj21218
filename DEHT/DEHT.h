@@ -293,7 +293,7 @@ bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 					     byte_t * blockDataOut, ulong_t blockDataLen,
 					     DEHT_DISK_PTR * blockDiskPtr, ulong_t * firstFreeIndex);
 
-bool_t DEHT_writeData(DEHT * ht, const byte_t * data, ulong_t dataLen, 
+bool_t DEHT_addData(DEHT * ht, const byte_t * data, ulong_t dataLen, 
 		      DEHT_DISK_PTR * newDataOffset);
 
 bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset, 

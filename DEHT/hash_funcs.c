@@ -2,7 +2,7 @@
 #include "hash_funcs.h"
 #include "../common/types.h"
 #include "../common/misc.h"
-
+#include "../common/constants.h"
 
 
 int DEHT_keyToTableIndexHasher(const unsigned char * key, int keySize, int tableSize)
@@ -15,7 +15,7 @@ int DEHT_keyToTableIndexHasher(const unsigned char * key, int keySize, int table
 	(void) miniHash((byte_t *) &cksum, sizeof(cksum), (byte_t *) TABLE_INDEX_SEED, sizeof(TABLE_INDEX_SEED) - 1, key, keySize);
 
 	/* ignore sign bit */
-	cksum = abs(cksum);
+	cksum = cksum & INT_MAX_POSITIVE_VALUE;
 
 	TRACE_FUNC_EXIT();
 	return (cksum % tableSize);

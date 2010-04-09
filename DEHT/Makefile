@@ -13,10 +13,10 @@ LDFLAGS_DEBUG=
 clean:
 	-rm deht_ut deht_ut_debug $(OBJS) $(DEBUG_OBJS) 
 
-deht_ut: $(OBJS)
+deht_ut: $(OBJS) *.c
 	gcc $(LDFLAGS) -o deht_ut $(OBJS)
 
-deht_ut_debug: $(DEBUG_OBJS)
+deht_ut_debug: $(DEBUG_OBJS) *.c
 	gcc $(LDFLAGS_DEBUG) -o deht_ut_debug $(DEBUG_OBJS)
 
 

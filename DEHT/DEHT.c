@@ -244,7 +244,7 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): updating record at %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockDiskOffset));
 
 		/* write the new data to the data file */
-		CHECK(DEHT_writeData(ht, data, dataLength, &newDataOffset));
+		CHECK(DEHT_addData(ht, data, dataLength, &newDataOffset));
 
 		/* update the target record */
 		targetRecord = GET_N_REC_PTR_IN_BLOCK(ht, tempKeyBlock, keyIndex);
@@ -312,7 +312,7 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	(void) ht->comparisonHashFunc(key, keyLength, targetRec->key);
 
 	/* write payload to data file */
-	CHECK(DEHT_writeData(ht, data, dataLength, &(targetRec->dataOffset)));
+	CHECK(DEHT_addData(ht, data, dataLength, &(targetRec->dataOffset)));
 
 	/* write updated block to disk */
 	CHECK(pfwrite(ht->keyFP, keyBlockOffset, blockContent, KEY_FILE_BLOCK_SIZE(ht)));
@@ -907,7 +907,7 @@ LBL_CLEANUP:
 
 
 
-bool_t DEHT_writeData(DEHT * ht, const byte_t * data, ulong_t dataLen, 
+bool_t DEHT_addData(DEHT * ht, const byte_t * data, ulong_t dataLen, 
 		      DEHT_DISK_PTR * newDataOffset)
 {
 	bool_t ret = FALSE;
@@ -924,7 +924,9 @@ bool_t DEHT_writeData(DEHT * ht, const byte_t * data, ulong_t dataLen,
 	*newDataOffset = ftell(ht->dataFP);
 
 	CHECK(1 == fwrite(&dataLen, sizeof(byte_t), 1, ht->dataFP));
-	CHECK(1 == fwrite(data, dataLen, 1, ht->dataFP));
+	if (0 != dataLen) {
+		CHECK(1 == fwrite(data, dataLen, 1, ht->dataFP));
+	}
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
