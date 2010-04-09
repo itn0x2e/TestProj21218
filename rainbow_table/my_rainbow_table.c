@@ -140,9 +140,10 @@ static bool_t fillRainbowTable(passwordEnumerator_t * passwordEnumerator,
 		for (j = 0; j < chainLength; ++j) {
 			/* k = pseudo-random-function with seed seed[j] and input curHash; */
 			LONG_INDEX_PROJ k = pseudo_random_function(curHash, curHashLen, seed[j]); /*! TODO: yet to be implemented */
-			passwordGeneratorCalculatePassword(passwordGenerator, k, kthPass);
+			
 			/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
-			cryptHash(cryptHashPtr, kthPass, curHash);
+			passwordGeneratorCalculatePassword(passwordGenerator, k, kthPass);
+			cryptHash(cryptHashPtr, get_password_64b(kthPass), 8);
 		/* end */
 		}
 		/* insert into disk embedded hash table the following pair: key=curHash, data=firstPass */
