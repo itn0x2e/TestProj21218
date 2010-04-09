@@ -49,6 +49,8 @@ static bool_t buildChain(bool_t crackingMode,
 	/* "k" */
 	ulong_t nextPasswordIndex = 0;
 
+	char tempHex[MAX_DIGEST_LEN * 2 + 1];
+
 
 	TRACE_FUNC_ENTRY();
 
@@ -65,6 +67,10 @@ static bool_t buildChain(bool_t crackingMode,
 		/* We were asked to crack a password - so we must start with the supplied hash */
 		memcpy(hashBuf, currHash, MIN(sizeof(currHash), hashBufLen));
 		hashLen = hashBufLen;
+/*
+		binary2hexa(currHash, hashLen, tempHexa);
+		printf("H=%s, ", firstPassword, tempHexa);
+*/
 	}
 	else {
 		/* chain creation mode - start with the first password */
@@ -73,6 +79,10 @@ static bool_t buildChain(bool_t crackingMode,
 		hashLen = hashFunc(firstPassword, firstPasswordLen, currHash);
 		CHECK(0 != hashLen);
 		CHECK(hashLen <= hashBufLen);
+/*
+		binary2hexa(currHash, hashLen, tempHexa);
+		printf("R=%s, H=%s, ", firstPassword, tempHexa);
+*/
 	}
 
 	/* perform the steps detailed in the project specification to compute the chain for this start point */
@@ -372,10 +382,11 @@ bool_t RT_query(RainbowTable_t * self,
 
 	/* walk the chain corresponding to the given hash, trying to find a match */
 	/* (j runs between 0 to chainLength + 1, since 0 means regular hashing, 1 is a chain of 1 cycle, etc...) */
-	for (j = 0;  j < self->config->chainLength + 1;  ++j) {
+	for (j = 0;  j < self->config->chainLength;  ++j) {
 		/* in each step, we procceed one step down the chain (using the appropriate seed) */
+		memcpy(currHash, hash, hashLen);
 		CHECK(buildChain(TRUE,
-				 self->config->seeds + j, 1,
+				 self->config->seeds + j, self->config->chainLength - j,
 				 self->hashFunc,
 			 	 self->passGenerator, self->generatorPassword,
 				 NULL, 0,
