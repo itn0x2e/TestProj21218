@@ -2,14 +2,6 @@
 #include "../common/utils.h"
 #include "random_password_enumerator.h"
 
-
-
-
-#include <stdio.h>
-
-
-
-
 static ulong_t getRandomIndex(const passwordEnumerator_t * passwordEnumerator);
 
 void randomPasswordEnumeratorInitialize(randomPasswordEnumerator_t * self, const passwordGenerator_t * generator, char * buf, ulong_t iterations) {

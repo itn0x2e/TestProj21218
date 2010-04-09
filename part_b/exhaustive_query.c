@@ -82,5 +82,5 @@ bool_t queryExaustiveTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t 
 	printf("%s\n", s);
 	
 	return RT_query(rainbowTable, 
-		hash, hashLen, (/*TODO: tmppppppppppp*/ byte_t *) password, passwordLen);
+		hash, hashLen, password, passwordLen);
 }

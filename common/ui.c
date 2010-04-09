@@ -12,8 +12,8 @@ static bool_t checkDEHTExistence(const char * prefix, bool_t shouldExist);
 static bool_t checkFileExistence(const char * filename, bool_t shouldExist);
 static const char * skipRangeRepresentation(const char * str);
 static const char * skipNumRepresentation(const char * str);
-static bool_t setIniKey(const char ** keys, const char ** values, uint_t numKeys, const char * key, const char * value);
-static bool_t areAllIniValuesSet(const char ** keys, const char ** values, uint_t numValues);
+static void setIniKey(const char ** keys, const char ** values, uint_t numKeys, const char * key, const char * value);
+static bool_t verifyAllIniValuesSet(const char ** keys, const char ** values, uint_t numValues);
 
 bool_t validateRule(const char * rule) {
 	if (!isRuleValid(rule)) {
@@ -62,7 +62,7 @@ bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t
 		value += strlen(delimeter);
 		
 		/* Set the value which matches the key */
-		CHECK(setIniKey(keys, values, numKeys, key, value));
+		setIniKey(keys, values, numKeys, key, value);
 		
 		/* Move to end of line */
 		key = strchr(value, '\n');
@@ -76,7 +76,7 @@ bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t
 		++key;
 	}
 	
-	if (!areAllIniValuesSet(keys, values, numKeys)) {
+	if (!verifyAllIniValuesSet(keys, values, numKeys)) {
 		return FALSE;
 	}
 	
@@ -86,6 +86,15 @@ LBL_ERROR:
 	fprintf(stderr, "Error: configuration file corruption\n");
 	return FALSE;
 		
+}
+
+bool_t parseIniNum(const char * str, ulong_t * num) {
+	if (1 != sscanf(str, "%lu", num)) {
+		fprintf(stderr, "Error: configuration file corruption\n");
+		return FALSE;
+	}
+	
+	return TRUE;
 }
 
 void printIni(const char ** keys, const char ** values, uint_t numKeys) {
@@ -220,20 +229,18 @@ static const char * skipNumRepresentation(const char * str) {
 	return str;
 }
 
-static bool_t setIniKey(const char ** keys, const char ** values, uint_t numKeys, const char * key, const char * value) {
+static void setIniKey(const char ** keys, const char ** values, uint_t numKeys, const char * key, const char * value) {
 	uint_t i;
 	
 	for(i = 0; i < numKeys; ++i) {
 		if (0 == strcmp(key, keys[i])) {
 			values[i] = value;
-			return TRUE;
+			return;
 		}
 	}
-	
-	return FALSE;
 }
 
-static bool_t areAllIniValuesSet(const char ** keys, const char ** values, uint_t numValues) {
+static bool_t verifyAllIniValuesSet(const char ** keys, const char ** values, uint_t numValues) {
 	uint_t i;
 	
 	for(i = 0; i < numValues; ++i) {
