@@ -44,17 +44,13 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 
 			const char * hashTableFilePrefix,
 			ulong_t nHashTableEntries,
-			ulong_t nPairsPerBlock,
-			bool_t enableFirstBlockCache,
-			bool_t enableLastBlockCache);
+			ulong_t nPairsPerBlock);
 
 RainbowTable_t * RT_open(
 			const passwordGenerator_t * passGenerator,
 			char * generatorPassword,
 
-			const char * hashTableFilePrefix,
-			bool_t enableFirstBlockCache,
-			bool_t enableLastBlockCache);
+			const char * hashTableFilePrefix);
 
 void RT_close(RainbowTable_t * self);
 
@@ -75,7 +71,7 @@ bool_t RT_print(FILE * file1, FILE * file2,
 
 
 
-static bool_t buildChain(bool_t crackingMode,
+bool_t buildChain(bool_t crackingMode,
 
 		         RainbowSeed_t * seeds, ulong_t chainLenght, 
 			 BasicHashFunctionPtr hashFunc,

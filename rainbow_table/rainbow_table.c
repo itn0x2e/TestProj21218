@@ -150,9 +150,7 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 
 			const char * hashTableFilePrefix,
 			ulong_t nHashTableEntries,
-			ulong_t nPairsPerBlock,
-			bool_t enableFirstBlockCache,
-			bool_t enableLastBlockCache)
+			ulong_t nPairsPerBlock)
 {
 	bool_t ret = FALSE;
 
@@ -189,12 +187,12 @@ bool_t RT_generate(	passwordEnumerator_t * passEnumerator,
 			       nHashTableEntries, nPairsPerBlock, sizeof(ulong_t), sizeof(RainbowTableConfig_t) + sizeof(RainbowSeed_t) * rainbowChainLen);
 	CHECK(NULL != ht);
 
-	if (enableFirstBlockCache) {
-		CHECK(DEHT_STATUS_FAIL != read_DEHT_pointers_table(ht));
-	}
-	if (enableLastBlockCache) {
-		CHECK(DEHT_STATUS_FAIL != calc_DEHT_last_block_per_bucket(ht));
-	}
+	/* We will be generating a lot of insert (and implicitly, query) operations - better use DEHT's cache for
+	   first & last blocks */
+	/* (Note, however, that errors here are treated as non-terminal, to increase robustness) */
+	(void) read_DEHT_pointers_table(ht);
+	(void) calc_DEHT_last_block_per_bucket(ht);
+	
 
 
 	/* load user bytes buffer (even though it should be empty right now, this will allow us to use the table's buffer, which gets saved to disk automagically) */
@@ -266,9 +264,7 @@ RainbowTable_t * RT_open(
 			const passwordGenerator_t * passGenerator,
 			char * generatorPassword,
 
-			const char * hashTableFilePrefix,
-			bool_t enableFirstBlockCache,
-			bool_t enableLastBlockCache)
+			const char * hashTableFilePrefix)
 {
 	RainbowTable_t * ret = NULL;
 
@@ -293,12 +289,12 @@ RainbowTable_t * RT_open(
 			       DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64);
 	CHECK(NULL != self->hashTable);
 
-	if (enableFirstBlockCache) {
-		CHECK(DEHT_STATUS_FAIL != read_DEHT_pointers_table(self->hashTable));
-	}
-	if (enableLastBlockCache) {
-		CHECK(DEHT_STATUS_FAIL != calc_DEHT_last_block_per_bucket(self->hashTable));
-	}
+
+	/* we will be generating a lot of query operations - better use DEHT's first block cache */
+	/* (Note, however, that errors here are treated as non-terminal, to increase robustness) */
+	(void) read_DEHT_pointers_table(self->hashTable);
+
+
 
 	/* find the hash type */
 	self->hashFunc = getHashFunFromName(self->hashTable->header.sDictionaryName);

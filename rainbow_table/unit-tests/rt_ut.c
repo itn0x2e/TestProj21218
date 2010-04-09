@@ -14,9 +14,15 @@
 #define HASH_TABLE_FILE_PREFIX ("rainbow_test")
 #define HASH_TABLE_ENTRIES 100
 #define HASH_TABLE_PAIRS_PER_BLOCK (100)
+
+
+/*!
+ * No longer relevant
+!*/
+/*!
 #define FIRST_BLOCK_PTRS_CACHE_ENABLE (TRUE)
 #define LAST_BLOCK_PTRS_CACHE_ENABLE (TRUE)
-
+!*/
 
 
 
@@ -168,17 +174,13 @@ int main(int agrc, char ** argv) {
 				    RAINBOW_CHAIN_LEN,
 				    HASH_TABLE_FILE_PREFIX,
 				    HASH_TABLE_ENTRIES,
-				    HASH_TABLE_PAIRS_PER_BLOCK,
-				    FIRST_BLOCK_PTRS_CACHE_ENABLE,
-				    LAST_BLOCK_PTRS_CACHE_ENABLE));
+				    HASH_TABLE_PAIRS_PER_BLOCK));
 
 	printf(">>> passed RT_generate\n");
 
 	/* Now open the generated table */
 	rt = RT_open(&passwordGenerator, generatorBuf,
-		     HASH_TABLE_FILE_PREFIX,
-		     FIRST_BLOCK_PTRS_CACHE_ENABLE,
-		     LAST_BLOCK_PTRS_CACHE_ENABLE);
+		     HASH_TABLE_FILE_PREFIX);
 	CHECK(NULL != rt);
 
 
