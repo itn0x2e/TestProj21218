@@ -137,6 +137,10 @@ passwordEnumerator_t * createPasswordEnumerator(
 	if (all) {
 		allPasswordEnumeratorInitialize((allPasswordEnumerator_t *) enumerator, generator, password);
 	} else {
+		if ((0 == passwordGeneratorGetSize(generator)) && (n > 0) {
+			fprintf(stderr, "Error: No password matches the specified rule\n");
+			return NULL;
+		}
 		randomPasswordEnumeratorInitialize((randomPasswordEnumerator_t *) enumerator, generator, password, n);
 	}
 	
@@ -167,7 +171,7 @@ bool_t generateExaustiveTable(passwordEnumerator_t * enumerator,
 	/* TODO: dummy */
 	while(passwordEnumeratorCalculateNextPassword(enumerator)) printf("%s\n", enumeratorPassword);
 	
-	return generateRainbowTable(enumerator,generator, enumeratorPassword, generatorPassword, hashFunc,
+	return RT_generate(enumerator,generator, enumeratorPassword, generatorPassword, hashFunc,
 			0 /*ulong_t rainbowChainLen*/,
 
 			prefix /*const char * hashTableFilePrefix*/,
