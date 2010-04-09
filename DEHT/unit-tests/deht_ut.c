@@ -7,9 +7,14 @@
 #include "../DEHT.h"
 #include "../hash_funcs.h"
 
-#define TABLE_SIZE (1000 * 1000)
+
+#define TABLE_FILE_PREFIX "deht_test"
+#define TABLE_DICT_NAME "test_dict"
+#define TABLE_SIZE (50 * 1000 * 1000)
 #define BLOCK_SIZE (1000)
 #define USER_BYTES (1337)
+
+
 
 /*
  * Real world setup
@@ -35,7 +40,7 @@
 */
 
 
-#define TORTURE_ELEM_COUNT (20)
+#define TORTURE_ELEM_COUNT (5000)
 /* #define TORTURE_ELEM_COUNT (BLOCK_SIZE - 1) */
 /* #define TORTURE_ELEM_COUNT (BLOCK_SIZE * 20) */
 
@@ -84,8 +89,8 @@ bool_t createTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableLastBl
 	
 	CHECK(NULL != ht);
 
-	*ht = create_empty_DEHT("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
-			       "test_dict",
+	*ht = create_empty_DEHT(TABLE_FILE_PREFIX, TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
+			       TABLE_DICT_NAME,
 				TABLE_SIZE, BLOCK_SIZE, KEY_SIZE, USER_BYTES);
 	CHECK(NULL != *ht);
 
@@ -117,7 +122,7 @@ bool_t openTable(DEHT ** ht, bool_t enableFirstBlockCache, bool_t enableLastBloc
 	
 	CHECK(NULL != ht);
 
-	*ht = load_DEHT_from_files("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC);
+	*ht = load_DEHT_from_files(TABLE_FILE_PREFIX, TABLE_INDEX_FUNC, VALID_KEY_FUNC);
 	CHECK(NULL != *ht);
 
 	if (enableFirstBlockCache) {
@@ -148,8 +153,8 @@ bool_t createAndCloseTable(void)
 	
 	DEHT * ht = NULL;
 
-	ht = create_empty_DEHT("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
-			       "test_dict",
+	ht = create_empty_DEHT(TABLE_FILE_PREFIX, TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
+			       TABLE_DICT_NAME,
 				TABLE_SIZE, BLOCK_SIZE, KEY_SIZE, USER_BYTES);
 
 	CHECK(NULL != ht);
@@ -178,7 +183,7 @@ bool_t openAndCloseTable(void)
 	
 	DEHT * ht = NULL;
 
-	ht = load_DEHT_from_files("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC);
+	ht = load_DEHT_from_files(TABLE_FILE_PREFIX, TABLE_INDEX_FUNC, VALID_KEY_FUNC);
 	CHECK(NULL != ht);
 
 	ret = TRUE;
@@ -202,12 +207,12 @@ LBL_CLEANUP:
 
 bool_t removeKeyFile(void)
 {
-	return (0 == remove("test.key"));
+	return (0 == remove(TABLE_FILE_PREFIX ".key"));
 }
 
 bool_t removeDataFile(void)
 {
-	return (0 == remove("test.data"));
+	return (0 == remove(TABLE_FILE_PREFIX ".data"));
 }
 
 
@@ -311,12 +316,40 @@ bool_t testUserBytes(void)
 	bool_t ret = FALSE;
 	
 	DEHT * ht = NULL;
+	byte_t testData[USER_BYTES];
+	byte_t * userBytes = NULL;
+	ulong_t userBytesSize = 0;
+	FILE * fd = NULL;
 
-	ht = create_empty_DEHT("test", TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
-			       "test_dict",
+
+	/* start from a normal state */
+	(void) removeFiles();
+
+	ht = create_empty_DEHT(TABLE_FILE_PREFIX, TABLE_INDEX_FUNC, VALID_KEY_FUNC, 
+			       TABLE_DICT_NAME,
 				TABLE_SIZE, BLOCK_SIZE, KEY_SIZE, USER_BYTES);
 	CHECK(NULL != ht);
 
+	CHECK(DEHT_getUserBytes(ht, &userBytes, &userBytesSize));
+	CHECK(NULL != userBytes);
+	CHECK(USER_BYTES == userBytesSize);
+	
+	fd = fopen("/dev/urandom", "rb");
+	CHECK(1 == fread(testData, sizeof(testData), 1, fd));
+
+
+	/* copy test data to the buffer */
+	memcpy(userBytes, testData, sizeof(testData));
+
+	lock_DEHT_files(ht);
+	ht = load_DEHT_from_files(TABLE_FILE_PREFIX, TABLE_INDEX_FUNC, VALID_KEY_FUNC);
+	CHECK(NULL != ht);
+
+	CHECK(DEHT_getUserBytes(ht, &userBytes, &userBytesSize));
+	CHECK(NULL != userBytes);
+	CHECK(USER_BYTES == userBytesSize);
+
+	CHECK(0 == memcmp(userBytes, testData, sizeof(testData)));	
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
@@ -326,6 +359,7 @@ LBL_ERROR:
 	ret = FALSE;
 
 LBL_CLEANUP:
+	FCLOSE(fd);
 
 	if (NULL != ht) {
 		lock_DEHT_files(ht);
@@ -721,6 +755,9 @@ int main(void)
 
 	CHECK(testOpenTableFileStates());
 	printf(">>> testOpenTableFileStates - passed.\n");
+
+	CHECK(testUserBytes());
+	printf(">>> testUserBytes - passed.\n");
 
 	for (enableFirstBlockCache = 0; enableFirstBlockCache < 2; ++enableFirstBlockCache) {
 		for (enableLastBlockCache = 0; enableLastBlockCache < 2; ++enableLastBlockCache) {

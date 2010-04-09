@@ -282,7 +282,7 @@ int write_DEHT_pointers_table(DEHT *ht);
 int calc_DEHT_last_block_per_bucket(DEHT *ht); 
 
 
-int DEHT_readUserBytes(DEHT * ht, void ** bufPtr, ulong_t * bufSize);
+int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
 int DEHT_writeUserBytes(DEHT * ht);
 
 DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex);

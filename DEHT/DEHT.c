@@ -494,7 +494,7 @@ LBL_CLEANUP:
 
 
 
-int DEHT_readUserBytes(DEHT * ht, void ** bufPtr, ulong_t * bufSize)
+int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize)
 {
 	int ret = DEHT_STATUS_FAIL;
 
@@ -551,6 +551,10 @@ int DEHT_writeUserBytes(DEHT * ht)
 	}
 
 	CHECK(pfwrite(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved));
+
+	/*! Note that unlink write_DEHT_pointers_table(), we DO NOT free the block here. Since this interface was
+	    not dictated by the project spec, we chose what we found to be a more convenient interface for our use-case,
+	    namely - only writing the data to disk, but not freeing the reference here !*/
 
 	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
@@ -614,6 +618,9 @@ int write_DEHT_pointers_table(DEHT *ht)
 	/* write the offset table */
 	CHECK(pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht)));
 
+	/*! I believe this doesn't yield much performance, but the project spec demanded that we free the cache here, so I will !*/
+	FREE(ht->hashTableOfPointersImageInMemory);
+
 	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
 
@@ -632,6 +639,7 @@ int calc_DEHT_last_block_per_bucket(DEHT *ht)
 	int ret = DEHT_STATUS_FAIL;
 	size_t rawTableSize = 0;
 	ulong_t bucketIndex = 0;
+	int pointerTableLoadRes = 0;
 
 	TRACE_FUNC_ENTRY();
 
@@ -641,8 +649,9 @@ int calc_DEHT_last_block_per_bucket(DEHT *ht)
 		return DEHT_STATUS_NOT_NEEDED;
 	}
 
-	/*! remove? !*/
-	(void) read_DEHT_pointers_table(ht);
+	/* We will be scanning the entire bucket table. It would be wise to use the 
+	  first block cache for this step */
+	pointerTableLoadRes = read_DEHT_pointers_table(ht);
 
 	/* alloc cache */
 	rawTableSize = ht->header.numEntriesInHashTable * sizeof(DEHT_DISK_PTR);
@@ -661,6 +670,11 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	/* If the first block pointer table wasn't loaded before us, we should unload it (errors are silenced) */
+	if (DEHT_STATUS_SUCCESS == pointerTableLoadRes) {
+		(void) write_DEHT_pointers_table(ht);
+	}
+
 	TRACE_FUNC_EXIT();
 	return ret;
 }
@@ -1004,6 +1018,7 @@ void DEHT_freeResources(DEHT * ht, bool_t removeFiles)
 	/* free ht cache if present */
 	FREE(ht->hashTableOfPointersImageInMemory);
 	FREE(ht->hashPointersForLastBlockImageInMemory);
+	FREE(ht->userBuf);
 
 	if (removeFiles) {
 		/* attempt to remove bad files. Errors are silenced */
