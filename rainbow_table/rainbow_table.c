@@ -63,9 +63,11 @@ static bool_t buildChain(bool_t crackingMode,
 	CHECK(NULL != hashBuf);
 
 
+	printf("chainLength=%lu\n", chainLength);
+
 	if (crackingMode) {
 		/* We were asked to crack a password - so we must start with the supplied hash */
-		memcpy(hashBuf, currHash, MIN(sizeof(currHash), hashBufLen));
+		memcpy(currHash, hashBuf, MIN(sizeof(currHash), hashBufLen));
 		hashLen = hashBufLen;
 /*
 		binary2hexa(currHash, hashLen, tempHexa);
@@ -87,6 +89,7 @@ static bool_t buildChain(bool_t crackingMode,
 
 	/* perform the steps detailed in the project specification to compute the chain for this start point */
 	for (inChainIndex = 0; inChainIndex < chainLength; ++inChainIndex) {
+		printf("inChainIndex=%lu\n", inChainIndex);
 
 		/* PRNG using the current hash and the seed corresponding to the current inChainIndex */
 		CHECK(0 != miniHash((byte_t *) &nextPasswordIndex, sizeof(nextPasswordIndex),
@@ -105,7 +108,7 @@ static bool_t buildChain(bool_t crackingMode,
 	}
 
 	/* copy result hash to user */
-	memcpy(hashBuf, currHash, hashBufLen);
+	memcpy(hashBuf, currHash, MIN(hashBufLen, sizeof(currHash)));
 
 	/* If we were asked to, supply the password as well. The string is always null terminated */
 	if (NULL != passwordOut) {
@@ -377,21 +380,27 @@ bool_t RT_query(RainbowTable_t * self,
 	CHECK(NULL != hash);
 	CHECK(NULL != resPassword);
 
-	/* init currPass to the given hash */
-	memcpy(currHash, hash, MIN(hashLen, sizeof(currHash)));
+
+
 
 	/* walk the chain corresponding to the given hash, trying to find a match */
 	/* (j runs between 0 to chainLength + 1, since 0 means regular hashing, 1 is a chain of 1 cycle, etc...) */
-	for (j = 0;  j < self->config->chainLength;  ++j) {
+	for (j = 0;  j < self->config->chainLength + 1;  ++j) {
+		/* init currHash to the given hash */
+		memcpy(currHash, hash, MIN(hashLen, sizeof(currHash)));
+
 		/* in each step, we procceed one step down the chain (using the appropriate seed) */
-		memcpy(currHash, hash, hashLen);
+		printf("before=%lu, ", *((ulong_t *) currHash));
 		CHECK(buildChain(TRUE,
-				 self->config->seeds + j, self->config->chainLength - j,
+				 self->config->seeds, j,
 				 self->hashFunc,
 			 	 self->passGenerator, self->generatorPassword,
 				 NULL, 0,
 				 currHash, hashLen,
 				 NULL, 0));
+
+		printf("after=%lu\n", *((ulong_t *) currHash));
+
 		
 		/* Now we have a hash that may be in the rainbow table - try looking for it */
 		foundChainBeginPasswordLen = query_DEHT(self->hashTable, 

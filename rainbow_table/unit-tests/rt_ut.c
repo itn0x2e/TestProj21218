@@ -10,7 +10,7 @@
 
 
 #define HASH_FUNC_NAME ("MD5")
-#define RAINBOW_CHAIN_LEN (1)
+#define RAINBOW_CHAIN_LEN (0)
 #define HASH_TABLE_FILE_PREFIX ("rainbow_test")
 #define HASH_TABLE_ENTRIES 100
 #define HASH_TABLE_PAIRS_PER_BLOCK (100)
