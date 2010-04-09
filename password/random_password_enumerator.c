@@ -5,6 +5,7 @@
 static ulong_t getRandomIndex(const passwordEnumerator_t * passwordEnumerator);
 
 void randomPasswordEnumeratorInitialize(randomPasswordEnumerator_t * self, const passwordGenerator_t * generator, char * buf, ulong_t iterations) {
+	/* TODO: document that there is a precondition that this function is invoked only if (generatorSize > 0) */
 	passwordEnumerator_t * enumerator =  (passwordEnumerator_t *) self;
 
 	passwordEnumeratorInitialize(enumerator, generator, buf);

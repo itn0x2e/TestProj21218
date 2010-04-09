@@ -137,6 +137,10 @@ passwordEnumerator_t * createPasswordEnumerator(
 	if (all) {
 		allPasswordEnumeratorInitialize((allPasswordEnumerator_t *) enumerator, generator, password);
 	} else {
+		if ((0 == passwordGeneratorGetSize(generator)) && (n > 0)) {
+			fprintf(stderr, "Error: No password matches the specified rule\n");
+			return NULL;
+		}
 		randomPasswordEnumeratorInitialize((randomPasswordEnumerator_t *) enumerator, generator, password, n);
 	}
 	
