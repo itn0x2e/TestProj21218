@@ -53,6 +53,7 @@ static bool_t buildChain(bool_t crackingMode,
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != seeds);
+	CHECK(NULL != hashFunc);
 
 	CHECK(NULL != passGenerator);
 	CHECK(NULL != generatorPassword);
@@ -357,6 +358,9 @@ bool_t RT_query(RainbowTable_t * self,
 	byte_t foundPassword[MAX_PASSWORD_LEN];
 	byte_t foundHash[MAX_DIGEST_LEN];
 
+	char tempOrgHash[2 * MAX_DIGEST_LEN + 1];
+	char tempFoundHash[2 * MAX_DIGEST_LEN + 1];
+
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != self);
@@ -400,11 +404,23 @@ bool_t RT_query(RainbowTable_t * self,
 				 currHash, hashLen,
 				 foundPassword, sizeof(foundPassword)));
 
+		/* calc hash of found password */
+		if (0 == self->hashFunc(foundPassword, strlen((char *) foundPassword), foundHash)) {
+
+			TRACE("error calculating hash!");
+
+			/* live to fight another day... */
+			continue;
+		}
+
 		if (0 != memcmp(foundHash, hash, hashLen)) {
-			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password %s was a false alarm (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
+			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password \"%s\" was a false alarm (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
+			binary2hexa(hash, hashLen, tempOrgHash, sizeof(tempOrgHash));
+			binary2hexa(foundHash, hashLen, tempFoundHash, sizeof(tempFoundHash));
+			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): orig=%s, found=%s\n", __FILE__, __LINE__, __FUNCTION__, tempOrgHash, tempFoundHash));
 		}
 		else {
-			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password %s matched! (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
+			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): password \"%s\" matched! (depth=%lu)\n", __FILE__, __LINE__, __FUNCTION__, foundPassword, j));
 			SAFE_STRNCPY((char *) resPassword, (char *) foundPassword, resPasswordLen);
 
 			ret = TRUE;

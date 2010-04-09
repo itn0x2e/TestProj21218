@@ -10,7 +10,7 @@
 
 
 #define HASH_FUNC_NAME ("MD5")
-#define RAINBOW_CHAIN_LEN (0)
+#define RAINBOW_CHAIN_LEN (1)
 #define HASH_TABLE_FILE_PREFIX ("rainbow_test")
 #define HASH_TABLE_ENTRIES 100
 #define HASH_TABLE_PAIRS_PER_BLOCK (100)
@@ -76,6 +76,9 @@ bool_t testCrackPassword(RainbowTable_t * rt,
 	CHECK(0 != hashFunc((byte_t *) crackedPassword, strlen(crackedPassword), crackedPasswordHash));
 
 	CHECK(0 == memcmp(hash, crackedPasswordHash, hashLen));
+
+	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): cracked password=%s\n", __FILE__, __LINE__, __FUNCTION__, password));
+
 	if (0 != strcmp(password, crackedPassword)) {
 		printf(">>>>>> found a collision for password \"%s\", but it's a different password: %s\n", password, crackedPassword);
 	}
@@ -117,8 +120,10 @@ bool_t testCrackAllPasswordsInRange(RainbowTable_t * rt,
 	allPasswordEnumeratorInitialize(&passEnumerator, passGen, passBuf);
 
 	while(passwordEnumeratorCalculateNextPassword((passwordEnumerator_t *) &passEnumerator)) {
-		/*CHECK(testCrackPassword(rt, hashFunc, genPass));*/
-		testCrackPassword(rt, hashFunc, genPass);
+		/*CHECK(testCrackPassword(rt, hashFunc, passBuf));*/
+		testCrackPassword(rt, hashFunc, passBuf);
+		/*testCrackPassword(rt, hashFunc, genPass);*/
+		/*printf(">>>>>> problematic password: \"%s\"\n", passBuf);*/
 	}
 	
 	ret = TRUE;
