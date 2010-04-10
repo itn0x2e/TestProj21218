@@ -101,6 +101,10 @@ typedef struct KeyFilePair_s {
 } KeyFilePair_t;
 
 
+typedef void (* DEHT_enumerationCallback_t) (int bucketIndex,
+					 byte_t * key, ulong_t keyLen,
+					 byte_t * data, ulong_t dataLen, void * param);
+
 
 
 /******************************************************************/
@@ -366,6 +370,9 @@ int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
 *		 As noted earlier, this function WILL NOT free the buffer. This part is handled by
 *		 DEHT_freeResources(), which is called on object destruction (lock_DEHT_files()).
 *
+* @note This function should been static (~private). It is only exposed for the purpose
+*	of the textual dumping of the rainbow table
+*
 * @param ht - hash table object
 *
 * @ret DEHT_STATUS_SUCCESS on successful dump to disk, DEHT_STATUS_NOT_NEEDED if the buffer isn't
@@ -373,6 +380,24 @@ int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
 *
 */
 int DEHT_writeUserBytes(DEHT * ht);
+
+
+
+/**
+* Function brief description: call the callback for record in the hash table
+* Function desc: This function uses DEHT_enumerateBucket() to call the user defined callback 
+*		 once for each valid record in each key block in each bucket.
+*		 The callback is supplied with the corresponding bucket index, key and data.
+*
+* @param ht - hash table object
+* @param callback - a call back to call (must not be null)
+* @param param - generic parameter for use by the callback (can be null)
+*
+* @ret TRUE on success, FALSE otherwise
+*
+*/
+bool_t DEHT_enumerate(DEHT * ht, 
+		      DEHT_enumerationCallback_t callback, void * param);
 
 
 #endif

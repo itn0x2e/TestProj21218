@@ -49,4 +49,24 @@ void RT_close(RainbowTable_t * self);
 
 bool_t RT_query(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, bool_t * found);
 
+
+bool_t RT_print(FILE * seedsAndPasswordsFd,
+		FILE * chainsFd,
+
+		const passwordGenerator_t * passGenerator,
+		char * generatorPassword,
+		ulong_t passwordMaxLen,
+		const char * hashTableFilePrefix);
+
+
+void goDownChain(byte_t * curHash,
+		uint_t curHashLen,
+		const passwordGenerator_t * passwordGenerator,
+		ulong_t numPossiblePasswords,
+		char * pass,
+		BasicHashFunctionPtr cryptHashPtr,
+		const RainbowSeed_t * seeds,
+		ulong_t iterations);
+
+
 #endif /* __RAINBOW_TABLE_H__ */

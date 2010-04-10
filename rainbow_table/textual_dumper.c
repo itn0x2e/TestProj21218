@@ -3,11 +3,20 @@
 #include "../common/constants.h"
 #include "../common/utils.h"
 #include "../common/misc.h"
-#include "../common/io.h"
 #include "../common/types.h"
 #include "../DEHT/DEHT.h"
 #include "../DEHT/hash_funcs.h"
 #include "rainbow_table.h"
+
+
+
+
+typedef struct htEnumerationParams_s {
+	RainbowTable_t * rt;
+
+	FILE * passwordsFd;
+	FILE * chainsFd;
+} htEnumerationParams_t;
 
 static bool_t printSeeds(RainbowTable_t * rt, FILE * fd)
 {
@@ -26,7 +35,7 @@ static bool_t printSeeds(RainbowTable_t * rt, FILE * fd)
 	CHECK(NULL != fd);
 
 	/* load user bytes buffer */
-	CHECK(DEHT_STATUS_FAIL != DEHT_readUserBytes(rt->hashTable, (void **) &(rt->config), &userBytesSize));
+	CHECK(DEHT_STATUS_FAIL != DEHT_getUserBytes(rt->hashTable, (byte_t **) &(rt->config), &userBytesSize));
 	CHECK(NULL != rt->config);
 	CHECK(userBytesSize == sizeof(RainbowTableConfig_t) + rt->config->chainLength * sizeof(RainbowSeed_t));
 
@@ -52,32 +61,57 @@ LBL_CLEANUP:
 }
 
 
-bool_t printAndVerifyChain(RainbowTable_t * rt, FILE * outputFD,
+bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
 			   char * password, ulong_t passwordLen,
 			   byte_t * hashOut, ulong_t hashOutLen)
 {
 	bool_t ret = FALSE;
 
-	byte_t verifiedHash[MAX_DIGEST_LEN];
+	byte_t curHash[MAX_DIGEST_LEN];
+	char hashStr[MAX_DIGEST_LEN * 2 + 1];
+	int hashLen = 0;
+	
+	ulong_t j = 0;
+	ulong_t numPossiblePasswords;
 
 	TRACE_FUNC_ENTRY();	
 
 	CHECK(NULL != rt);
+	CHECK(NULL != outputFd);
 	CHECK(NULL != password);
+	CHECK(NULL != hashOut);
+	
+	numPossiblePasswords = passwordGeneratorGetSize(rt->passGenerator);
 
-	/* scan the chain and print in the process */
-	CHECK(buildChain(FALSE,
-			rt->config->seeds, rt->config->chainLength,
-			rt->hashFunc,
-			rt->passGenerator, (byte_t *) rt->generatorPassword,
-			(byte_t *) password, passwordLen,
-			verifiedHash, sizeof(verifiedHash),
-			NULL, 0,
-			outputFD));
+       /* first, print the initial password */
+        fprintf(outputFd, "%s", password);
+        
+        /* calculate its hash */
+        CHECK(NULL != rt->hashFunc);
+        hashLen = cryptHash(rt->hashFunc, password, curHash);
+        CHECK(0 != hashLen);
+        
+        /* print the hash (in hex) */
+        binary2hexa(curHash, hashLen, hashStr, sizeof(hashStr));
+        fprintf(outputFd, "\t%s", hashStr);
 
+
+	for (j = 0; j < rt->config->chainLength; ++j) {
+		/* k = pseudo-random-function with seed seed[j] and input curHash; */
+		RainbowSeed_t k = pseudo_random_function(curHash, hashLen, rt->config->seeds[j]); /*! TODO: yet to be implemented */
+	
+		/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
+		k %= numPossiblePasswords;
+		passwordGeneratorCalculatePassword(rt->passGenerator, k, rt->password);
+		cryptHash(rt->hashFunc, rt->password, curHash);
+	
+		fprintf(outputFd, "\t%s", rt->password);
+		binary2hexa(curHash, hashLen, hashStr, sizeof(hashStr));
+		fprintf(outputFd, "\t%s", hashStr);
+	}
 
 	/* copy result hash to user */
-	memcpy(hashOut, verifiedHash, MIN(sizeof(verifiedHash), hashOutLen));
+	memcpy(hashOut, curHash, MIN(sizeof(curHash), hashOutLen));
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
@@ -94,175 +128,102 @@ LBL_CLEANUP:
 
 
 
-static bool_t printPasswordsAndChainsInBlock(RainbowTable_t * rt, 
-					     byte_t * currKeyBlock, ulong_t bucketId, 
-					     FILE * file1, FILE * file2)
+static void hashTableEnumerationFunc(int bucketIndex,
+				     byte_t * key, ulong_t keySize, 
+				     byte_t * data, ulong_t dataLen,
+				     void * params)
 {
+	htEnumerationParams_t * enumerationParams = params;
 
-	bool_t ret = FALSE;
+	byte_t verifiedHash[MAX_DIGEST_LEN];
 
-	ulong_t keyIndex = 0;
-
-	KeyFilePair_t * currKeyPair = NULL;
-
-	byte_t currPassword[MAX_PASSWORD_LEN];
-	ulong_t bytesRead = 0;
-
-	byte_t chainHash[MAX_DIGEST_LEN];
-	ulong_t hashLen;
-
-	int chainHashTableIndex = 0;
-	byte_t chainValidationKey[8];
-	
+	int verifiedBucketIndex = 0;
+	byte_t verifiedValidationKey[BYTES_PER_KEY];
 
 	TRACE_FUNC_ENTRY();
 
-	CHECK(NULL != rt);
-	CHECK(NULL != file1);
-	CHECK(NULL != file2);
-	CHECK(NULL != currKeyBlock);
+	CHECK(NULL != key);
+	CHECK(NULL != data);
+	CHECK(NULL != params);
 
-	hashLen = getHashFunDigestLength(rt->hashFunc);
-	CHECK(0 != hashLen);
+	CHECK(NULL != enumerationParams->rt);
+	CHECK(NULL != enumerationParams->passwordsFd);
+	CHECK(NULL != enumerationParams->chainsFd);
 
-	for (keyIndex = 0;  keyIndex < GET_USED_RECORD_COUNT(currKeyBlock); ++keyIndex) {
-		currKeyPair = GET_N_REC_PTR_IN_BLOCK(rt->hashTable, currKeyBlock, keyIndex);
-		
-		CHECK(DEHT_readDataAtOffset(rt->hashTable, currKeyPair->dataOffset,
-					    currPassword, sizeof(currPassword) - 1, &bytesRead));
-		/* terminate */
-		currPassword[MIN(bytesRead, sizeof(currPassword) - 1)] = 0x00;
-
-		fprintf(file1, "%s\n", currPassword);
-
-		/* keep going even if we encounter an error on a single password */
-		if (!printAndVerifyChain(rt, file2,
-					   (char *) currPassword, bytesRead,
-					   chainHash, sizeof(chainHash))) {
-			continue;
-		}
-
-		/* Compute the two sub-indices created based on this hash */
-		chainHashTableIndex = DEHT_keyToTableIndexHasher(chainHash, hashLen, rt->hashTable->header.numEntriesInHashTable);
-		(void) DEHT_keyToValidationKeyHasher64(chainHash, hashLen, (byte_t *) &chainValidationKey);
-
-		/* compare to the current pair state */
-		if ((bucketId != chainHashTableIndex) || (0 != memcmp(chainValidationKey, currKeyPair->key, sizeof(chainValidationKey)))) {
-			fprintf(stderr, "Error: when begin with %s get wrong chainn\n", currPassword);
-
-			/* (fail silently here, to keep testing all the entries in the table */
-		}
-
-	}
-
-	ret = TRUE;
-	goto LBL_CLEANUP;
-
-LBL_ERROR:
-	TRACE_FUNC_ERROR();
-	ret = FALSE;
-
-LBL_CLEANUP:
-	TRACE_FUNC_EXIT();
-	return ret;
-}
-
-
-static bool_t printPasswordsAndChains(RainbowTable_t * rt, 
-				      FILE * file1, FILE * file2)
-{
-	bool_t ret = FALSE;
-
-	ulong_t bucketId = 0;
-
-	byte_t * currKeyBlock = NULL;
-	DEHT_DISK_PTR currBlockDiskOffset = 0;
-
-	TRACE_FUNC_ENTRY();
-
-	CHECK(NULL != rt);
-	CHECK(NULL != file1);
-	CHECK(NULL != file2);
-
-	/* alloc a block for scanning the DEHT */
-	currKeyBlock = malloc(KEY_FILE_BLOCK_SIZE(rt->hashTable));
-	CHECK(NULL != currKeyBlock);
-
-	fprintf(file1, "Passwords:\n");
-
-	/* Dump passwords, guided by the key file. We use this method rather than directly pulling info from the data file, there may have been
-	   collision, causing some data in data file to no longer be relevant */
-	/* scan each bucket */
-	for (bucketId = 0;  bucketId <  rt->hashTable->header.numEntriesInHashTable; ++bucketId) {
-		/* read the first block */
-		currBlockDiskOffset = DEHT_findFirstBlockForBucket(rt->hashTable, bucketId);
-		if (0 == currBlockDiskOffset) {
-			TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): bucket %lu is empty\n", __FILE__, __LINE__, __FUNCTION__, bucketId));
-			continue;
-		}
-
-		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): passwords for bucket %lu:\n", __FILE__, __LINE__, __FUNCTION__, bucketId));
-
-		/* walk the block linked list */
-		while(0 != currBlockDiskOffset) {
-			/* read block to memory */
-			CHECK(pfread(rt->hashTable->keyFP, currBlockDiskOffset, currKeyBlock, KEY_FILE_BLOCK_SIZE(rt->hashTable)));
-
-			/* dump passwords */
-			CHECK(printPasswordsAndChainsInBlock(rt, 
-								currKeyBlock, bucketId,
-								file1, file2));
-
-			/* move to next block */
-			currBlockDiskOffset = GET_NEXT_BLOCK_PTR(rt->hashTable, currKeyBlock);
-		}
-	}
-
-
-	fprintf(file1, "\n");
-
-	ret = TRUE;
-	goto LBL_CLEANUP;
-
-LBL_ERROR:
-	TRACE_FUNC_ERROR();
-	ret = FALSE;
-
-LBL_CLEANUP:
-
-	FREE(currKeyBlock);
 	
+	fprintf(enumerationParams->passwordsFd, "%s\n", data);
+
+
+	CHECK(calcAndPrintChain(enumerationParams->rt, enumerationParams->chainsFd,
+				(char *) data, dataLen,
+				verifiedHash, sizeof(verifiedHash)));
+
+	/* calculate this hash's corresponding table index */
+	verifiedBucketIndex = DEHT_keyToTableIndexHasher(verifiedHash, getHashFunDigestLength(enumerationParams->rt->hashFunc), enumerationParams->rt->hashTable->header.numEntriesInHashTable);
+
+	/* calculate this hash's validation key */
+	(void) DEHT_keyToValidationKeyHasher64(verifiedHash, getHashFunDigestLength(enumerationParams->rt->hashFunc), verifiedValidationKey);
+
+
+	if ((verifiedBucketIndex != bucketIndex) || (0 != memcmp(verifiedValidationKey, key, keySize))) {
+		fprintf(enumerationParams->chainsFd, "Error: when begin with %s get wrong chain\n", data);
+	}
+
+	goto LBL_CLEANUP;
+
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	
+LBL_CLEANUP:
 	TRACE_FUNC_EXIT();
-	return ret;
+	return;
 }
 
 
-bool_t RT_print(FILE * file1, FILE * file2,
+
+bool_t RT_print(FILE * seedsAndPasswordsFd,
+		FILE * chainsFd,
 
 		const passwordGenerator_t * passGenerator,
 		char * generatorPassword,
-
+		ulong_t passwordMaxLen,
 		const char * hashTableFilePrefix)
 {
 	bool_t ret = FALSE;
 
 	RainbowTable_t * rt = NULL;
 
-
+	htEnumerationParams_t enumerationParams;
 
 	TRACE_FUNC_ENTRY();
 
+	CHECK(NULL != seedsAndPasswordsFd);
+	CHECK(NULL != chainsFd);
+
 	CHECK(NULL != hashTableFilePrefix);
-	CHECK(NULL != file1);
-	CHECK(NULL != file2);
+	CHECK(NULL != passGenerator);
+	CHECK(NULL != generatorPassword);
 
 
+	/* Open rainbow table (all caches off, since we'll be doing sequencial access */
 	rt = RT_open(passGenerator, generatorPassword, 
-		     hashTableFilePrefix);
+		     passwordMaxLen, hashTableFilePrefix,
+		     FALSE, FALSE);
 	CHECK(NULL != rt);
 
-	CHECK(printSeeds(rt, file1));
-	CHECK(printPasswordsAndChains(rt, file1, file2));
+
+	/* print seeds */	
+	CHECK(printSeeds(rt, seedsAndPasswordsFd));
+
+	/* set up enumeration params */
+	memset(&enumerationParams, 0, sizeof(enumerationParams));
+	enumerationParams.rt = rt;
+	enumerationParams.passwordsFd = seedsAndPasswordsFd;
+	enumerationParams.chainsFd = chainsFd;
+
+	/* scan all chains */	
+	CHECK(DEHT_enumerate(rt->hashTable, hashTableEnumerationFunc, (void *) &enumerationParams));
 
 	ret = TRUE;
 	goto LBL_CLEANUP;
