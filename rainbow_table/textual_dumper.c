@@ -30,14 +30,13 @@ static bool_t printSeeds(RainbowTable_t * rt, FILE * fd)
 
 	TRACE_FUNC_ENTRY();
 
-
 	CHECK(NULL != rt);
 	CHECK(NULL != fd);
 
 	/* load user bytes buffer */
 	CHECK(DEHT_STATUS_FAIL != DEHT_getUserBytes(rt->hashTable, (byte_t **) &(rt->config), &userBytesSize));
 	CHECK(NULL != rt->config);
-	CHECK(userBytesSize == sizeof(RainbowTableConfig_t) + rt->config->chainLength * sizeof(RainbowSeed_t));
+	CHECK(userBytesSize == getConfigSize(rt->config->chainLength));
 
 
 	fprintf(fd, "Seeds:\n");
@@ -84,7 +83,7 @@ bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
 	numPossiblePasswords = passwordGeneratorGetSize(rt->passGenerator);
 
        /* first, print the initial password */
-        fprintf(outputFd, "%s", password);
+        fprintf(outputFd, "firstPass=%s", password);
         
         /* calculate its hash */
         CHECK(NULL != rt->hashFunc);
@@ -93,7 +92,7 @@ bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
         
         /* print the hash (in hex) */
         binary2hexa(curHash, hashLen, hashStr, sizeof(hashStr));
-        fprintf(outputFd, "\t%s", hashStr);
+        fprintf(outputFd, "\tfirstHash=%s", hashStr);
 
 
 	for (j = 0; j < rt->config->chainLength; ++j) {
@@ -105,9 +104,12 @@ bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
 		passwordGeneratorCalculatePassword(rt->passGenerator, k, rt->password);
 		cryptHash(rt->hashFunc, rt->password, curHash);
 	
-		fprintf(outputFd, "\t%s", rt->password);
+		/* print appropriate password */
+		fprintf(outputFd, "\tpass=%s", rt->password);
+
+		/* print corresponding hash */
 		binary2hexa(curHash, hashLen, hashStr, sizeof(hashStr));
-		fprintf(outputFd, "\t%s", hashStr);
+		fprintf(outputFd, "\thash=%s", hashStr);
 	}
 
 	/* copy result hash to user */
@@ -166,7 +168,7 @@ static void hashTableEnumerationFunc(int bucketIndex,
 
 
 	if ((verifiedBucketIndex != bucketIndex) || (0 != memcmp(verifiedValidationKey, key, keySize))) {
-		fprintf(enumerationParams->chainsFd, "Error: when begin with %s get wrong chain", data);
+		fprintf(enumerationParams->chainsFd, "\nError: when begin with %s get wrong chain", data);
 	}
 
 	fprintf(enumerationParams->chainsFd, "\n");
@@ -223,6 +225,10 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 	enumerationParams.rt = rt;
 	enumerationParams.passwordsFd = seedsAndPasswordsFd;
 	enumerationParams.chainsFd = chainsFd;
+
+
+	/* write description into files */
+	fprintf(seedsAndPasswordsFd, "Passwords:\n");
 
 	/* scan all chains */	
 	CHECK(DEHT_enumerate(rt->hashTable, hashTableEnumerationFunc, (void *) &enumerationParams));

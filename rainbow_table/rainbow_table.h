@@ -25,6 +25,9 @@ typedef struct RainbowTable_s {
 	ulong_t passwordLength;
 } RainbowTable_t;
 
+
+ulong_t getConfigSize(ulong_t chainLength);
+
 /* only for generation - for queries, use the RT_open, RT_query interface */
 bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   const passwordGenerator_t * passwordGenerator,
