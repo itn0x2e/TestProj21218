@@ -14,30 +14,49 @@
 
 #define STR_TOKENIZE(x) #x
 
-#define PERROR() perror("Error")
+
 
 #ifdef DEBUG
 	#define TRACE(msg) fprintf(stderr, "TRACE: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
-	#define TRACE_FPRINTF(params) fprintf params
-
-	#define ERROR(msg) fprintf(stderr, "ERROR: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg); \
-				if (0 != errno) { \
-			   		perror("possible error cause"); \
-				}
-	#define WARN(msg) fprintf(stderr, "WARNING: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
-
 #else
 	#define TRACE(msg) /* In release - do nothing for trace messages */
-	#define TRACE_FPRINTF(params)  
-
-	#define ERROR(msg) perror("ERROR: " msg ". Possible error cause")
-	#define WARN(msg) perror("WARNING: " msg)
-
 #endif /* DEBUG */
+
 
 #define TRACE_FUNC_ENTRY() TRACE("entered")
 #define TRACE_FUNC_EXIT() TRACE("exiting")
 #define TRACE_FUNC_ERROR() TRACE("exiting due to error")
+
+
+#ifdef DEBUG
+	#define TRACE_FPRINTF(params) fprintf params
+#else
+	#define TRACE_FPRINTF(params)  
+#endif /* DEBUG */
+
+
+#ifdef DEBUG
+	#define WARN(msg) fprintf(stderr, "WARNING: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg)
+#else
+	#define WARN(msg) perror("WARNING: " msg)
+#endif /* DEBUG */
+
+
+#ifdef DEBUG
+	#define ERROR(msg) fprintf(stderr, "ERROR: %s:%d (%s): %s\n", __FILE__, __LINE__, __FUNCTION__, msg); \
+				if (0 != errno) { \
+			   		perror("possible error cause"); \
+				}
+#else 
+	#define ERROR(msg) perror("ERROR: " msg ". Possible error cause")
+#endif /* DEBUG */
+
+
+
+	
+#define PERROR() perror("Error")
+
+
 
 #define ASSERT(x) \
 		assert(x);
@@ -48,16 +67,36 @@
 
 
 #ifdef DEBUG
-	#define CHECK(x) if (!(x)) {  \
-				ERROR("Assertion failed: " #x); \
+	#define CHECK(cond) if (!(cond)) {  \
+				ERROR("Assertion failed: " #cond); \
 				goto LBL_ERROR; \
 			 }
+
 #else
-	#define CHECK(x) if (!(x)) {  \
+	#define CHECK(cond) if (!(cond)) {  \
 				/* silent in release */ \
 				goto LBL_ERROR; \
 			 }
 #endif /* DEBUG */
+
+
+
+#ifdef DEBUG
+	#define CHECK_MSG(msg, cond) if (!(cond)) {  \
+				ERROR("Assertion failed: " #cond); \
+				perror(msg); \
+				goto LBL_ERROR; \
+			 }
+
+#else
+	#define CHECK_MSG(msg, cond) if (!(cond)) {  \
+				perror(msg); \
+				goto LBL_ERROR; \
+			 }
+#endif /* DEBUG */
+
+
+
 
 #define FREE(x) \
 		if(NULL != x) { \

@@ -270,13 +270,13 @@ DEHT * create_empty_DEHT(const char *prefix,
 	ht->header.numUnrelatedBytesSaved = nUserBytes;
 
 	/* write header to disk */
-	CHECK(1 == fwrite(&(ht->header), sizeof(ht->header), 1, ht->keyFP));
+	CHECK_MSG(ht->sKeyfileName, (1 == fwrite(&(ht->header), sizeof(ht->header), 1, ht->keyFP)));
 
 	/* write (empty) pointer table to disk */
-	CHECK(growFile(ht->keyFP, sizeof(DEHT_DISK_PTR) * numEntriesInHashTable));
+	CHECK_MSG(ht->sKeyfileName, (growFile(ht->keyFP, sizeof(DEHT_DISK_PTR) * numEntriesInHashTable)));
 
 	/* write (empty) user data to disk */
-	CHECK(growFile(ht->dataFP, ht->header.numUnrelatedBytesSaved));
+	CHECK_MSG(ht->sKeyfileName, (growFile(ht->dataFP, ht->header.numUnrelatedBytesSaved)));
 
 
 
@@ -312,8 +312,8 @@ DEHT * load_DEHT_from_files(const char *prefix, hashKeyIntoTableFunctionPtr hash
 	CHECK(NULL != ht);
 
 	/* load dict settings from file */
-	CHECK(1 == fread(&(ht->header), sizeof(ht->header), 1, ht->keyFP));
-	CHECK(DEHT_HEADER_MAGIC == ht->header.magic);
+	CHECK_MSG(ht->sKeyfileName, (1 == fread(&(ht->header), sizeof(ht->header), 1, ht->keyFP)));
+	CHECK_MSG("corrupted key file", (DEHT_HEADER_MAGIC == ht->header.magic));
 
 
 	goto LBL_CLEANUP;	
@@ -341,6 +341,7 @@ LBL_CLEANUP:
 static DEHT * DEHT_initInstance (const char * prefix, char * fileMode, 
 			   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun)
 {
+	bool_t filesAlreadyExist = FALSE;
 	bool_t errorState = TRUE;
 	bool_t deleteFilesOnError = FALSE;
 
@@ -357,7 +358,7 @@ static DEHT * DEHT_initInstance (const char * prefix, char * fileMode,
 	CHECK(NULL != validfun);
 
 	ht = malloc(sizeof(DEHT));
-	CHECK(NULL != ht);
+	CHECK_MSG("malloc", (NULL != ht));
 
 	memset(ht, 0, sizeof(DEHT));
 
@@ -374,14 +375,19 @@ static DEHT * DEHT_initInstance (const char * prefix, char * fileMode,
 		ht->keyFP = fopen(ht->sKeyfileName, "rb");
 		if (NULL != ht->keyFP) {
 			deleteFilesOnError = FALSE;
-			FAIL("key file already exists!");
+			filesAlreadyExist = TRUE;
+			fprintf(stderr, "Error: File %s already exists\n", ht->sKeyfileName);
 		}
 
 		ht->dataFP = fopen(ht->sDatafileName, "rb");
 		if (NULL != ht->dataFP) {
 			deleteFilesOnError = FALSE;
-			FAIL("data file already exists!");
+			filesAlreadyExist = TRUE;
+			fprintf(stderr, "Error: File %s already exists\n", ht->sDatafileName);
 		}
+
+		/* fail if files already exist */
+		CHECK(!filesAlreadyExist);
 
 		/* that check passed. Now modify the file mode back to a standard one */
 		tempFileMode[0] = 'w';
@@ -391,13 +397,11 @@ static DEHT * DEHT_initInstance (const char * prefix, char * fileMode,
 
 	/* Open key file */
 	ht->keyFP = fopen(ht->sKeyfileName, tempFileMode);
-	CHECK(NULL != ht->keyFP);
-	/*! CHECK(0 == setvbuf(ht->keyFP, NULL, _IOFBF, 256)); !*/
+	CHECK_MSG(ht->sKeyfileName, (NULL != ht->keyFP));
 
 	/* Open data file */
 	ht->dataFP = fopen(ht->sDatafileName, tempFileMode);
-	CHECK(NULL != ht->dataFP);
-	/*! CHECK(0 == setvbuf(ht->dataFP, NULL, _IOFBF, 256)); !*/
+	CHECK_MSG(ht->sDatafileName, (NULL != ht->dataFP));
 	
 	ht->hashTableOfPointersImageInMemory = NULL;
 	ht->hashPointersForLastBlockImageInMemory = NULL;
@@ -450,7 +454,7 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 
 	/* allocate a buffer for DEHT_queryEx */
 	tempKeyBlock = malloc(KEY_FILE_BLOCK_SIZE(ht));
-	CHECK(NULL != tempKeyBlock);
+	CHECK_MSG("malloc", (NULL != tempKeyBlock));
 	
 	ret = DEHT_queryEx(ht, key, keyLength, tempData, sizeof(tempData), tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht), 
 				  &keyBlockDiskOffset, &keyIndex);
@@ -484,7 +488,7 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 		targetRecord->dataOffset = newDataOffset;
 
 		/* update block on disk */
-		CHECK(pfwrite(ht->keyFP, keyBlockDiskOffset, tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht)));
+		CHECK_MSG(ht->sKeyfileName, (pfwrite(ht->keyFP, keyBlockDiskOffset, tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht))));
 
 		ret = DEHT_STATUS_NOT_NEEDED;
 		
@@ -530,7 +534,7 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): bucket index=%#x\n", __FILE__, __LINE__, __FUNCTION__, hashTableIndex));
 
 	blockContent = malloc(KEY_FILE_BLOCK_SIZE(ht));
-	CHECK(NULL != blockContent);
+	CHECK_MSG("malloc", (NULL != blockContent));
 	CHECK(DEHT_allocEmptyLocationInBucket(ht, hashTableIndex, blockContent, KEY_FILE_BLOCK_SIZE(ht),
 					     &keyBlockOffset, &freeIndex));
 
@@ -548,7 +552,7 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	CHECK(DEHT_addData(ht, data, dataLength, &(targetRec->dataOffset)));
 
 	/* write updated block to disk */
-	CHECK(pfwrite(ht->keyFP, keyBlockOffset, blockContent, KEY_FILE_BLOCK_SIZE(ht)));
+	CHECK_MSG(ht->sKeyfileName, (pfwrite(ht->keyFP, keyBlockOffset, blockContent, KEY_FILE_BLOCK_SIZE(ht))));
 
 	TRACE("block updated");
 
@@ -585,7 +589,7 @@ int query_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 
 	/* allocate a buffer for DEHT_queryEx */
 	tempKeyBlock = malloc(KEY_FILE_BLOCK_SIZE(ht));
-	CHECK(NULL != tempKeyBlock);
+	CHECK_MSG("malloc", (NULL != tempKeyBlock));
 	
 	ret = DEHT_queryEx(ht, key, keyLength, data, dataMaxAllowedLength, tempKeyBlock, KEY_FILE_BLOCK_SIZE(ht), 
 				  &keyBlockDiskOffset, &keyIndex);
@@ -653,7 +657,7 @@ static int DEHT_queryEx(DEHT *ht, const unsigned char *key, int keyLength, const
 
 	/* alloc space and calc validation key */
 	validationKey = malloc(ht->header.nBytesPerValidationKey);
-	CHECK(NULL != validationKey);
+	CHECK_MSG("malloc", (NULL != validationKey));
 
 	/*! Note: return value isn't checked since the spec failed to include details regarding the key 
 		  validation function interface */
@@ -662,7 +666,7 @@ static int DEHT_queryEx(DEHT *ht, const unsigned char *key, int keyLength, const
 
 	while (0 != *keyBlockDiskOffset) {
 		/* read block to mem */
-		CHECK(pfread(ht->keyFP, *keyBlockDiskOffset, keyBlockOut, KEY_FILE_BLOCK_SIZE(ht)));
+		CHECK_MSG(ht->sKeyfileName, (pfread(ht->keyFP, *keyBlockDiskOffset, keyBlockOut, KEY_FILE_BLOCK_SIZE(ht))));
 
 		/* scan this block */
 		for(*keyIndex = 0;  *keyIndex < ht->header.nPairsPerBlock;  ++*keyIndex) {
@@ -735,9 +739,9 @@ int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize)
 	}
 
 	ht->userBuf = malloc(ht->header.numUnrelatedBytesSaved);
-	CHECK(NULL != ht->userBuf);
+	CHECK_MSG("malloc", (NULL != ht->userBuf));
 
-	CHECK(pfread(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved));
+	CHECK_MSG(ht->sDatafileName, (pfread(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved)));
 
 	*bufSize = ht->header.numUnrelatedBytesSaved;
 	*bufPtr = ht->userBuf;
@@ -750,7 +754,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
-	if (!ret) {
+	if (DEHT_STATUS_FAIL == ret) {
 		FREE(ht->userBuf);
 	}
 
@@ -773,7 +777,7 @@ int DEHT_writeUserBytes(DEHT * ht)
 		goto LBL_CLEANUP;
 	}
 
-	CHECK(pfwrite(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved));
+	CHECK_MSG(ht->sDatafileName, (pfwrite(ht->dataFP, DATA_FILE_OFFSET_TO_USER_BYTES, ht->userBuf, ht->header.numUnrelatedBytesSaved)));
 
 	/*! Note that unlink write_DEHT_pointers_table(), we DO NOT free the block here. Since this interface was
 	    not dictated by the project spec, we chose what we found to be a more convenient interface for our use-case,
@@ -809,15 +813,18 @@ int read_DEHT_pointers_table(DEHT *ht)
 
 	/* alloc cache */
 	ht->hashTableOfPointersImageInMemory = malloc(KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht));
-	CHECK(NULL != ht->hashTableOfPointersImageInMemory);
+	CHECK_MSG("malloc", (NULL != ht->hashTableOfPointersImageInMemory));
 
 	/* read the offset table */
-	CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht)));
+	CHECK_MSG(ht->sKeyfileName, (pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht))));
 
 	ret = DEHT_STATUS_SUCCESS;
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
+	/* on error, free the buffer */
+	FREE(ht->hashTableOfPointersImageInMemory);
+
 	ret = DEHT_STATUS_FAIL;
 	TRACE_FUNC_ERROR();
 
@@ -839,9 +846,9 @@ int write_DEHT_pointers_table(DEHT *ht)
 	}
 
 	/* write the offset table */
-	CHECK(pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht)));
+	CHECK_MSG(ht->sKeyfileName, (pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht))));
 
-	/*! I believe this doesn't yield much performance, but the project spec demanded that we free the cache here, so I will !*/
+	/*! The project spec demanded that we free the cache here. It would be better to do so only on destruction, but nevermind */
 	FREE(ht->hashTableOfPointersImageInMemory);
 
 	ret = DEHT_STATUS_SUCCESS;
@@ -854,7 +861,6 @@ LBL_ERROR:
 LBL_CLEANUP:
 	TRACE_FUNC_EXIT();
 	return ret;
-
 }
 
 int calc_DEHT_last_block_per_bucket(DEHT *ht)
@@ -879,7 +885,7 @@ int calc_DEHT_last_block_per_bucket(DEHT *ht)
 	/* alloc cache */
 	rawTableSize = ht->header.numEntriesInHashTable * sizeof(DEHT_DISK_PTR);
 	ht->hashPointersForLastBlockImageInMemory = malloc(rawTableSize);
-	CHECK(NULL != ht->hashPointersForLastBlockImageInMemory);
+	CHECK_MSG("malloc", (NULL != ht->hashPointersForLastBlockImageInMemory));
 
 	for (bucketIndex = 0;  bucketIndex < ht->header.numEntriesInHashTable;  ++bucketIndex) {
 		CHECK(DEHT_findLastBlockForBucketDumb(ht, bucketIndex, ht->hashPointersForLastBlockImageInMemory + bucketIndex));
@@ -918,7 +924,7 @@ static bool_t DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex, DEHT_
 		*blockOffset = ht->hashTableOfPointersImageInMemory[bucketIndex];
 	}
 	else {
-		CHECK(pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) blockOffset, sizeof(*blockOffset)));
+		CHECK_MSG(ht->sKeyfileName, (pfread(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) blockOffset, sizeof(*blockOffset))));
 	}
 
 	ret = TRUE;
@@ -960,7 +966,7 @@ static bool_t DEHT_findFirstBlockForBucketAndAlloc(DEHT * ht, ulong_t bucketInde
 		}
 		else {
 			/* update on-disk ptr */
-			CHECK(pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) blockOffset, sizeof(*blockOffset)));
+			CHECK_MSG(ht->sKeyfileName, (pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + bucketIndex * sizeof(DEHT_DISK_PTR), (byte_t *) blockOffset, sizeof(*blockOffset))));
 		}
 
 		/* if present, update last block cache */
@@ -1009,7 +1015,7 @@ static bool_t DEHT_findLastBlockForBucketDumb(DEHT * ht, ulong_t bucketIndex, DE
 		*lastBlockOffset = blockOffset;
 		
 		/* read the offset to the next block from disk */
-		CHECK(pfread(ht->keyFP, blockOffset + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset)));
+		CHECK_MSG(ht->sKeyfileName, (pfread(ht->keyFP, blockOffset + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR), (byte_t *) &blockOffset, sizeof(blockOffset))));
 	}
 
 	ret = TRUE;
@@ -1084,7 +1090,7 @@ static bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 	}
 
 	/* read it */
-	CHECK(pfread(ht->keyFP, *blockDiskPtr, blockDataOut, KEY_FILE_BLOCK_SIZE(ht)));
+	CHECK_MSG(ht->sKeyfileName, (pfread(ht->keyFP, *blockDiskPtr, blockDataOut, KEY_FILE_BLOCK_SIZE(ht))));
 
 	/* get the current used block count */
 	*firstFreeIndex = GET_USED_RECORD_COUNT(blockDataOut);
@@ -1103,7 +1109,7 @@ static bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 			ht->hashPointersForLastBlockImageInMemory[bucketIndex] = newBlock;
 		}
 		
-		CHECK(pfwrite(ht->keyFP, *blockDiskPtr, blockDataOut, KEY_FILE_BLOCK_SIZE(ht)));
+		CHECK_MSG(ht->sKeyfileName, (pfwrite(ht->keyFP, *blockDiskPtr, blockDataOut, KEY_FILE_BLOCK_SIZE(ht))));
 		
 		/* now, just return the reference to the start of the new block */
 		memset(blockDataOut, 0, KEY_FILE_BLOCK_SIZE(ht));
@@ -1173,7 +1179,7 @@ static bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 	CHECK(NULL != bytesRead);
 	*bytesRead = 0;
 
-	CHECK(pfread(ht->dataFP, dataBlockOffset, &dataLen, sizeof(dataLen)));
+	CHECK_MSG(ht->sDatafileName, (pfread(ht->dataFP, dataBlockOffset, &dataLen, sizeof(dataLen))));
 
 	TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): data size is %d\n", __FILE__, __LINE__, __FUNCTION__, dataLen));
 
@@ -1363,5 +1369,4 @@ LBL_ERROR:
 LBL_CLEANUP:
 	TRACE_FUNC_EXIT();
 	return ret;
-
 }
