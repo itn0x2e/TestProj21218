@@ -179,6 +179,9 @@ static DEHT_DISK_PTR DEHT_allocKeyBlock(DEHT * ht);
 * Function brief description: Write a data chunk to the DEHT datastore.
 * Function desc: This function will write the data in the 'data' buffer to disk
 *		 the end of the data file, encapsulating it in the following manner:
+		 the data length is stored as a one byte length indicator,
+*		 then followed by 'length' bytes of data (the data store does not 
+*		 care about null termination).
 *		---------------------------------------------------------------
 *		| LENGTH (1 byte) |   <<<<--- DATA BYTES (up to 255) --->>>>  |
 *		---------------------------------------------------------------
@@ -199,7 +202,10 @@ static bool_t DEHT_addData(DEHT * ht, const byte_t * data, ulong_t dataLen,
 * Function brief description: read a data chunk from the DEHT datastore
 * Function desc: Inside the data file, byte arrays are stored as a one byte length indicator,
 *		 followed by 'length' bytes of data (the data store does not care about null
-*		 termination).
+*		 termination). Illustration:
+*		---------------------------------------------------------------
+*		| LENGTH (1 byte) |   <<<<--- DATA BYTES (up to 255) --->>>>  |
+*		---------------------------------------------------------------
 *
 * @note This function should been static (~private). It is only exposed for the purpose
 *	of the textual dumping of the rainbow table
@@ -250,6 +256,49 @@ static void DEHT_formatFilenames(DEHT * ht, char * prefix);
 static bool_t DEHT_removeFilesInternal(DEHT * ht);
 
 
+
+/**
+* Function brief description: call the callback for each record inside the block
+* Function desc: This function calls the user defined callback once for each valid record
+*		 in the key block given to it.
+*		 The callback is supplied with the corresponding bucket index, key and data.
+*
+* @param ht - hash table object
+* @param blockBuffer - a buffer containing the contents of the block to be iterated upon
+* @param bucketIndex - bucket index in the hash table (needed to pass to the callback)
+* @param callback - a call back to call (must not be null)
+* @param param - generic parameter for use by the callback (can be null)
+*
+* @ret TRUE on success, FALSE otherwise
+*
+*/
+static bool_t DEHT_enumerateBlock(DEHT * ht, 
+				byte_t * blockBuffer,
+				int bucketIndex,
+				DEHT_enumerationCallback_t callback, void * param);
+
+
+/**
+* Function brief description: call the callback for each record inside the chosen bucket
+* Function desc: This function uses DEHT_enumerateBlock() to call the user defined callback 
+*		 once for each valid record in each key block in the bucket given to it.
+*		 The callback is supplied with the corresponding bucket index, key and data.
+*
+* @param ht - hash table object
+* @param blockBuffer - scratch-pad buffer for reading the contents of key file blocks.
+*		       MUST BE THE SIZE OF THE DEHT block (see KEY_FILE_BLOCK_SIZE(ht)).
+*		       this parameter is supplied here to spare the need to alloc and free
+*		       this buffer for every call internally.
+* @param bucketIndex - bucket index in the hash table (needed to pass to the callback)
+* @param callback - a call back to call (must not be null)
+* @param param - generic parameter for use by the callback (can be null)
+*
+* @ret TRUE on success, FALSE otherwise
+*
+*/
+static bool_t DEHT_enumerateBucket(DEHT * ht, ulong_t bucketIndex, 
+			    byte_t * blockBuffer,
+			    DEHT_enumerationCallback_t callback, void * param);
 
 
 

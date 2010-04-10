@@ -383,9 +383,21 @@ int DEHT_writeUserBytes(DEHT * ht);
 
 
 
-
+/**
+* Function brief description: call the callback for record in the hash table
+* Function desc: This function uses DEHT_enumerateBucket() to call the user defined callback 
+*		 once for each valid record in each key block in each bucket.
+*		 The callback is supplied with the corresponding bucket index, key and data.
+*
+* @param ht - hash table object
+* @param callback - a call back to call (must not be null)
+* @param param - generic parameter for use by the callback (can be null)
+*
+* @ret TRUE on success, FALSE otherwise
+*
+*/
 bool_t DEHT_enumerate(DEHT * ht, 
-		      DEHT_enumerationCallback_t func, void * param);
+		      DEHT_enumerationCallback_t callback, void * param);
 
 
 #endif
