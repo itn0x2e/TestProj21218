@@ -22,6 +22,9 @@
 #define DEHT_DISK_PTR    long 
 
 
+
+/*******************************************************  MACROS & DEFINITIONS *****************************************************/
+
 /* suffixes for key and data files */
 #define KEY_FILE_EXT (".key")
 #define DATA_FILE_EXT (".data")
@@ -30,8 +33,11 @@
  * it could easily be extended to any wanted size, but for this project 255 bytes should suffice */
 #define DEHT_MAX_DATA_LEN 255
 
+/* The magic value stored inside the DEHTpreferences struct (key file header) */
+#define DEHT_HEADER_MAGIC (0xDEADBABE)
 
-/* On disk, the file layout is:
+
+/* On disk, the key file layout is:
  * DEHTpreferences - header
  * array of first block ptrs
  * blocks containing key + data ptr pairs
@@ -81,6 +87,10 @@
 	} while (0)
 
 
+
+
+/************************************************  Type definitions *********************************************/
+
 /* This struct represents a key-data pair as stored in the key file
  * Since the key is of variable length, by casting a pointer of this type
  * over the appropriate (larger) data, one can access the key or data offset
@@ -91,8 +101,7 @@ typedef struct KeyFilePair_s {
 } KeyFilePair_t;
 
 
-/* The magic value stored inside the DEHTpreferences struct (key file header) */
-#define DEHT_HEADER_MAGIC (0xDEADBABE)
+
 
 /******************************************************************/
 /* structure of "first level header" - basic preferences of a DEHT*/
@@ -248,6 +257,14 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 /* Else access using table of pointers on disk.                                 */
 /* "ht" argument is non const as fseek is non const too (will change "keyFP")   */
 /********************************************************************************/
+/*! Note: this specification is slightly flawed. For values which are of length
+ *! 0, we indeed return 0, but unfortunatly that is the value that was chosen for
+ *! DEHT_STATUS_NOT_NEEDED, which is the return value for "key not found".
+ *! it would have been much better to seperate the control (success/fail) and
+ *! parameter information sharing (bytesRead) paths, as is done internally.
+ *! We left the original interface as specified, and work around this issue in
+ *! the rainbow table implementation
+!*/
 int query_DEHT ( DEHT *ht, const unsigned char *key, int keyLength, 
 				 const unsigned char *data, int dataMaxAllowedLength);
 
@@ -296,6 +313,9 @@ int calc_DEHT_last_block_per_bucket(DEHT *ht);
 /************************************************************************************/
 void lock_DEHT_files(DEHT *ht);
 
+
+
+/*********************  Exposed functions added to the DEHT interface  ***************************/
 
 
 /**

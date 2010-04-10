@@ -7,6 +7,10 @@
 
 
 
+
+/************************************************  Internal function declarations *********************************************/
+
+
 /**
 * Function brief description: Initialize the DEHT instance (consolidation of shared init operation
 *			      to minimize code duplication). Used by both c'tors.
@@ -239,6 +243,13 @@ static void DEHT_formatFilenames(DEHT * ht, char * prefix);
 */
 static bool_t DEHT_removeFilesInternal(DEHT * ht);
 
+
+
+
+
+
+
+/************************************************  Function defintions *********************************************/
 
 
 DEHT * create_empty_DEHT(const char *prefix,
