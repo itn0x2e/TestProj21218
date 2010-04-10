@@ -44,13 +44,11 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   bool_t b1, /*! TODO: tmp */
 		   bool_t b2 /*! TODO: tmp */);
 
-RainbowTable_t * RT_open(
-			const passwordGenerator_t * passGenerator,
-			char * generatorPassword,
-
-			const char * hashTableFilePrefix,
-		   bool_t b1, /*! TODO: tmp */
-		   bool_t b2 /*! TODO: tmp */);
+RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
+			 char * generatorPassword,
+			 const char * hashTableFilePrefix,
+			 bool_t b1, /*! TODO: tmp */
+			 bool_t b2 /*! TODO: tmp */);
 
 void RT_close(RainbowTable_t * self);
 

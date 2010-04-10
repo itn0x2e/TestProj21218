@@ -7,12 +7,12 @@
 #include "../password/password_generator.h"
 #include "../rainbow_table/rainbow_table.h"
 
-void commandLoop(RainbowTable_t * rainbowTable);
+void commandLoop(RainbowTable_t * rainbowTable, char * password);
 RainbowTable_t * initializeRainbowTable(const passwordGenerator_t * passGenerator,
 					  char * generatorPassword,
 					  const char * prefix);
 void finalizeRainbowTable(RainbowTable_t * rainbowTable); /* TODO: this func should tolerate NULL as arg, and ignore it */
-bool_t queryRainbowTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, char * password, ulong_t passwordLen); /* TODO: should receive size allocated for password? */
+bool_t queryRainbowTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, bool_t * found); /* TODO: should receive size allocated for password? */
 
 int main(int argc, char** argv);
 
@@ -65,7 +65,7 @@ bool_t crackUsingRainbowTable(const char * prefix,
 		goto LBL_CLEANUP_GENERATOR;
 	}
 	
-	commandLoop(rainbowTable);
+	commandLoop(rainbowTable, generatorPassword);
 	
 	finalizeRainbowTable(rainbowTable);
 	return TRUE;
@@ -100,14 +100,15 @@ LBL_ERROR:
 	return ret;
 }
 
-void commandLoop(RainbowTable_t * rainbowTable) {
+void commandLoop(RainbowTable_t * rainbowTable, char * password) {
 	char line[MAX_LINE_LEN] = {0};
 	byte_t hash[MAX_LINE_LEN] = {0}; /* The hash is never longer than its string representation */
 	uint_t hashLen = 0;		
-	char password[1000] = {0}; /* TODO: determine constant value */
 
 	/* Treat the user's submitted requests until told to quit */
 	for(;;) {
+		bool_t found = FALSE;
+
 		if (!readPrompt(line) || (0 == strcmp(line, "quit"))) {
 			return;
 		}
@@ -119,14 +120,19 @@ void commandLoop(RainbowTable_t * rainbowTable) {
 			binary2hexa(hash, hashLen, hashStr, sizeof(hashStr));
 			printf("\tIn hexa password is%s\n", hashStr);
 		} else {
-			hashLen = (uint_t) hexa2binary(line + 1, hash, sizeof(hash));
+			hashLen = (uint_t) hexa2binary(line, hash, sizeof(hash));
 			if (-1 == hashLen) {
 				fprintf(stderr, "Commands are either hexa, !password or quit.\n");
 				continue;
 			}
 		}
 		
-		if (queryRainbowTable(rainbowTable, hash, hashLen, password, sizeof(password))) {
+		if (!queryRainbowTable(rainbowTable, hash, hashLen, &found)) {
+			/* An error has occured and a message has already been printed */
+			return;
+		}
+
+		if (found) {
 			printf("Try to login with password \"%s\"\n", password);
 		} else {
 			printf("Sorry but this hash doesn't appears in pre-processing\n");
@@ -137,20 +143,22 @@ void commandLoop(RainbowTable_t * rainbowTable) {
 RainbowTable_t * initializeRainbowTable(const passwordGenerator_t * passGenerator,
 					char * generatorPassword,
 					const char * prefix) {
-	return (RainbowTable_t *) 1;
-	return RT_open(passGenerator, generatorPassword, prefix, TRUE, TRUE);
+	return RT_open(passGenerator,
+			generatorPassword,
+			passwordGeneratorGetMaxLength(passGenerator),
+			prefix,
+			TRUE,
+			TRUE);
 }
 
 void finalizeRainbowTable(RainbowTable_t * rainbowTable) {
-	return;
 	RT_close(rainbowTable);
 	FREE(rainbowTable);
 }
 
-bool_t queryRainbowTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, char * password, ulong_t passwordLen) {
-	char s[1000];
+bool_t queryRainbowTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, bool_t * found) {
+	/*char s[1000];
 	binary2hexa(hash, (int) hashLen, s, sizeof(s));
-	printf("%s\n", s);
-	return TRUE;
-	return RT_query(rainbowTable, hash, hashLen, password, passwordLen);
+	printf("queryRainbowTable: %s\n", s);*/
+	return RT_query(rainbowTable, hash, hashLen, found);
 }

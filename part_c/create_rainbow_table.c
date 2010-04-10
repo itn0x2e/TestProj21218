@@ -8,7 +8,7 @@
 #include "../password/random_password_enumerator.h"
 #include "../rainbow_table/rainbow_table.h"
 
-#define RANDOM_PASSWORD_NUM_FACTOR (10)
+#define RANDOM_PASSWORD_NUM_FACTOR (1) /*! TODO: change to 10 */
 
 int main(int argc, char** argv);
 
