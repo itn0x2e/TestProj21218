@@ -78,6 +78,7 @@ static int DEHT_queryEx(DEHT *ht, const unsigned char *key, int keyLength, const
 
 
 
+
 /**
 * Function brief description: find disk offset to the first block for the wanted bucket
 * Function desc: Meant as an abstraction layer for support of first block ptr caching.
@@ -91,6 +92,7 @@ static int DEHT_queryEx(DEHT *ht, const unsigned char *key, int keyLength, const
 * @ret TRUE on success, FALSE otherwise
 */
 static bool_t DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex, DEHT_DISK_PTR * blockOffset);
+
 
 /**
 * Function brief description: Find the offset to the first block for the specified bucket.
@@ -193,12 +195,14 @@ static DEHT_DISK_PTR DEHT_allocKeyBlock(DEHT * ht);
 static bool_t DEHT_addData(DEHT * ht, const byte_t * data, ulong_t dataLen, 
 		      DEHT_DISK_PTR * newDataOffset);
 
-
 /**
 * Function brief description: read a data chunk from the DEHT datastore
 * Function desc: Inside the data file, byte arrays are stored as a one byte length indicator,
 *		 followed by 'length' bytes of data (the data store does not care about null
 *		 termination).
+*
+* @note This function should been static (~private). It is only exposed for the purpose
+*	of the textual dumping of the rainbow table
 *
 * @param ht - hash table object
 * @param dataBlockOffset - offset in the data file to read from
@@ -214,6 +218,8 @@ static bool_t DEHT_addData(DEHT * ht, const byte_t * data, ulong_t dataLen,
 */
 static bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset, 
 			     byte_t * data, ulong_t dataMaxAllowedLength, ulong_t * bytesRead);
+
+
 
 
 /**
@@ -1381,3 +1387,130 @@ LBL_CLEANUP:
 	TRACE_FUNC_EXIT();
 	return ret;
 }
+
+
+
+static bool_t DEHT_enumerateBlock(DEHT * ht, byte_t * blockBuffer,
+			    DEHT_enumerationFunc_t func, void * param)
+{
+	bool_t ret = FALSE;
+
+	ulong_t recordIndex = 0;
+	KeyFilePair_t * currPair = NULL;
+	byte_t currData[DEHT_MAX_DATA_LEN + 1];
+	ulong_t bytesRead = 0;
+
+	TRACE_FUNC_ENTRY();
+	
+	CHECK(NULL != ht);
+	CHECK(NULL != blockBuffer);
+	CHECK(NULL != func);
+
+	for (recordIndex = 0; recordIndex < GET_USED_RECORD_COUNT(blockBuffer); ++recordIndex) {
+		currPair = GET_N_REC_PTR_IN_BLOCK(ht, blockBuffer, recordIndex);
+
+		CHECK(DEHT_readDataAtOffset(ht, currPair->dataOffset, currData, sizeof(currData), &bytesRead));
+		
+		/* terminate for sure */
+		currData[MIN(bytesRead, sizeof(currData) - 1)] = 0x00;
+
+		/* call user func */
+		func(currPair->key, ht->header.nBytesPerValidationKey,
+		     currData, bytesRead,
+		     param);		
+		
+	}
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;	
+}
+
+
+
+static bool_t DEHT_enumerateBucket(DEHT * ht, ulong_t bucketIndex, 
+			    byte_t * blockBuffer,
+			    DEHT_enumerationFunc_t func, void * param)
+{
+	bool_t ret = FALSE;
+	DEHT_DISK_PTR blockOffset = 0;
+
+	TRACE_FUNC_ENTRY();
+	CHECK(NULL != ht);
+	CHECK(NULL != blockBuffer);
+	CHECK(NULL != func);
+
+	CHECK(DEHT_findFirstBlockForBucket(ht, bucketIndex, &blockOffset));
+
+	while (0 != blockOffset) {
+		CHECK_MSG(ht->sKeyfileName, (pfread(ht->keyFP, blockOffset, blockBuffer, KEY_FILE_BLOCK_SIZE(ht))));
+		
+		printf("> bucket %lu, block at %#x\n", bucketIndex, blockOffset);
+		
+		CHECK(DEHT_enumerateBlock(ht, blockBuffer, func, param));
+		
+		blockOffset = GET_NEXT_BLOCK_PTR(ht, blockBuffer);
+	}
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;	
+}
+
+
+bool_t DEHT_enumerate(DEHT * ht, 
+		      DEHT_enumerationFunc_t func, void * param)
+{
+	bool_t ret = FALSE;
+
+	ulong_t bucketIndex = 0;
+	byte_t * currBlock = NULL;
+
+	TRACE_FUNC_ENTRY();
+	CHECK(NULL != ht);
+	CHECK(NULL != func);
+
+	/* A buffer to hold a single block */
+	currBlock = malloc(KEY_FILE_BLOCK_SIZE(ht));
+	CHECK_MSG("malloc", (NULL != currBlock));
+
+	for (bucketIndex = 0; bucketIndex < ht->header.numEntriesInHashTable; ++bucketIndex) {
+		CHECK(DEHT_enumerateBucket(ht, bucketIndex, currBlock, func, param));
+	}
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
+	FREE(currBlock);
+
+	TRACE_FUNC_EXIT();
+	return ret;
+}
+
+
+
+
+
+
+
+
+

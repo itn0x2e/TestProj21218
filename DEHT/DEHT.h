@@ -101,6 +101,9 @@ typedef struct KeyFilePair_s {
 } KeyFilePair_t;
 
 
+typedef void (* DEHT_enumerationFunc_t) (byte_t * key, ulong_t keyLen,
+					   byte_t * data, ulong_t dataLen, void * param);
+
 
 
 /******************************************************************/
@@ -366,6 +369,9 @@ int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
 *		 As noted earlier, this function WILL NOT free the buffer. This part is handled by
 *		 DEHT_freeResources(), which is called on object destruction (lock_DEHT_files()).
 *
+* @note This function should been static (~private). It is only exposed for the purpose
+*	of the textual dumping of the rainbow table
+*
 * @param ht - hash table object
 *
 * @ret DEHT_STATUS_SUCCESS on successful dump to disk, DEHT_STATUS_NOT_NEEDED if the buffer isn't
@@ -373,6 +379,12 @@ int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
 *
 */
 int DEHT_writeUserBytes(DEHT * ht);
+
+
+
+
+bool_t DEHT_enumerate(DEHT * ht, 
+		      DEHT_enumerationFunc_t func, void * param);
 
 
 #endif
