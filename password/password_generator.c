@@ -64,7 +64,7 @@ ulong_t passwordGeneratorGetMaxLength(const passwordGenerator_t * self) {
 	return self->maxPasswordLength;
 }
 
-bool_t passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_t index, char * buf) {
+void passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_t index, char * buf) {
 	uint_t i;
 
 	ASSERT(index < self->size);
@@ -77,12 +77,11 @@ bool_t passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulon
 				relativeIndex -= self->ruleSegmentAccumulativeSizes[i - 1];
 			}
 
-			return ruleSegmentCalculatePassword(self->ruleSegments + i, relativeIndex, buf);
+			ruleSegmentCalculatePassword(self->ruleSegments + i, relativeIndex, buf);
 		}
 	}
 
 	/* This should never be reached; */
-	return FALSE;
 }
 
 static bool_t parseRule(passwordGenerator_t * self, const char * rule, const dictionary_t * dictionary) {

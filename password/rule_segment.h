@@ -18,6 +18,6 @@ bool_t ruleSegmentInitialize(ruleSegment_t * self, const char * ruleSegmentStr, 
 void ruleSegmentFinalize(ruleSegment_t * self);
 ulong_t ruleSegmentGetSize(const ruleSegment_t * self);
 ulong_t ruleSegmentGetMaxLength(const ruleSegment_t * self);
-bool_t ruleSegmentCalculatePassword(const ruleSegment_t * self, ulong_t index, char * buf);
+void ruleSegmentCalculatePassword(const ruleSegment_t * self, ulong_t index, char * buf);
 
 #endif /*__RULE_SEGMENT_H__*/
