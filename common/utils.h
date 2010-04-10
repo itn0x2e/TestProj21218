@@ -57,9 +57,11 @@
 #define PERROR() perror("Error")
 
 
-
-#define ASSERT(x) \
-		assert(x);
+#ifdef DEBUG
+	#define ASSERT(x) assert(x)
+#else
+	#define ASSERT(x)
+#endif /* DEBUG */
 		
 #define FAIL(msg) \
 		ERROR(msg); \
