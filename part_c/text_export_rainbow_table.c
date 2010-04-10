@@ -30,6 +30,8 @@ bool_t textExportRainbowTable(const char * prefix,
 	bool_t ret = FALSE;
 	const char * keys[] = { "rule", "dictionary_name" };
 	const char * values[sizeof(keys) / sizeof(*keys)] = {0};
+	const char ** rule = values;
+	const char ** dictFilename = values + 1;
 	const uint_t numKeys = sizeof(keys) / sizeof(*keys);
 	dictionary_t dictionary;
 	char * iniContent = NULL;
@@ -51,10 +53,10 @@ bool_t textExportRainbowTable(const char * prefix,
 	CHECK(parseIni(iniContent, keys, values, numKeys));
 	printIni(keys, values, numKeys);
 	
-	CHECK(validateRule(values[0]));
-	CHECK(readDictionaryFromFile(&dictionary, values[1]));
+	CHECK(validateRule(*rule));
+	CHECK(readDictionaryFromFile(&dictionary, *dictFilename));
 
-	if (!passwordGeneratorInitialize(&passwordGenerator, rule, &dictionary)) {
+	if (!passwordGeneratorInitialize(&passwordGenerator, *rule, &dictionary)) {
 		goto LBL_CLEANUP_DICTIONARY;
 	}
 
@@ -79,7 +81,7 @@ bool_t textExportRainbowTable(const char * prefix,
 	}
 	
 	/* Scan DEHT file and print its content */
-	ret = RT_print(output1, output2, passwordGenerator, generatorPassword, prefix);
+	ret = RT_print(output1, output2, &passwordGenerator, generatorPassword, maxPasswordLength, prefix);
 
 LBL_CLEANUP_GENERATOR:
 	passwordGeneratorFinalize(&passwordGenerator);
