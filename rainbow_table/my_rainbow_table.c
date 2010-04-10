@@ -100,7 +100,7 @@ static DEHT * createEmptyRainbowTable(const char *prefix,
 				 (int) numEntriesInHashTable,
 				 (int) nPairsPerBlock,
 				 (int) nBytesPerKey,
-				 (int) (rainbowChainLen * sizeof(LONG_INDEX_PROJ)));
+				 (int) (sizeof(ulong_t) + (rainbowChainLen * sizeof(LONG_INDEX_PROJ))));
 }
 
 static void closeRainbowTable(DEHT * rainbowTable) {
@@ -110,20 +110,26 @@ static void closeRainbowTable(DEHT * rainbowTable) {
 }
 
 static const LONG_INDEX_PROJ * createSeeds(DEHT * rainbowTable, ulong_t rainbowChainLen) {
-	void * buf = NULL;
+	byte_t * buf = NULL;
+	LONG_INDEX_PROJ * seeds = NULL;
 	ulong_t bufSize = 0;
 	
 	/* Read user bytes */
-	CHECK(DEHT_STATUS_FAIL != DEHT_readUserBytes(rainbowTable, &buf, &bufSize))
+	CHECK(DEHT_STATUS_FAIL != DEHT_getUserBytes(rainbowTable, &buf, &bufSize))
 	
-	/* Write the seeds into those bytes */
-	CHECK(bufSize >= (rainbowChainLen * sizeof(LONG_INDEX_PROJ)));
-	randomizeSeeds((LONG_INDEX_PROJ *) buf, rainbowChainLen);
+	/* Write the rainbow chain length and seeds into those bytes */
+	if ((sizeof(ulong_t) + (rainbowChainLen * sizeof(LONG_INDEX_PROJ))) != bufSize) {
+		fprintf(stderr, "Error: DEHT file corruption");
+		goto LBL_ERROR;
+	}
+	*((ulong_t *) buf) = rainbowChainLen;
+	seeds = (LONG_INDEX_PROJ *) (buf + sizeof(ulong_t));
+	randomizeSeeds(seeds, rainbowChainLen);
 	
 	/* Store the user bytes */
 	CHECK(DEHT_STATUS_FAIL != DEHT_writeUserBytes(rainbowTable));
 	
-	return buf;
+	return seeds;
 
 LBL_ERROR:
 	return NULL;
