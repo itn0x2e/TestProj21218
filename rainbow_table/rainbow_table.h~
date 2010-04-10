@@ -7,8 +7,7 @@
 #include "../password/password_generator.h"
 #include "../DEHT/DEHT.h"
 
-
-typedef ulong_t RainbowSeed_t;
+typedef LONG_INDEX_PROJ RainbowSeed_t;
 
 /* data stored inside DEHT's user bytes */
 typedef struct RainbowTableConfig_s {
@@ -20,16 +19,11 @@ typedef struct RainbowTableConfig_s {
 typedef struct RainbowTable_s {
 	DEHT * hashTable;
 	RainbowTableConfig_t * config;
-
 	BasicHashFunctionPtr hashFunc;
-
 	const passwordGenerator_t * passGenerator;
-	byte_t * generatorPassword;
-
+	char * password;
+	ulong_t passwordLength;
 } RainbowTable_t;
-
-
-
 
 /* only for generation - for queries, use the RT_open, RT_query interface */
 bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
@@ -45,45 +39,14 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   bool_t b2 /*! TODO: tmp */);
 
 RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
-			 char * generatorPassword,
+			 char * password,
+			 ulong_t passwordLength,
 			 const char * hashTableFilePrefix,
-			 bool_t b1, /*! TODO: tmp */
-			 bool_t b2 /*! TODO: tmp */);
+			 bool_t enableFirstBlockCache,
+			 bool_t enableLastBlockCache);
 
 void RT_close(RainbowTable_t * self);
 
-bool_t RT_query(RainbowTable_t * self, 
-		byte_t * hash, ulong_t hashLen,
-		char * resPassword, ulong_t resPasswordLen);
-
-
-
-bool_t RT_print(FILE * file1, FILE * file2,
-
-		const passwordGenerator_t * passGenerator,
-		char * generatorPassword,
-
-		const char * hashTableFilePrefix,
-		bool_t enableFirstBlockCache,
-		bool_t enableLastBlockCache);
-
-
-
-bool_t buildChain(bool_t crackingMode,
-
-		         RainbowSeed_t * seeds, ulong_t chainLenght, 
-			 BasicHashFunctionPtr hashFunc,
-
-			 const passwordGenerator_t * passGenerator, byte_t * generatorPassword,
-
-			 byte_t * firstPassword, ulong_t firstPasswordLen,
-			 byte_t * hashBuf, ulong_t hashBufLen,
-
-			 byte_t * passwordOut, ulong_t passwordOutLen,
-	
-			 FILE * outputFD);
-
-
-
+bool_t RT_query(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, bool_t * found);
 
 #endif /* __RAINBOW_TABLE_H__ */
