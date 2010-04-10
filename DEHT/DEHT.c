@@ -961,6 +961,9 @@ int calc_DEHT_last_block_per_bucket(DEHT *ht)
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
+	/* free on error */
+	FREE(ht->hashPointersForLastBlockImageInMemory);
+
 	ret = DEHT_STATUS_FAIL;
 	TRACE_FUNC_ERROR();
 
