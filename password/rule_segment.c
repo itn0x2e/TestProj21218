@@ -54,7 +54,6 @@ ulong_t ruleSegmentGetMaxLength(const ruleSegment_t * self) {
 
 void ruleSegmentCalculatePassword(const ruleSegment_t * self, ulong_t index, char * buf) {
 	uint_t i;
-	printf("index: %u, size: %u", index, self->size);
 	ASSERT(index < self->size);
 
 	for (i = 0; i < self->numPasswordPartGenerators; ++i) {

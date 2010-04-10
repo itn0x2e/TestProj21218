@@ -77,11 +77,9 @@ void passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_
 			}
 
 			ruleSegmentCalculatePassword(self->ruleSegments + i, relativeIndex, buf);
-			return;
+			break;
 		}
 	}
-
-	/* This should never be reached; */
 }
 
 static bool_t parseRule(passwordGenerator_t * self, const char * rule, const dictionary_t * dictionary) {
