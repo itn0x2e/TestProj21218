@@ -218,13 +218,7 @@ bool_t removeDataFile(void)
 
 bool_t removeFiles(void)
 {
-	bool_t ret = TRUE;
-
-	/* try doing both anyway */	
-	ret &= removeKeyFile();
-	ret &= removeDataFile();
-
-	return ret;
+	return DEHT_removeFiles(TABLE_FILE_PREFIX);
 }
 
 

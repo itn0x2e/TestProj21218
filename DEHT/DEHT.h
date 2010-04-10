@@ -303,8 +303,14 @@ void lock_DEHT_files(DEHT *ht);
 * Function desc: Use this function to remove remaining DEHT files for the given 
 * 		 prefix.
 *
-* @param filenamePrefix - prefix of filenames (.data & .key files will be deleted
-*			  if present
+** @param filenamePrefix - prefix of filenames (.data & .key files will be deleted
+*
+* @Note This function is not meant to be used if DEHT creation failed. 
+*	create_empty_DEHT() already guarantees that if it fails the correct
+*	cleanup is performed.
+*	This function is meant to allow higher-level users (e.g. this project's
+*	Rainbow Table module) delete these files if THEY have an internal error,
+*	requiring a cleanup operation
 *
 * @ret - TRUE on succes, FALSE otherwise. 
 *
