@@ -126,7 +126,7 @@ void commandLoop(RainbowTable_t * rainbowTable, char * password) {
 				continue;
 			}
 		}
-		
+
 		if (!queryRainbowTable(rainbowTable, hash, hashLen, &found)) {
 			/* An error has occured and a message has already been printed */
 			return;
@@ -143,6 +143,7 @@ void commandLoop(RainbowTable_t * rainbowTable, char * password) {
 RainbowTable_t * initializeRainbowTable(const passwordGenerator_t * passGenerator,
 					char * generatorPassword,
 					const char * prefix) {
+	printf("initializeRainbowTable\n");
 	return RT_open(passGenerator,
 			generatorPassword,
 			passwordGeneratorGetMaxLength(passGenerator),
