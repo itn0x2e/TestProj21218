@@ -58,4 +58,15 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 		ulong_t passwordMaxLen,
 		const char * hashTableFilePrefix);
 
+
+void goDownChain(byte_t * curHash,
+		uint_t curHashLen,
+		const passwordGenerator_t * passwordGenerator,
+		ulong_t numPossiblePasswords,
+		char * pass,
+		BasicHashFunctionPtr cryptHashPtr,
+		const RainbowSeed_t * seeds,
+		ulong_t iterations);
+
+
 #endif /* __RAINBOW_TABLE_H__ */

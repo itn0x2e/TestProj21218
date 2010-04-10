@@ -52,14 +52,6 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 				    uint_t dataStrMaxLen,
 				    bool_t * found);
    
-static void goDownChain(byte_t * curHash,
-		uint_t curHashLen,
-		const passwordGenerator_t * passwordGenerator,
-		ulong_t numPossiblePasswords,
-		char * pass,
-		BasicHashFunctionPtr cryptHashPtr,
-		const RainbowSeed_t * seeds,
-		ulong_t iterations);
 
 bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   const passwordGenerator_t * passwordGenerator,
@@ -477,7 +469,7 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 	return TRUE;
 }
 
-static void goDownChain(byte_t * curHash,
+void goDownChain(byte_t * curHash,
 			uint_t curHashLen,
 			const passwordGenerator_t * passwordGenerator,
 			ulong_t numPossiblePasswords,
