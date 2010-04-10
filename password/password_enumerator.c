@@ -10,7 +10,7 @@ void passwordEnumeratorInitialize(passwordEnumerator_t * self,
 	self->password = password;
 	self->iterations = iterations;
 	self->index = 0;
-	self->getGeneratorIndexFunc = NULL;
+	self->getGeneratorIndexFunc = getGeneratorIndexFunc;
 }
 
 bool_t passwordEnumeratorCalculateNextPassword(passwordEnumerator_t* self) {
@@ -23,6 +23,7 @@ bool_t passwordEnumeratorCalculateNextPassword(passwordEnumerator_t* self) {
 	passwordGeneratorCalculatePassword(self->generator,
 									   self->getGeneratorIndexFunc(self),
 									   self->password);
+
 	self->index++;
 	return TRUE;
 }

@@ -66,7 +66,6 @@ ulong_t passwordGeneratorGetMaxLength(const passwordGenerator_t * self) {
 
 void passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_t index, char * buf) {
 	uint_t i;
-
 	ASSERT(index < self->size);
 
 	/* TODO: consider binary search */
@@ -78,6 +77,7 @@ void passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_
 			}
 
 			ruleSegmentCalculatePassword(self->ruleSegments + i, relativeIndex, buf);
+			return;
 		}
 	}
 

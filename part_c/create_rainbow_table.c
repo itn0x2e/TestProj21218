@@ -57,7 +57,7 @@ bool_t createRainbowTable(const char * hashName,
 	char * enumeratorPassword = NULL;
 	char * generatorPassword = NULL;
 	randomPasswordEnumerator_t randomPasswordEnumerator;
-	
+
 	CHECK(parseHashFunName(&hashFunc, hashName));
 	CHECK(verifyDEHTNotExist(prefix));
 	CHECK(validateRule(rule));
@@ -65,19 +65,19 @@ bool_t createRainbowTable(const char * hashName,
 	CHECK(parseIniNum(entiresInHashTableStr, &entiresInHashTable));
 	CHECK(parseIniNum(bucketBlockLengthStr, &bucketBlockLength));
 	CHECK(readDictionaryFromFile(&dictionary, dictionaryFilename));
-	
+
 	if (!passwordGeneratorInitialize(&passwordGenerator, rule, &dictionary)) {
 		goto LBL_CLEANUP_DICTIONARY;
 	}
-	
+
 	maxPasswordLength = passwordGeneratorGetMaxLength(&passwordGenerator);
-	
+
 	generatorPassword = (char *) malloc((maxPasswordLength + 1) * sizeof(char));
 	if (NULL == generatorPassword) {
 		PERROR();
 		goto LBL_CLEANUP_GENERATOR;
 	}
-	
+
 	enumeratorPassword = (char *) malloc((maxPasswordLength + 1) * sizeof(char));
 	if (NULL == enumeratorPassword) {
 		PERROR();

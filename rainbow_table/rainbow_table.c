@@ -75,7 +75,7 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 	bool_t ret = FALSE;
 	DEHT * rainbowTable = NULL;
 	const RainbowTableConfig_t * config = NULL;
-	
+
 	/* Create an empty rainbow table */
 	CHECK(rainbowTable = createEmptyRainbowTable(hashTableFilePrefix,
 						     getNameFromHashFun(hashFunc),
@@ -83,11 +83,11 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 						     nPairsPerBlock,
 						     BYTES_PER_KEY,
 						     getConfigSize(rainbowChainLen)));
-	
+
 	/* Create rainbow table configuration in the rainbow table */
 	config = createConfig(rainbowTable, rainbowChainLen);
 	CHECK(NULL != config);
-	
+
 	/* Fill the rainbow table */
 	ret = fillRainbowTable(rainbowTable,
 			       passwordEnumerator,
@@ -97,7 +97,7 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 			       hashFunc,
 			       rainbowChainLen,
 			       config->seeds);
-	       
+
 LBL_ERROR:
 	closeRainbowTable(rainbowTable);
 	/*!TODO: should we delete the DEHT files upon failure? */
