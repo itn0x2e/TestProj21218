@@ -12,36 +12,38 @@
 
 
 
-/* Maximum size for any single object in the DEHT data store */
-/*! If you wish to increase this size, you MUST adjust the members used in data file access !*/
-#define DEHT_DATA_MAX_LEN (255)
-
-
 
 /********************************************************************/
 /* type DEHT_DISK_PTR stands for "pointers" representation in DEHT  */
 /* Data-type of long (argument of "fseek" function) represents an   */
 /* offset in a file, which is "disk pointers" in our implementation */
 /********************************************************************/
+/*! No idea why this is a define and not a proper typedef, but that's what the project spec asked for !*/
 #define DEHT_DISK_PTR    long 
 
 
-
+/* suffixes for key and data files */
 #define KEY_FILE_EXT (".key")
 #define DATA_FILE_EXT (".data")
 
+/* This constraint is a result of our use of 1 byte to store the data length in the data file.
+ * it could easily be extended to any wanted size, but for this project 255 bytes should suffice */
+#define DEHT_MAX_DATA_LEN 255
 
 
 /* On disk, the file layout is:
  * DEHTpreferences - header
  * array of first block ptrs
  * blocks containing key + data ptr pairs
+ * 
+ * These macros facilitate access to the various offsets in the files.
+ * (Had the hash table not needed to support variable key sizes, this could be handled
+ * much more elegantly by a struct)
  */
 #define KEY_FILE_OFFSET_TO_USER_BYTES(ht) (sizeof(ht->header))
 #define KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) (KEY_FILE_OFFSET_TO_USER_BYTES(ht))
 #define KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht) (ht->header.numEntriesInHashTable * sizeof(DEHT_DISK_PTR))
 #define KEY_FILE_OFFSET_TO_FIRST_BLOCK(ht) (KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht) + KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht))
-
 
 #define KEY_FILE_RECORD_SIZE(ht) (ht->header.nBytesPerValidationKey + sizeof(DEHT_DISK_PTR))
 
@@ -52,7 +54,7 @@
  */
 #define KEY_FILE_BLOCK_SIZE(ht) (sizeof(uint_t) + ht->header.nPairsPerBlock * KEY_FILE_RECORD_SIZE(ht) + sizeof(DEHT_DISK_PTR))
 
-/*! Not for direct use. !*/
+/* Not intended for direct use */
 /* First element in the block is the used blocks count */
 #define __RECORD_COUNT_PTR(blockPtr) ((uint_t *) (blockPtr))
 
@@ -69,7 +71,7 @@
 
 #define GET_N_REC_PTR_IN_BLOCK(ht, blockPtr, n) ((KeyFilePair_t *) (((byte_t *) blockPtr) + sizeof(uint_t) + n * KEY_FILE_RECORD_SIZE(ht)))
 
-/*! Not intended for direct use !*/
+/* Not intended for direct use */
 #define __NEXT_BLOCK_PTR(ht, blockPtr) ((DEHT_DISK_PTR *) (((byte_t *) blockPtr) + KEY_FILE_BLOCK_SIZE(ht) - sizeof(DEHT_DISK_PTR)))
 
 #define GET_NEXT_BLOCK_PTR(ht, blockPtr) ( *(__NEXT_BLOCK_PTR(ht, blockPtr)) )
@@ -79,14 +81,17 @@
 	} while (0)
 
 
-
+/* This struct represents a key-data pair as stored in the key file
+ * Since the key is of variable length, by casting a pointer of this type
+ * over the appropriate (larger) data, one can access the key or data offset
+ * easily */
 typedef struct KeyFilePair_s {
 	DEHT_DISK_PTR dataOffset;
 	byte_t key[1];
 } KeyFilePair_t;
 
 
-
+/* The magic value stored inside the DEHTpreferences struct (key file header) */
 #define DEHT_HEADER_MAGIC (0xDEADBABE)
 
 /******************************************************************/
@@ -94,7 +99,7 @@ typedef struct KeyFilePair_s {
 /******************************************************************/
 struct DEHTpreferences
 {
-	/* a signiture to protect us against error and abuse */
+	/* a signiture to protect us against file system hard errors and user mis-use (and / or abuse) */
 	ulong_t magic;
 
 	char sDictionaryName[16];  /*Name for identification, e.g. "MD5\0" */
@@ -198,10 +203,6 @@ DEHT *load_DEHT_from_files(const char *prefix,
 						   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun); 
 
 
-/* utility functions for c'tors & d'tor */
-DEHT * DEHT_initInstance (const char * prefix, char * fileMode, 
-			   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun);
-void DEHT_freeResources(DEHT * instance, bool_t removeFiles);
 
 /********************************************************************************/
 /* Function insert_uniquely_DEHT inserts an ellement.                           */
@@ -282,27 +283,9 @@ int write_DEHT_pointers_table(DEHT *ht);
 int calc_DEHT_last_block_per_bucket(DEHT *ht); 
 
 
-int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
-int DEHT_writeUserBytes(DEHT * ht);
-
-DEHT_DISK_PTR DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex);
-DEHT_DISK_PTR DEHT_findFirstBlockForBucketAndAlloc(DEHT * ht, ulong_t bucketIndex);
-DEHT_DISK_PTR DEHT_findLastBlockForBucketDumb(DEHT * ht, ulong_t bucketIndex);
-DEHT_DISK_PTR DEHT_allocKeyBlock(DEHT * ht);
-
-bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
-					     byte_t * blockDataOut, ulong_t blockDataLen,
-					     DEHT_DISK_PTR * blockDiskPtr, ulong_t * firstFreeIndex);
-
-bool_t DEHT_addData(DEHT * ht, const byte_t * data, ulong_t dataLen, 
-		      DEHT_DISK_PTR * newDataOffset);
-
-bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset, 
-			     byte_t * data, ulong_t dataMaxAllowedLength, ulong_t * bytesRead);
 
 
-int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const unsigned char *data, int dataMaxAllowedLength,
-			byte_t * keyBlockOut, ulong_t keyBlockSize, DEHT_DISK_PTR * keyBlockDiskOffset, ulong_t * keyIndex, DEHT_DISK_PTR * lastKeyBlockDiskOffset);
+
 
 /************************************************************************************/
 /* Function lock_DEHT_files closes the DEHT files and release memory.               */
@@ -312,6 +295,59 @@ int DEHT_queryInternal(DEHT *ht, const unsigned char *key, int keyLength, const 
 /* use "fclose" command. do not free "FILE *"                                       */
 /************************************************************************************/
 void lock_DEHT_files(DEHT *ht);
-       
+
+
+
+/**
+* Function brief description: Utility function for cleaning up DEHT's files
+* Function desc: Use this function to remove remaining DEHT files for the given 
+* 		 prefix.
+*
+* @param filenamePrefix - prefix of filenames (.data & .key files will be deleted
+*			  if present
+*
+* @ret - TRUE on succes, FALSE otherwise. 
+*
+*/
+bool_t DEHT_removeFiles(char * filenamePrefix);
+
+/**
+* Function brief description: Use to get a pointer to the raw user buffer
+*			      stored inside DEHT's data file
+* Function desc: this function will return the pointer to the user
+* 		 buffer. It can be called as many times as you like - the buffer
+*		 is persistant and will not be reallocated each time.
+*
+* @param ht - hash table object
+* @param bufPtr - out parameter - After the call, the pointer 
+*		  pointed to by bufPtr will point to the buffer.
+* @param bufSize - out parameter - After the call, the ulong_t pointed to
+* 		   by bufSize will hold the user buffer size.
+*
+* @ret DEHT_STATUS_SUCCESS on first call for this DEHT object, DEHT_STATUS_NOT_NEEDED
+*      on subsequent calls, DEHT_STATUS_FAIL on failure.
+*
+*/
+int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
+
+/**
+* Function brief description: Dump user bytes to disk. Unlike write_DEHT_pointers_table,
+*			      the buffer is not freed afterwards.
+* Function desc: this function will write the data in the allocated buffer to disk.
+* 		 If the buffer isn't allocated at the time of the call, or if
+*		 the DEHT instance has no user data assigned (0 == ht->header.numUnrelatedBytesSaved),
+*		 nothing is done.
+*		 As noted earlier, this function WILL NOT free the buffer. This part is handled by
+*		 DEHT_freeResources(), which is called on object destruction (lock_DEHT_files()).
+*
+* @param ht - hash table object
+*
+* @ret DEHT_STATUS_SUCCESS on successful dump to disk, DEHT_STATUS_NOT_NEEDED if the buffer isn't
+*      allocated or if numUnreleatedBytesSaved is 0. DEHT_STATUS_FAIL is returned on failure.
+*
+*/
+int DEHT_writeUserBytes(DEHT * ht);
+
+
 #endif
 /************************* EOF (DEHT.h) ****************/ 

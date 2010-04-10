@@ -12,13 +12,16 @@ LDFLAGS_DEBUG=
 
 clean:
 	-rm deht_ut deht_ut_debug $(OBJS) $(DEBUG_OBJS) 
+	-rm deht_test.key deht_test.data
 
-deht_ut: $(OBJS) *.c
+deht_ut: $(OBJS) *.c unit-tests/*.c
 	gcc $(LDFLAGS) -o deht_ut $(OBJS)
 
-deht_ut_debug: $(DEBUG_OBJS) *.c
+deht_ut_debug: $(DEBUG_OBJS) *.c unit-tests/*.c
 	gcc $(LDFLAGS_DEBUG) -o deht_ut_debug $(DEBUG_OBJS)
 
+*.o:
+	gcc $(FLAGS) -c 
 
 DEHT.o:
 	gcc $(CFLAGS) -o DEHT.o DEHT.c

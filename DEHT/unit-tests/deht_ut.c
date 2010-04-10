@@ -10,7 +10,7 @@
 
 #define TABLE_FILE_PREFIX "deht_test"
 #define TABLE_DICT_NAME "test_dict"
-#define TABLE_SIZE (50 * 1000 * 1000)
+#define TABLE_SIZE (1 * 1000)
 #define BLOCK_SIZE (1000)
 #define USER_BYTES (1337)
 
@@ -40,12 +40,12 @@
 */
 
 
-#define TORTURE_ELEM_COUNT (5000)
+#define TORTURE_ELEM_COUNT (2000)
 /* #define TORTURE_ELEM_COUNT (BLOCK_SIZE - 1) */
 /* #define TORTURE_ELEM_COUNT (BLOCK_SIZE * 20) */
 
 
-#define TABLE_TORTURE_RATIO (255)
+#define TABLE_TORTURE_RATIO (20)
 
 
 typedef struct TestParams_s {
@@ -557,12 +557,12 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 		beginTime = time(NULL);
 	
 		CHECK(testEntireTable(ht, massiveInsertIntoBucket, &params));
-		printf("\nmassiveInsertIntoBucket passed\n\n");
+		printf("\nmassiveInsertIntoBucket passed\n");
 
 		endTime = time(NULL);
-		printf("\n\n>>> TIME: inserts took %lu secs\n", (ulong_t) (endTime - beginTime));
+		printf(">>> TIME: inserts took %lu secs\n", (ulong_t) (endTime - beginTime));
 
-		printf("cotinuing to state=2 - many queries and updates\n");
+		printf("\ncotinuing to state=2 - many queries and updates\n");
 		goto LBL_CASE_2;
 
 
@@ -574,10 +574,10 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 		beginTime = time(NULL);
 
 		CHECK(testEntireTable(ht, massiveQueryBucket, &params));
-		printf("\nmassiveQueryBucket passed\n\n");
+		printf("\nmassiveQueryBucket passed\n");
 
 		endTime = time(NULL);
-		printf("\n\n>>> TIME: queries took %lu secs\n", (ulong_t) (endTime - beginTime));
+		printf(">>> TIME: queries took %lu secs\n", (ulong_t) (endTime - beginTime));
 
 
 		params.dataFormatStr = "this_is_my_data_0123456789ABCDEF0123456789ABCDEF %lu";
@@ -589,7 +589,7 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 		printf("\nmassiveUpdateBucket passed\n");
 
 		endTime = time(NULL);
-		printf("\n\n>>> TIME: updates took %lu secs\n", (ulong_t) (endTime - beginTime));
+		printf(">>> TIME: updates took %lu secs\n", (ulong_t) (endTime - beginTime));
 
 
 		beginTime = endTime;
@@ -599,7 +599,7 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 		printf("\nmassiveQueryBucket after update passed\n");
 
 		endTime = time(NULL);
-		printf("\n\n>>> TIME: queries took %lu secs\n", (ulong_t) (endTime - beginTime));
+		printf(">>> TIME: queries took %lu secs\n", (ulong_t) (endTime - beginTime));
 
 		break;
 
@@ -613,10 +613,10 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 		beginTime = time(NULL);
 
 		CHECK(testEntireTable(ht, massiveQueryBucket, &params));
-		printf("\nmassiveQueryBucket passed\n\n");
+		printf("\nmassiveQueryBucket passed\n");
 
 		endTime = time(NULL);
-		printf("\n\n>>> TIME: queries took %lu secs\n", (ulong_t) (endTime - beginTime));
+		printf(">>> TIME: queries took %lu secs\n", (ulong_t) (endTime - beginTime));
 		
 		beginTime = endTime;
 
@@ -626,7 +626,7 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 		printf("\nmassiveUpdateBucket passed\n");
 
 		endTime = time(NULL);
-		printf("\n\n>>> TIME: updates took %lu secs\n", (ulong_t) (endTime - beginTime));
+		printf(">>> TIME: updates took %lu secs\n", (ulong_t) (endTime - beginTime));
 
 		beginTime = endTime;
 
@@ -635,7 +635,7 @@ bool_t tortureTable(DEHT * ht, uint_t state)
 		printf("\nmassiveQueryBucket after update passed\n");
 
 		endTime = time(NULL);
-		printf("\n\n>>> TIME: queries took %lu secs\n", (ulong_t) (endTime - beginTime));
+		printf(">>> TIME: queries took %lu secs\n", (ulong_t) (endTime - beginTime));
 
 		break;
 
@@ -666,7 +666,7 @@ bool_t testCreatedTable(bool_t enableFirstBlockCache, bool_t enableLastBlockCach
 
 	TRACE_FUNC_ENTRY();
 
-	printf("\n\ntestCreatedTable started\n");
+	printf("testCreatedTable started\n");
 
 	beginTime = time(NULL);
 			
@@ -674,7 +674,7 @@ bool_t testCreatedTable(bool_t enableFirstBlockCache, bool_t enableLastBlockCach
 
 	endTime = time(NULL);
 
-	printf("\n\n>>> TIME: init took %lu secs with settings: enableFirstBlockCache=%s, enableLastBlockCache=%s\n\n", (ulong_t) (endTime - beginTime), enableFirstBlockCache ? "True" : "False", enableLastBlockCache ? "True" : "False");
+	printf(">>> TIME: init took %lu secs with settings: enableFirstBlockCache=%s, enableLastBlockCache=%s\n", (ulong_t) (endTime - beginTime), enableFirstBlockCache ? "True" : "False", enableLastBlockCache ? "True" : "False");
 
 
 	CHECK(tortureTable(ht, 0));
@@ -706,14 +706,14 @@ bool_t testOpenedTable(bool_t enableFirstBlockCache, bool_t enableLastBlockCache
 
 	TRACE_FUNC_ENTRY();
 
-	printf("\n\ntestOpenedTable started\n");
+	printf("testOpenedTable started\n");
 
 	CHECK(openTable(&ht, enableFirstBlockCache, enableLastBlockCache));
 
 	CHECK(tortureTable(ht, 1));
 
 	printf("testOpenedTable passed for state=1\n");
-	printf("\nclosing and re-opening\n");
+	printf("closing and re-opening\n");
 	lock_DEHT_files(ht);
 	ht = NULL;
 
@@ -761,14 +761,14 @@ int main(void)
 
 	for (enableFirstBlockCache = 0; enableFirstBlockCache < 2; ++enableFirstBlockCache) {
 		for (enableLastBlockCache = 0; enableLastBlockCache < 2; ++enableLastBlockCache) {
-			printf("\n>>> testing table for enableFirstBlockCache=%s, enableLastBlockCache=%s\n", enableFirstBlockCache ? "True" : "False", enableLastBlockCache ? "True" : "False");
+			printf(">>> testing table for enableFirstBlockCache=%s, enableLastBlockCache=%s\n", enableFirstBlockCache ? "True" : "False", enableLastBlockCache ? "True" : "False");
 
 			(void) removeFiles();
 
 			CHECK(testCreatedTable(enableFirstBlockCache, enableLastBlockCache));
-			printf(">>>>>>>> testCreatedTable - passed.\n");
+			printf(">>>>>>>> testCreatedTable - passed.\n\n");
 			CHECK(testOpenedTable(enableFirstBlockCache, enableLastBlockCache));
-			printf(">>>>>>>> testOpenedTable - passed.\n");
+			printf(">>>>>>>> testOpenedTable - passed.\n\n\n\n");
 
 		}
 

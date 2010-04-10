@@ -30,5 +30,6 @@ bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size
 bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
 bool_t growFile(FILE * fd, size_t size);
 
+bool_t removeFile(char * fileName);
 
 #endif /* __IO_H__ */

@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include "types.h"
 
+
+#define WRITE_BUF_SIZE (BUFSIZ)
+
 /**
  * @param line
  *
@@ -14,10 +17,18 @@
  */
 bool_t readLine(FILE * stream, char * line);
 
+bool_t doesFileExist(const char * filename);
+
 byte_t * readEntireBinaryFile(const char * filename, ulong_t * len); /* TODO: do we use this? */
 
 char * readEntireTextFile(const char * filename);
 
 uint_t countNewlines(const char * str); /* counts the occurrences of '\n' */ 
+
+
+bool_t pfread(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
+bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_size);
+bool_t growFile(FILE * fd, size_t size);
+
 
 #endif /* __IO_H__ */

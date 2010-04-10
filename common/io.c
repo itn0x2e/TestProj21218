@@ -208,3 +208,38 @@ LBL_CLEANUP:
 	return ret;
 
 }
+
+bool_t removeFile(char * fileName)
+{
+	bool_t ret = FALSE;
+	FILE * fd = NULL;
+
+	TRACE_FUNC_ENTRY();
+
+	CHECK(NULL != fileName);
+
+	/* First, check if the file is present */
+	/*! Due to the fact we were limited to using the ANSI-C std-lib, this is the best way we could
+	   check a file's existance.  Using the unix API would be much better (access / stat) !*/
+	fd = fopen(fileName, "rb");
+	if (NULL == fd) {
+		return TRUE;
+	}
+
+	FCLOSE(fd);
+
+	/* remove the file */
+	CHECK(0 == remove(fileName));
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
+
+LBL_ERROR:
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
+
+LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
+	return ret;
+
+}
