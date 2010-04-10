@@ -28,12 +28,20 @@ bool_t textExportRainbowTable(const char * prefix,
 			      const char * output1Filename,
 			      const char * output2Filename) {
 	bool_t ret = FALSE;
+
 	const char * keys[] = { "dictionary_name", "rainbow_chain_length", "entires_in_hash_table", "bucket_block_length", "rule" };
 	const char * values[sizeof(keys) / sizeof(*keys)] = {0};
 	const uint_t numKeys = sizeof(keys) / sizeof(*keys);
 	char * iniContent = NULL;
 	FILE * output1 = NULL;
 	FILE * output2 = NULL;
+
+	TRACE_FUNC_ENTRY();
+	
+	CHECK(NULL != prefix);
+	CHECK(NULL != iniFilename);
+	CHECK(NULL != output1Filename);
+	CHECK(NULL != output2Filename);
 	
 	/* Verify that the DEHT files exist and the output files don't */
 	CHECK(verifyDEHTExists(prefix));
@@ -60,11 +68,22 @@ bool_t textExportRainbowTable(const char * prefix,
 	}
 	
 	/* Scan DEHT file and print its content */
-	ret = RT_print(prefix, output1, output2);
+	CHECK(RT_print(output1, output2, 
+		       NULL, NULL, 0,
+		       prefix));
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
 	
 LBL_ERROR:
+	TRACE_FUNC_ERROR();
+	ret = FALSE;
+
+LBL_CLEANUP:
 	FREE(iniContent);
 	FCLOSE(output1);
 	FCLOSE(output2);
+
+	TRACE_FUNC_EXIT();
 	return ret;
 }

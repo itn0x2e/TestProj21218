@@ -166,8 +166,10 @@ static void hashTableEnumerationFunc(int bucketIndex,
 
 
 	if ((verifiedBucketIndex != bucketIndex) || (0 != memcmp(verifiedValidationKey, key, keySize))) {
-		fprintf(enumerationParams->chainsFd, "Error: when begin with %s get wrong chain\n", data);
+		fprintf(enumerationParams->chainsFd, "Error: when begin with %s get wrong chain", data);
 	}
+
+	fprintf(enumerationParams->chainsFd, "\n");
 
 	goto LBL_CLEANUP;
 
