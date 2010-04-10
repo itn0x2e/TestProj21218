@@ -128,12 +128,16 @@ LBL_CLEANUP:
 
 
 
-static void hashTableEnumerationFunc(byte_t * key, ulong_t keySize, 
+static void hashTableEnumerationFunc(int bucketIndex,
+				     byte_t * key, ulong_t keySize, 
 				     byte_t * data, ulong_t dataLen,
 				     void * params)
 {
 	htEnumerationParams_t * enumerationParams = params;
+
 	byte_t verifiedHash[MAX_DIGEST_LEN];
+
+	int verifiedBucketIndex = 0;
 	byte_t verifiedValidationKey[BYTES_PER_KEY];
 
 	TRACE_FUNC_ENTRY();
@@ -154,10 +158,14 @@ static void hashTableEnumerationFunc(byte_t * key, ulong_t keySize,
 				(char *) data, dataLen,
 				verifiedHash, sizeof(verifiedHash)));
 
+	/* calculate this hash's corresponding table index */
+	verifiedBucketIndex = DEHT_keyToTableIndexHasher(verifiedHash, getHashFunDigestLength(enumerationParams->rt->hashFunc), enumerationParams->rt->hashTable->header.numEntriesInHashTable);
+
 	/* calculate this hash's validation key */
 	(void) DEHT_keyToValidationKeyHasher64(verifiedHash, getHashFunDigestLength(enumerationParams->rt->hashFunc), verifiedValidationKey);
 
-	if (0 != memcmp(verifiedValidationKey, key, keySize)) {
+
+	if ((verifiedBucketIndex != bucketIndex) || (0 != memcmp(verifiedValidationKey, key, keySize))) {
 		fprintf(enumerationParams->chainsFd, "Error: when begin with %s get wrong chain\n", data);
 	}
 

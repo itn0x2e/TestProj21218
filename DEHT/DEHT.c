@@ -1390,8 +1390,10 @@ LBL_CLEANUP:
 
 
 
-static bool_t DEHT_enumerateBlock(DEHT * ht, byte_t * blockBuffer,
-			    DEHT_enumerationFunc_t func, void * param)
+static bool_t DEHT_enumerateBlock(DEHT * ht, 
+				byte_t * blockBuffer,
+				int bucketIndex,
+				DEHT_enumerationCallback_t func, void * param)
 {
 	bool_t ret = FALSE;
 
@@ -1415,7 +1417,8 @@ static bool_t DEHT_enumerateBlock(DEHT * ht, byte_t * blockBuffer,
 		currData[MIN(bytesRead, sizeof(currData) - 1)] = 0x00;
 
 		/* call user func */
-		func(currPair->key, ht->header.nBytesPerValidationKey,
+		func(bucketIndex, 
+		     currPair->key, ht->header.nBytesPerValidationKey,
 		     currData, bytesRead,
 		     param);		
 		
@@ -1437,7 +1440,7 @@ LBL_CLEANUP:
 
 static bool_t DEHT_enumerateBucket(DEHT * ht, ulong_t bucketIndex, 
 			    byte_t * blockBuffer,
-			    DEHT_enumerationFunc_t func, void * param)
+			    DEHT_enumerationCallback_t func, void * param)
 {
 	bool_t ret = FALSE;
 	DEHT_DISK_PTR blockOffset = 0;
@@ -1452,9 +1455,7 @@ static bool_t DEHT_enumerateBucket(DEHT * ht, ulong_t bucketIndex,
 	while (0 != blockOffset) {
 		CHECK_MSG(ht->sKeyfileName, (pfread(ht->keyFP, blockOffset, blockBuffer, KEY_FILE_BLOCK_SIZE(ht))));
 		
-		printf("> bucket %lu, block at %#x\n", bucketIndex, blockOffset);
-		
-		CHECK(DEHT_enumerateBlock(ht, blockBuffer, func, param));
+		CHECK(DEHT_enumerateBlock(ht, blockBuffer, bucketIndex, func, param));
 		
 		blockOffset = GET_NEXT_BLOCK_PTR(ht, blockBuffer);
 	}
@@ -1473,7 +1474,7 @@ LBL_CLEANUP:
 
 
 bool_t DEHT_enumerate(DEHT * ht, 
-		      DEHT_enumerationFunc_t func, void * param)
+		      DEHT_enumerationCallback_t func, void * param)
 {
 	bool_t ret = FALSE;
 

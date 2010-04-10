@@ -101,8 +101,9 @@ typedef struct KeyFilePair_s {
 } KeyFilePair_t;
 
 
-typedef void (* DEHT_enumerationFunc_t) (byte_t * key, ulong_t keyLen,
-					   byte_t * data, ulong_t dataLen, void * param);
+typedef void (* DEHT_enumerationCallback_t) (int bucketIndex,
+					 byte_t * key, ulong_t keyLen,
+					 byte_t * data, ulong_t dataLen, void * param);
 
 
 
@@ -384,7 +385,7 @@ int DEHT_writeUserBytes(DEHT * ht);
 
 
 bool_t DEHT_enumerate(DEHT * ht, 
-		      DEHT_enumerationFunc_t func, void * param);
+		      DEHT_enumerationCallback_t func, void * param);
 
 
 #endif
