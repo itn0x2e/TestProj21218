@@ -133,7 +133,11 @@ static bool_t printSeeds(RainbowTable_t * rt, FILE * fd)
 		binary2hexa((byte_t *) (rt->config->seeds + seedIndex), sizeof(RainbowSeed_t), seedStr, sizeof(seedStr));
 		fprintf(fd, "%s\n", seedStr);
 	}
+<<<<<<< HEAD:rainbow_table/textual_dumper.c
+	
+=======
 
+>>>>>>> c7909dbea5a261194b92f1c814d53240ea5d53eb:rainbow_table/textual_dumper.c
 	ret = TRUE;
 	goto LBL_CLEANUP;
 
