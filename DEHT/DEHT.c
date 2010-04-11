@@ -12,8 +12,7 @@
 
 
 /**
-* Function brief description: Initialize the DEHT instance (consolidation of shared init operation
-*			      to minimize code duplication). Used by both c'tors.
+* Initialize the DEHT instance (consolidation of shared init operation to minimize code duplication). Used by both c'tors.
 * Function desc: This function will allocate a DEHT instance and take care of all 
 *		 operations which are shared by create_empty_DEHT() and load_DEHT_from_files().
 *		 It will create the formatted strings for both file names and open the corresponding
@@ -35,7 +34,7 @@ static DEHT * DEHT_initInstance (const char * prefix, char * fileMode,
 			   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun);
 
 /**
-* Function brief description: Free all system resources used by the supplied DEHT instance
+* Free all system resources used by the supplied DEHT instance
 * Function desc: This function makes no DEHT calls to flush pending data to disk,
 *		 but it will call fflush() on both file objects before closing them.
 *		 Afterwards, any pointers to allocated buffers in the DEHT instance 
@@ -50,7 +49,7 @@ static void DEHT_freeResources(DEHT * instance, bool_t removeFiles);
 
 
 /**
-* Function brief description: Internal worker function for query operation.
+* Internal worker function for query operation.
 * Function desc: This function implements the actual work needed to perform a query operation.
 *		 In addition to the basic query operation, it returns extra information
 *		 that is useful in the event of an update.
@@ -80,7 +79,7 @@ static int DEHT_queryEx(DEHT *ht, const unsigned char *key, int keyLength, const
 
 
 /**
-* Function brief description: find disk offset to the first block for the wanted bucket
+* Find disk offset to the first block for the wanted bucket
 * Function desc: Meant as an abstraction layer for support of first block ptr caching.
 *		 If the cache is loaded, it will be used. Otherwise, the value is 
 *		 read from disk.
@@ -95,9 +94,8 @@ static bool_t DEHT_findFirstBlockForBucket(DEHT * ht, ulong_t bucketIndex, DEHT_
 
 
 /**
-* Function brief description: Find the offset to the first block for the specified bucket.
-*			      If no such block exists (first allocation for this bucket),
-*			      allocate a new block
+* Find the offset to the first block for the specified bucket. If no such block exists (first allocation for this bucket),
+* allocate a new block
 * Function desc: This function uses DEHT_findFirstBlockForBucket() to find the first block
 *		 for the specified bucket. If the current offset is 0, a new block is allocated
 *		 using DEHT_allocKeyBlock().
@@ -112,9 +110,8 @@ static bool_t DEHT_findFirstBlockForBucketAndAlloc(DEHT * ht, ulong_t bucketInde
 
 
 /**
-* Function brief description: Find the last block for the specified bucket directly, i.e. by
-*			      'walking' the block list for this bucket and finding the last
-*			      block in the list
+* Find the last block for the specified bucket directly, i.e. by 'walking' the block list 
+* for this bucket and finding the last block in the list
 * Function desc: This function uses DEHT_findFirstBlockForBucket() to retrieve the first block,
 *		 then scans the linked list of key blocks for the first block pointing to 0 (invalid block ptr)
 *
@@ -127,7 +124,7 @@ static bool_t DEHT_findFirstBlockForBucketAndAlloc(DEHT * ht, ulong_t bucketInde
 static bool_t DEHT_findLastBlockForBucketDumb(DEHT * ht, ulong_t bucketIndex, DEHT_DISK_PTR * lastBlockOffset);
 
 /**
-* Function brief description: Find the last block for the specified bucket efficiently.
+* Find the last block for the specified bucket efficiently.
 * Function desc: This function uses the last block ptr cache if present, or DEHT_findLastBlockDumb() 
 *		 otherwise.
 *
@@ -140,7 +137,7 @@ static bool_t DEHT_findLastBlockForBucketDumb(DEHT * ht, ulong_t bucketIndex, DE
 static bool_t DEHT_findLastBlockForBucket(DEHT * ht, ulong_t bucketIndex, DEHT_DISK_PTR * lastBlockOffset);
 
 /**
-* Function brief description: Find an empty record at the end of the bucket's linked list
+* Find an empty record at the end of the bucket's linked list
 * Function desc: This function uses DEHT_findLastBlockForBucket() to find the last block,
 *		 then scans it for an empty location. If the last block is full, a new
 *		 block is allocated and inserted into the linked list.
@@ -161,7 +158,7 @@ static bool_t DEHT_allocEmptyLocationInBucket(DEHT * ht, ulong_t bucketIndex,
 					     DEHT_DISK_PTR * blockDiskPtr, ulong_t * firstFreeIndex);
 
 /**
-* Function brief description: allocate a new key block in the key file.
+* allocate a new key block in the key file.
 * Function desc: This function will "allocate" a new key block by appending KEY_FILE_BLOCK_SIZE(ht)
 *		 zeroed bytes to the end of key file, and returning the offset of the begining of 
 *		 the new block.
@@ -176,7 +173,7 @@ static DEHT_DISK_PTR DEHT_allocKeyBlock(DEHT * ht);
 
 
 /**
-* Function brief description: Write a data chunk to the DEHT datastore.
+* Write a data chunk to the DEHT datastore.
 * Function desc: This function will write the data in the 'data' buffer to disk
 *		 the end of the data file, encapsulating it in the following manner:
 		 the data length is stored as a one byte length indicator,
@@ -199,7 +196,7 @@ static bool_t DEHT_addData(DEHT * ht, const byte_t * data, ulong_t dataLen,
 		      DEHT_DISK_PTR * newDataOffset);
 
 /**
-* Function brief description: read a data chunk from the DEHT datastore
+* read a data chunk from the DEHT datastore
 * Function desc: Inside the data file, byte arrays are stored as a one byte length indicator,
 *		 followed by 'length' bytes of data (the data store does not care about null
 *		 termination). Illustration:
@@ -229,8 +226,7 @@ static bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 
 
 /**
-* Function brief description: Utility function to fill in the strings for the two filenames
-*			      in the DEHT instance header.
+* Utility function to fill in the strings for the two filenames in the DEHT instance header.
 * Function desc: This function fills in the sKeyfileName and sDatafileName field in the 
 *		 DEHT instance, according to the given prefix.
 *
@@ -243,7 +239,7 @@ static bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 static void DEHT_formatFilenames(DEHT * ht, char * prefix);
 
 /**
-* Function brief description: clean DEHT's files (according to the DEHT instance's 
+* Clean DEHT's files (according to the DEHT instance's 
 * Function desc: Using the paths in the sKeyfileName and sDatafileName fields of the instance's 
 * 		 struct, this function tests whether each file exists and deletes it using removeFile() 
 *		 (see common/io.h)
@@ -258,7 +254,7 @@ static bool_t DEHT_removeFilesInternal(DEHT * ht);
 
 
 /**
-* Function brief description: call the callback for each record inside the block
+* Call the callback for each record inside the block
 * Function desc: This function calls the user defined callback once for each valid record
 *		 in the key block given to it.
 *		 The callback is supplied with the corresponding bucket index, key and data.
@@ -279,7 +275,7 @@ static bool_t DEHT_enumerateBlock(DEHT * ht,
 
 
 /**
-* Function brief description: call the callback for each record inside the chosen bucket
+* Call the callback for each record inside the chosen bucket
 * Function desc: This function uses DEHT_enumerateBlock() to call the user defined callback 
 *		 once for each valid record in each key block in the bucket given to it.
 *		 The callback is supplied with the corresponding bucket index, key and data.

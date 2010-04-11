@@ -323,7 +323,7 @@ void lock_DEHT_files(DEHT *ht);
 
 
 /**
-* Function brief description: Utility function for cleaning up DEHT's files
+* Utility function for cleaning up DEHT's files. Used by rainbow table cleanup.
 * Function desc: Use this function to remove remaining DEHT files for the given 
 * 		 prefix.
 *
@@ -342,8 +342,7 @@ void lock_DEHT_files(DEHT *ht);
 bool_t DEHT_removeFiles(char * filenamePrefix);
 
 /**
-* Function brief description: Use to get a pointer to the raw user buffer
-*			      stored inside DEHT's data file
+* Use to get a pointer to the raw user buffer stored inside DEHT's data file
 * Function desc: this function will return the pointer to the user
 * 		 buffer. It can be called as many times as you like - the buffer
 *		 is persistant and will not be reallocated each time.
@@ -361,8 +360,7 @@ bool_t DEHT_removeFiles(char * filenamePrefix);
 int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
 
 /**
-* Function brief description: Dump user bytes to disk. Unlike write_DEHT_pointers_table,
-*			      the buffer is not freed afterwards.
+* Dump user bytes to disk. Unlike write_DEHT_pointers_table, the buffer is not freed afterwards.
 * Function desc: this function will write the data in the allocated buffer to disk.
 * 		 If the buffer isn't allocated at the time of the call, or if
 *		 the DEHT instance has no user data assigned (0 == ht->header.numUnrelatedBytesSaved),
@@ -384,7 +382,7 @@ int DEHT_writeUserBytes(DEHT * ht);
 
 
 /**
-* Function brief description: call the callback for record in the hash table
+* Call the callback for every record in the hash table
 * Function desc: This function uses DEHT_enumerateBucket() to call the user defined callback 
 *		 once for each valid record in each key block in each bucket.
 *		 The callback is supplied with the corresponding bucket index, key and data.
