@@ -606,7 +606,7 @@ int add_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 	targetRec = GET_N_REC_PTR_IN_BLOCK(ht, blockContent, freeIndex);
 
 	/* calc validation key and fill in record */
-	/*! Note: return value isn't checked since the spec failed to include details regarding the key 
+	/*! Note: return value isn't checked since the spec does not include details regarding the key 
 		  validation function interface */
 	CHECK(NULL != ht->comparisonHashFunc);
 	(void) ht->comparisonHashFunc(key, keyLength, targetRec->key);
@@ -722,7 +722,7 @@ static int DEHT_queryEx(DEHT *ht, const unsigned char *key, int keyLength, const
 	validationKey = malloc(ht->header.nBytesPerValidationKey);
 	CHECK_MSG("malloc", (NULL != validationKey));
 
-	/*! Note: return value isn't checked since the spec failed to include details regarding the key 
+	/*! Note: return value isn't checked since the spec does not include details regarding the key 
 		  validation function interface */
 	CHECK(NULL != ht->comparisonHashFunc);
 	(void) ht->comparisonHashFunc(key, keyLength, validationKey);
@@ -911,7 +911,7 @@ int write_DEHT_pointers_table(DEHT *ht)
 	/* write the offset table */
 	CHECK_MSG(ht->sKeyfileName, (pfwrite(ht->keyFP, KEY_FILE_OFFSET_TO_FIRST_BLOCK_PTRS(ht), (byte_t *) ht->hashTableOfPointersImageInMemory, KEY_FILE_FIRST_BLOCK_PTRS_SIZE(ht))));
 
-	/*! The project spec demanded that we free the cache here. It would be better to do so only on destruction, but nevermind */
+	/* free the cache (according to the spec) */
 	FREE(ht->hashTableOfPointersImageInMemory);
 
 	ret = DEHT_STATUS_SUCCESS;

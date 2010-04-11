@@ -10,6 +10,6 @@ byte_t getRandomByte();
 ulong_t getRandomULong();
 LONG_INDEX_PROJ getRandomLongIndexProj();
 void randomizeBuffer(byte_t * buf, uint_t len);
-void randomizeSalt(byte_t * salt); /* TODO: document that salt is assumed to have at least 6 allocated bytes */
+void randomizeSalt(byte_t * salt); /* salt is assumed to have at least 6 allocated bytes */
 
 #endif /* __RAND_UTILS_H__ */
