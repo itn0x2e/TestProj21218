@@ -283,8 +283,6 @@ static bool_t fillRainbowTable(DEHT * deht,
 			       BasicHashFunctionPtr cryptHashPtr,
 			       ulong_t chainLength,
 			       const RainbowSeed_t * seeds) {
-	const ulong_t numPossiblePasswords = passwordGeneratorGetSize(passwordGenerator);
-	
 	/* Iterate many times (about 10 times size of S) */
 	while(passwordEnumeratorCalculateNextPassword(passwordEnumerator)) {
 
@@ -324,8 +322,7 @@ static bool_t fillRainbowTable(DEHT * deht,
 			RainbowSeed_t k = pseudo_random_function(curHash, curHashLen, seeds[j]); /*! TODO: yet to be implemented */
 			
 			/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
-			k %= numPossiblePasswords;
-			passwordGeneratorCalculatePassword(passwordGenerator, k, kthPass);
+			passwordGeneratorCalculatePassword(passwordGenerator, k % passwordGeneratorGetSize(passwordGenerator), kthPass);
 			cryptHash(cryptHashPtr, kthPass, curHash);
 			
 			
@@ -356,7 +353,7 @@ static bool_t fillRainbowTable(DEHT * deht,
 }
 
 static bool_t queryRainbowTable(DEHT * deht,
-				const passwordGenerator_t * passwordGenerator,z
+				const passwordGenerator_t * passwordGenerator,
 				char * password,
 				ulong_t passwordLen,
 				BasicHashFunctionPtr cryptHashPtr,
@@ -369,9 +366,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 	ulong_t j;
 	
 	/*char outStr[1000];*/
-
-	/*! TODO: this should be inside the chain scaning function */
-	ulong_t numPossiblePasswords = 0;
 	
 
 	char * tryThisPassword = (char *) malloc((passwordLen + 1) * sizeof(char));
@@ -380,11 +374,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 		return FALSE;
 	}
 
-	/*! TODO: this should be inside the chain scaning function */
-	if (NULL != passwordGenerator) {
-		numPossiblePasswords = passwordGeneratorGetSize(passwordGenerator);
-	}
-	
 	/*! Initially, the respose is that a password matching this hash value cannot be found */
 	*found = FALSE;
 
@@ -418,7 +407,7 @@ static bool_t queryRainbowTable(DEHT * deht,
 				printf("***currHash: %s\tk == %u\n", outStr, k);*/
 
 				/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
-				passwordGeneratorCalculatePassword(passwordGenerator, k % numPossiblePasswords, tryThisPassword);
+				passwordGeneratorCalculatePassword(passwordGenerator, k % passwordGeneratorGetSize(passwordGenerator), tryThisPassword);
 				cryptHash(cryptHashPtr, tryThisPassword, curHash);
 
 				/*printf("***password: %s\n", tryThisPassword);
@@ -471,7 +460,7 @@ static bool_t queryRainbowTable(DEHT * deht,
 
 
 							/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
-							passwordGeneratorCalculatePassword(passwordGenerator, k % numPossiblePasswords, password);
+							passwordGeneratorCalculatePassword(passwordGenerator, k % passwordGeneratorGetSize(passwordGenerator), password);
 							cryptHash(cryptHashPtr, tryThisPassword, curHash);
 
 
