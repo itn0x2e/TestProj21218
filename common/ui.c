@@ -10,7 +10,6 @@
 static bool_t isRuleValid(const char * rule);
 static bool_t checkDEHTExistence(const char * prefix, bool_t shouldExist);
 static bool_t checkFileExistence(const char * filename, bool_t shouldExist);
-static bool_t parseIniCommon(char * content, const char ** keys, const char ** values, uint_t numKeys, bool_t mustAll);
 static const char * skipRangeRepresentation(const char * str);
 static const char * skipNumRepresentation(const char * str);
 static void setIniKey(const char ** keys, const char ** values, uint_t numKeys, const char * key, const char * value);
@@ -42,12 +41,51 @@ bool_t verifyFileNotExist(const char * filename) {
 }
 
 bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys) {
-	return parseIniCommon(content, keys, values, numKeys, TRUE);
+	char * key = content;
+	const char * delimeter = " = ";
+	
+	/* Initially set all pointers to NULL */
+	memset(values, '\0', numKeys * sizeof(*values));
+	
+	while ('\0' != *key) {
+		char * value;
 		
-}
-
-bool_t parseIniPartial(char * content, const char ** keys, const char ** values, uint_t numKeys) {
-	return parseIniCommon(content, keys, values, numKeys, FALSE);
+		/* Find the end of the key representation */
+		value = strchr(key, delimeter[0]);
+		CHECK(NULL != value);
+		CHECK(0 == strncmp(value, delimeter, strlen(delimeter)));
+		
+		/* Make the key representation null-terminated */
+		*value = '\0';
+		
+		/* The value appears after the delimeter */
+		value += strlen(delimeter);
+		
+		/* Set the value which matches the key */
+		setIniKey(keys, values, numKeys, key, value);
+		
+		/* Move to end of line */
+		key = strchr(value, '\n');
+		if (NULL == key) {
+			/* Value is already null-terminated */
+			break;
+		}
+		
+		/* Make the value null-terminated and advance to the next key */
+		*key = '\0';
+		++key;
+	}
+	
+	if (!verifyAllIniValuesSet(keys, values, numKeys)) {
+		return FALSE;
+	}
+	
+	return TRUE;
+	
+LBL_ERROR:
+	fprintf(stderr, "Error: configuration file corruption\n");
+	return FALSE;
+		
 }
 
 bool_t parseIniNum(const char * str, ulong_t * num) {
@@ -158,52 +196,6 @@ LBL_ERROR:
 	return ret;
 }
 
-static bool_t parseIniCommon(char * content, const char ** keys, const char ** values, uint_t numKeys, bool_t mustAll) {
-	char * key = content;
-	const char * delimeter = " = ";
-	
-	/* Initially set all pointers to NULL */
-	memset(values, '\0', numKeys * sizeof(*values));
-	
-	while ('\0' != *key) {
-		char * value;
-		
-		/* Find the end of the key representation */
-		value = strchr(key, delimeter[0]);
-		CHECK(NULL != value);
-		CHECK(0 == strncmp(value, delimeter, strlen(delimeter)));
-		
-		/* Make the key representation null-terminated */
-		*value = '\0';
-		
-		/* The value appears after the delimeter */
-		value += strlen(delimeter);
-		
-		/* Set the value which matches the key */
-		setIniKey(keys, values, numKeys, key, value);
-		
-		/* Move to end of line */
-		key = strchr(value, '\n');
-		if (NULL == key) {
-			/* Value is already null-terminated */
-			break;
-		}
-		
-		/* Make the value null-terminated and advance to the next key */
-		*key = '\0';
-		++key;
-	}
-	
-	if (mustAll && !verifyAllIniValuesSet(keys, values, numKeys)) {
-		return FALSE;
-	}
-	
-	return TRUE;
-	
-LBL_ERROR:
-	fprintf(stderr, "Error: configuration file corruption\n");
-	return FALSE;
-}
 static bool_t checkFileExistence(const char * filename, bool_t shouldExist)  {
 	if (doesFileExist(filename)) {
 		if (!shouldExist) {
