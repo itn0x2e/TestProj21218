@@ -10,11 +10,10 @@ static const char * ALPHABETS[] = {
 	" \t!\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
 };
 
-void alphabetPhraseGeneratorInitialize(
-		alphabetPhraseGenerator_t * self,
-		alphabet_t alphabet,
-		uint_t minLength,
-		uint_t maxLength) {
+void alphabetPhraseGeneratorInitialize(alphabetPhraseGenerator_t * self,
+				       alphabet_t alphabet,
+				       uint_t minLength,
+				       uint_t maxLength) {
 
 	passwordPartGenerator_t * passwordPartGenerator = (passwordPartGenerator_t *) self;
 
@@ -39,11 +38,9 @@ void alphabetPhraseGeneratorInitialize(
 
 	passwordPartGenerator->maxLength = maxLength;
 	passwordPartGenerator->calcPassFunc =
-			(passwordPartGeneratorCalcPassFuncPtr_t)
-			alphabetPhraseGeneratorCalcPass;
+		(passwordPartGeneratorCalcPassFuncPtr_t) alphabetPhraseGeneratorCalcPass;
 	passwordPartGenerator->finalizeFunc =
-			(passwordPartGeneratorFinalizeFuncPtr_t)
-			alphabetPhraseGeneratorFinalize;
+		(passwordPartGeneratorFinalizeFuncPtr_t) alphabetPhraseGeneratorFinalize;
 }
 
 void alphabetPhraseGeneratorFinalize(alphabetPhraseGenerator_t * self) {

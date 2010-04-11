@@ -5,13 +5,36 @@
 #include "dictionary.h"
 #include "dictionary_word_generator.h"
 
+/**
+ * A variation of dictionary word generator which generates words with
+ * a specified case.
+ */
 typedef struct singleCasedDictionaryWordGenerator_s {
 	dictionaryWordGenerator_t super;
+	
+	/* The letter case */
 	letterCase_t letterCase;
 } singleCasedDictionaryWordGenerator_t;
 
-void singleCasedDictionaryWordGeneratorInitialize(singleCasedDictionaryWordGenerator_t * self, const dictionary_t * dictionary, letterCase_t letterCase);
+/**
+ * @see dictionaryWordGeneratorInitialize
+ *
+ * @param letterCase 	The letter case to use
+ */
+void singleCasedDictionaryWordGeneratorInitialize(singleCasedDictionaryWordGenerator_t * self,
+						  const dictionary_t * dictionary,
+						  letterCase_t letterCase);
+						  
+/**
+ * Finalization function
+ */
 void singleCasedDictionaryWordGeneratorFinalize(singleCasedDictionaryWordGenerator_t * self);
-char * singleCasedDictionaryWordGeneratorCalcPass(const singleCasedDictionaryWordGenerator_t * self, ulong_t index, char * buf);
+
+/**
+ * @see	passwordPartGenerator_t
+ */
+char * singleCasedDictionaryWordGeneratorCalcPass(const singleCasedDictionaryWordGenerator_t * self,
+						  ulong_t index,
+						  char * buf);
 
 #endif /*__SINGLE_CASED_DICTIONARY_WORD_GENERATOR_H__*/
