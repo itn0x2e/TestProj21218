@@ -134,8 +134,6 @@ static bool_t printSeeds(RainbowTable_t * rt, FILE * fd)
 		fprintf(fd, "%s\n", seedStr);
 	}
 
-	fprintf(fd, "\n");
-
 	ret = TRUE;
 	goto LBL_CLEANUP;
 
