@@ -3,10 +3,41 @@
 #include "../common/utils.h"
 #include "mixed_cased_dictionary_word_generator.h"
 
+/**
+ * @param str	A null-terminated string
+ * @return The number of lower case characters in the string
+ */
 static ulong_t countLower(const char * str);
+
+/**
+ * @param str	A null-terminated string
+ * @return The number of case variation possibilities of the string
+ */
 static ulong_t getNumOfVariations(const char * str);
+
+/**
+ * Turns some of the lower cased characters in a string into upper cased
+ * according to a bitmask.
+ *
+ * @param str	A null-terminated string
+ * @param mask	A bitmask in which the bits set represent the indexes
+ *		(refering to the lower case characters only) in the
+ *		string which should be capitalized.
+ *
+ * @pre The mask does not exceed the length of the string.
+ */
 static void applyStringCapitalizationMask(char * str, ulong_t mask);
+
+/**
+ * @param str	A null-terminated string
+ * @return 	A pointer to the next lower cased character in the string.
+ *
+ * @pre Such a character exists.
+ */
 static char * getNextLower(char * str);
+
+/* A comparator for bsearch which compares an index to a range from the
+ * precomputed range array */
 static int compareIndexToRange(const void * a, const void * b);
 
 bool_t mixedCasedDictionaryWordGeneratorInitialize(
@@ -21,11 +52,9 @@ bool_t mixedCasedDictionaryWordGeneratorInitialize(
 
 	passwordPartGenerator->maxLength = dictionaryGetMaxLength(dictionary);
 	passwordPartGenerator->calcPassFunc =
-			(passwordPartGeneratorCalcPassFuncPtr_t)
-			mixedCasedDictionaryWordGeneratorCalcPass;
+		(passwordPartGeneratorCalcPassFuncPtr_t) mixedCasedDictionaryWordGeneratorCalcPass;
 	passwordPartGenerator->finalizeFunc =
-			(passwordPartGeneratorFinalizeFuncPtr_t)
-			mixedCasedDictionaryWordGeneratorFinalize;
+		(passwordPartGeneratorFinalizeFuncPtr_t) mixedCasedDictionaryWordGeneratorFinalize;
 
 	if (0 == dictionarySize) {
 		passwordPartGenerator->size = 0;
@@ -98,8 +127,6 @@ static ulong_t getNumOfVariations(const char * str) {
 }
 
 static void applyStringCapitalizationMask(char * str, ulong_t mask) {
-	/* TODO: document that it is assumed that the mask does not exceed the length of the string */
-
 	while (mask > 0) {
 		/* Find the next lower-cased symbol */
 		str = getNextLower(str);
@@ -114,8 +141,6 @@ static void applyStringCapitalizationMask(char * str, ulong_t mask) {
 }
 
 static char * getNextLower(char * str) {
-	/* TODO: document that we assume that such exists */
-
 	while (!islower(*str)) {
 		++str;
 	}

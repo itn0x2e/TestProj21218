@@ -77,7 +77,7 @@ ulong_t passwordGeneratorGetSize(const passwordGenerator_t * self);
  * @pre		self != NULL
  * @pre		self is initialized.
  *
- * @return	The total number of valid password indexes
+ * @return	The length of the longest password, not including the terminating null
  */
 ulong_t passwordGeneratorGetMaxLength(const passwordGenerator_t * self);
 

@@ -4,13 +4,32 @@
 #include "../common/utils.h"
 #include "password_generator.h"
 
-static bool_t parseRule(passwordGenerator_t * self, const char * rule, const dictionary_t * dictionary);
+/**
+ * Parses a rule and creates אhe segments the union of which defines the rule.
+ *
+ * @param	self	The password generator to initialize
+ * @param	rule	A string representation of the rule
+ * @param	dictionary	The dictionary to use whenever specified by the rule
+ *
+ * @pre		self != NULL
+ * @pre		rule has a valid syntax
+ * @pre		dictionary != NULL
+ * @pre		dictionary is initialized
+ *
+ * @return 	TRUE upon success, otherwise FALSE.
+ *
+ * @post	numRuleSegments is set to the number already initialized, for the finalization
+ *		function to know which should be finalized, even in case of failure.
+ */
+static bool_t parseRule(passwordGenerator_t * self,
+			const char * rule,
+			const dictionary_t * dictionary);
 				  
 bool_t passwordGeneratorInitialize(passwordGenerator_t * self,
 				   const char * rule,
 				   const dictionary_t * dictionary) {
 	uint_t i;
-	self->ruleSegmentAccumulativeSizes = NULL; /* TODO: this is important for d-tor */
+	self->ruleSegmentAccumulativeSizes = NULL;
 	CHECK(parseRule(self, rule, dictionary));
 
 	self->maxPasswordLength = 0;
@@ -47,7 +66,7 @@ LBL_ERROR:
 
 void passwordGeneratorFinalize(passwordGenerator_t * self) {
 	uint_t i;
-	/* TODO: make sure that parseRule sets numRuleSegments to the actual number already initialized if it fails. */
+	
 	for (i = 0; i < self->numRuleSegments; ++i) {
 		ruleSegmentFinalize(self->ruleSegments + i);
 	}
@@ -68,7 +87,8 @@ void passwordGeneratorCalculatePassword(const passwordGenerator_t * self, ulong_
 	uint_t i;
 	ASSERT(index < self->size);
 
-	/* TODO: consider binary search */
+	/* We do not use binary search altough the array is ordered.
+	 * That is because the number of rule segments tend to be relatively small */
 	for (i = 0; i < self->numRuleSegments; ++i) {
 		if (index < self->ruleSegmentAccumulativeSizes[i]) {
 			ulong_t relativeIndex = index;
@@ -112,7 +132,8 @@ static bool_t parseRule(passwordGenerator_t * self, const char * rule, const dic
 	return TRUE;
 
 LBL_ERROR:
-	/* Set numRuleSegments to the number already initialized, for the finalization function to know which should be finalized. */
+	/* Set numRuleSegments to the number already initialized, for the finalization
+	 * function to know which should be finalized. */
 	self->numRuleSegments = i;
 
 	return FALSE;
