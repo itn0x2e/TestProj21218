@@ -4,7 +4,9 @@ import os
 
 
 TEMP_FILE = "temp_test_authenticate.auth"
+
 PROMPT = ">>"
+BAD_ALGO_NAME = "MD8"
 
 MAX_USER_LEN = 80
 MAX_PASS_LEN = 80
@@ -131,11 +133,25 @@ class Authenticate:
 		return True
 
 
-def testAuthentication(cmd, hardQuit):
+def _testAuthentication(cmd, algoName, hardQuit):
 	ret = True
 
 	cleanFile()
-	a = CreateAuthentication(cmd[0], "MD5")
+	# try running again with a bad algo name. should cause an error
+	exceptionOccurred = False
+	try:
+		a = CreateAuthentication(cmd[0], BAD_ALGO_NAME)
+	except Exception, e:
+		exceptionOccurred = True
+		if -1 == e.args[0].find(r'Error: Hash "%s" is not supported' %BAD_ALGO_NAME):
+			print "bad message about invalid hash algorithm"
+			ret = False
+	if not exceptionOccurred:
+		print "no message about invalid hash algorithm"
+		ret = False
+	
+
+	a = CreateAuthentication(cmd[0], algoName)
 	for (username, password) in TEST_SCENARIOS:
 		a.addUser(username, password)
 	if hardQuit:
@@ -146,7 +162,7 @@ def testAuthentication(cmd, hardQuit):
 	# try running again without deleting the file, should be an error
 	exceptionOccurred = False
 	try:
-		a = CreateAuthentication(cmd[0], "MD5")
+		a = CreateAuthentication(cmd[0], algoName)
 	except Exception, e:
 		exceptionOccurred = True
 		if -1 == e.args[0].find(r'Error: File "temp_test_authenticate.auth" already exist'):
@@ -155,7 +171,6 @@ def testAuthentication(cmd, hardQuit):
 	if not exceptionOccurred:
 		print "no message about already present file"
 		ret = False
-	a.quit()	
 
 	#first, try authenticating properly
 	a = Authenticate(cmd[1])
@@ -185,13 +200,18 @@ def testAuthentication(cmd, hardQuit):
 	return ret
 
 
-print "simple authenticate: "
-print testAuthentication(("./create_authentication", "./authenticate"), False)
-print testAuthentication(("./create_authentication", "./authenticate"), True)
+def testAuthentication(cmd):
+	print "Testing %s. (Expect 4 \"True\")" %str(cmd)
 
-print "\nsalty authenticate: "
-print testAuthentication(("./create_salty_authentication", "./salty_authenticate"), False)
-print testAuthentication(("./create_salty_authentication", "./salty_authenticate"), True)
+	print _testAuthentication(cmd, "MD5", False)
+	print _testAuthentication(cmd, "SHA1", False)
+
+	print _testAuthentication(cmd, "MD5", True)
+	print _testAuthentication(cmd, "SHA1", True)
+	
+
+testAuthentication(("./create_authentication", "./authenticate"))
+testAuthentication(("./create_salty_authentication", "./salty_authenticate"))
 
 
 	
