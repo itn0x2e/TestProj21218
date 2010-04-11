@@ -109,8 +109,7 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 			 char * password,
 			 ulong_t passwordLength,
 			 const char * hashTableFilePrefix,
-			 bool_t enableFirstBlockCache,
-			 bool_t enableLastBlockCache) {
+			 bool_t enableFirstBlockCache) {
 	RainbowTable_t * ret = NULL;
 	RainbowTable_t * self = NULL;
 	
@@ -132,9 +131,11 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 			       DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64);
 	CHECK(NULL != self->hashTable);
 
-	/* we will be generating a lot of query operations - better use DEHT's first block cache */
-	/* (Note, however, that errors here are treated as non-terminal, to increase robustness) */
-	(void) read_DEHT_pointers_table(self->hashTable);
+	if (enableFirstBlockCache) {
+		/* Apparently, we will be generating a lot of query operations - better use DEHT's first block cache */
+		/* (Note, however, that errors here are treated as non-terminal, to increase robustness) */
+		(void) read_DEHT_pointers_table(self->hashTable);
+	}
 
 	/* find the hash type */
 	self->hashFunc = getHashFunFromName(self->hashTable->header.sDictionaryName);
@@ -172,12 +173,8 @@ LBL_CLEANUP:
 
 void RT_close(RainbowTable_t * self) {
 	TRACE_FUNC_ENTRY();
-
-	/*! TODO: document that */
-	if (NULL == self) {
-		return;
-	}
-
+	CHECK(NULL != self);
+	
 	if (NULL != self->hashTable) {
 		lock_DEHT_files(self->hashTable);
 		self->hashTable = NULL;
@@ -195,6 +192,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
 	return;
 }
 

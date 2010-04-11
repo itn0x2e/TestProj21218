@@ -98,8 +98,10 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 
 LBL_ERROR:
 	closeRainbowTable(rainbowTable);
-	/*!TODO: should we delete the DEHT files upon failure? */
-	/*! TODO: should I really avoid FREE(seeds)? */
+
+	/* We failed to generate the table, so we should remove the file */
+	(void) DEHT_removeFiles(hashTableFilePrefix);
+
 	return ret;
 }
 
@@ -107,8 +109,7 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 			 char * password,
 			 ulong_t passwordLength,
 			 const char * hashTableFilePrefix,
-			 bool_t enableFirstBlockCache,
-			 bool_t enableLastBlockCache) {
+			 bool_t enableFirstBlockCache) {
 	RainbowTable_t * ret = NULL;
 	RainbowTable_t * self = NULL;
 	
@@ -130,9 +131,11 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 			       DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64);
 	CHECK(NULL != self->hashTable);
 
-	/* we will be generating a lot of query operations - better use DEHT's first block cache */
-	/* (Note, however, that errors here are treated as non-terminal, to increase robustness) */
-	(void) read_DEHT_pointers_table(self->hashTable);
+	if (enableFirstBlockCache) {
+		/* Apparently, we will be generating a lot of query operations - better use DEHT's first block cache */
+		/* (Note, however, that errors here are treated as non-terminal, to increase robustness) */
+		(void) read_DEHT_pointers_table(self->hashTable);
+	}
 
 	/* find the hash type */
 	self->hashFunc = getHashFunFromName(self->hashTable->header.sDictionaryName);
@@ -170,12 +173,8 @@ LBL_CLEANUP:
 
 void RT_close(RainbowTable_t * self) {
 	TRACE_FUNC_ENTRY();
-
-	/*! TODO: document that */
-	if (NULL == self) {
-		return;
-	}
-
+	CHECK(NULL != self);
+	
 	if (NULL != self->hashTable) {
 		lock_DEHT_files(self->hashTable);
 		self->hashTable = NULL;
@@ -193,6 +192,7 @@ LBL_ERROR:
 	TRACE_FUNC_ERROR();
 
 LBL_CLEANUP:
+	TRACE_FUNC_EXIT();
 	return;
 }
 
@@ -419,7 +419,7 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 
 	if ('\0' != dataStr[queryRet - 1]) {
 		/* The data read is not a string */
-		/*! TODO: should we print an error about corruption? */
+		fprintf(stderr, "Error: DEHT file corruption");
 		return FALSE;
 	}
 

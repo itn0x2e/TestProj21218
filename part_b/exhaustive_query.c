@@ -74,7 +74,7 @@ void commandLoop(RainbowTable_t * rainbowTable, char * password) {
 }
 
 RainbowTable_t * initializeExaustiveTable(const char * prefix, char * password, ulong_t passwordLen) {
-	return RT_open(NULL, password, passwordLen, prefix, FALSE, FALSE);
+	return RT_open(NULL, password, passwordLen, prefix, FALSE);
 }
 
 void finalizeExaustiveTable(RainbowTable_t * rainbowTable) {
