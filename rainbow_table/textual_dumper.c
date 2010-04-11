@@ -129,9 +129,6 @@ static bool_t printSeeds(RainbowTable_t * rt, FILE * fd)
 	CHECK(NULL != rt->config);
 	CHECK(userBytesSize == getConfigSize(rt->config->chainLength));
 
-
-	/*! Commmented out to fit the interface in the project spec !*/
-	/*!fprintf(fd, "Seeds:\n"); !*/
 	for (seedIndex = 0; seedIndex < rt->config->chainLength;  ++seedIndex) {
 		binary2hexa((byte_t *) (rt->config->seeds + seedIndex), sizeof(RainbowSeed_t), seedStr, sizeof(seedStr));
 		fprintf(fd, "%s\n", seedStr);
@@ -319,9 +316,6 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 	enumerationParams.chainsFd = chainsFd;
 
 
-	/* write description into files */
-	/*! Commmented out to fit the interface in the project spec !*/
-	/*!fprintf(seedsAndPasswordsFd, "Passwords:\n"); !*/
 
 	/* scan all chains */	
 	CHECK(DEHT_enumerate(rt->hashTable, hashTableEnumerationFunc, (void *) &enumerationParams));
