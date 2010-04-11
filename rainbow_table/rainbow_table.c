@@ -197,7 +197,6 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 * @param hash - hash value to begin with
 * @param hashLen - length of hash
 * @param passwordGenerator - a password generator (random access to the entire password range)
-* @param numPossiblePasswords - size of the password space
 * @param password - the buffer associated with the password generator
 * @param cryptHashPtr - valid pointer the one of the hash functions (SHA-1 / MD-5)
 * @param seeds - array of seeds to use for chain computations
@@ -207,7 +206,6 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 static void advanceInChain(byte_t * hash,
 			   uint_t hashLen,
 			   const passwordGenerator_t * passwordGenerator,
-			   ulong_t numPossiblePasswords,
 			   char * password,
 			   BasicHashFunctionPtr cryptHashPtr,
 			   const RainbowSeed_t * seeds,
@@ -458,7 +456,6 @@ static bool_t fillRainbowTable(DEHT * deht,
 		advanceInChain(curHash,
 			       curHashLen,
 			       passwordGenerator,
-			       passwordGeneratorGetSize(passwordGenerator),
 			       kthPass,
 			       cryptHashPtr,
 			       seeds,
@@ -505,7 +502,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 		advanceInChain(curHash,
 			       curHashLen,
 			       passwordGenerator,
-			       passwordGeneratorGetSize(passwordGenerator),
 			       password,
 			       cryptHashPtr,
 			       seeds,
@@ -523,7 +519,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 			advanceInChain(curHash,
 					curHashLen,
 					passwordGenerator,
-					passwordGeneratorGetSize(passwordGenerator),
 					password,
 					cryptHashPtr,
 					seeds,
@@ -606,7 +601,6 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 static void advanceInChain(byte_t * hash,
 			   uint_t hashLen,
 			   const passwordGenerator_t * passwordGenerator,
-			   ulong_t numPossiblePasswords,
 			   char * password,
 			   BasicHashFunctionPtr cryptHashPtr,
 			   const RainbowSeed_t * seeds,
@@ -618,7 +612,7 @@ static void advanceInChain(byte_t * hash,
 		RainbowSeed_t k = pseudo_random_function(hash, hashLen, seeds[beginningIndex + i]);
 
 		/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
-		passwordGeneratorCalculatePassword(passwordGenerator, k % numPossiblePasswords, password);
+		passwordGeneratorCalculatePassword(passwordGenerator, k % passwordGeneratorGetSize(passwordGenerator), password);
 		cryptHash(cryptHashPtr, password, hash);
 	}
 }
