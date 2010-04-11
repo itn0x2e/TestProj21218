@@ -5,7 +5,7 @@
 #include "password_generator.h"
 
 /**
- * Parses a rule and creates אhe segments the union of which defines the rule.
+ * Parses a rule and creates the segments the union of which defines the rule.
  *
  * @param	self	The password generator to initialize
  * @param	rule	A string representation of the rule

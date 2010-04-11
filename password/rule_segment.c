@@ -2,11 +2,31 @@
 #include "../common/utils.h"
 #include "rule_segment.h"
 
-static bool_t parseRuleSegment(ruleSegment_t * self, const char * ruleSegmentStr, const dictionary_t * dictionary);
+/**
+ * Parses a rule segment and creates the password part generators
+ *
+ * @param self			The rule segment to initialize
+ * @param ruleSegmentStr	A string representation of the rule segment
+ * @param dictionary		The dictionary to use whenever specified by the rule
+ *
+ * @pre		self != NULL
+ * @pre		rule has a valid syntax
+ * @pre		dictionary != NULL
+ * @pre		dictionary is initialized
+ *
+ * @return 	TRUE upon success, otherwise FALSE.
+ *
+ * @post	numPasswordPartGenerators is set to the number already created,
+ *		for the finalization function to know which should be finalized
+ *		and freed, even in case of failure.
+ */
+static bool_t parseRuleSegment(ruleSegment_t * self,
+			       const char * ruleSegmentStr,
+			       const dictionary_t * dictionary);
 
 bool_t ruleSegmentInitialize(ruleSegment_t * self,
-							const char * ruleSegmentStr,
-							const dictionary_t * dictionary) {
+			     const char * ruleSegmentStr,
+			     const dictionary_t * dictionary) {
 	uint_t i;
 
 	CHECK(parseRuleSegment(self, ruleSegmentStr, dictionary));
@@ -68,11 +88,9 @@ void ruleSegmentCalculatePassword(const ruleSegment_t * self, ulong_t index, cha
 	*buf = '\0';
 }
 
-static bool_t parseRuleSegment(
-		ruleSegment_t * self,
-		const char * ruleSegmentStr,
-		const dictionary_t * dictionary) {
-
+static bool_t parseRuleSegment(ruleSegment_t * self,
+			       const char * ruleSegmentStr,
+			       const dictionary_t * dictionary) {
 	const char * ruleSegmentEnd = strchr(ruleSegmentStr, '|');
 	const char * currRulePart = strpbrk(ruleSegmentStr, RULE_SEGMENT_RULE_TOKENS);
 	uint_t numRuleParts = 0;
