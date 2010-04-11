@@ -41,7 +41,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 				
 static bool_t readConfig(DEHT * deht, RainbowTableConfig_t ** config);
 
-static bool_t getConfigSize(ulong_t chainLength);
 
 static bool_t insertIntoDEHT(DEHT * deht, const byte_t * key, uint_t keyLen, const char * dataStr);
 
@@ -504,7 +503,7 @@ LBL_CLEANUP:
 	return ret;
 }
 
-static bool_t getConfigSize(ulong_t chainLength) {
+ulong_t getConfigSize(ulong_t chainLength) {
 	ulong_t size = sizeof(RainbowTableConfig_t);
 	if (chainLength > 0) {
 		size += (chainLength - 1) * sizeof(RainbowSeed_t);

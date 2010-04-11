@@ -442,14 +442,14 @@ static DEHT * DEHT_initInstance (const char * prefix, char * fileMode,
 		if (NULL != ht->keyFP) {
 			deleteFilesOnError = FALSE;
 			filesAlreadyExist = TRUE;
-			fprintf(stderr, "Error: File %s already exists\n", ht->sKeyfileName);
+			fprintf(stderr, "Error: File \"%s\" already exist\n", ht->sKeyfileName);
 		}
 
 		ht->dataFP = fopen(ht->sDatafileName, "rb");
 		if (NULL != ht->dataFP) {
 			deleteFilesOnError = FALSE;
 			filesAlreadyExist = TRUE;
-			fprintf(stderr, "Error: File %s already exists\n", ht->sDatafileName);
+			fprintf(stderr, "Error: File \"%s\" already exist\n", ht->sDatafileName);
 		}
 
 		/* fail if files already exist */
@@ -961,6 +961,9 @@ int calc_DEHT_last_block_per_bucket(DEHT *ht)
 	goto LBL_CLEANUP;
 
 LBL_ERROR:
+	/* free on error */
+	FREE(ht->hashPointersForLastBlockImageInMemory);
+
 	ret = DEHT_STATUS_FAIL;
 	TRACE_FUNC_ERROR();
 

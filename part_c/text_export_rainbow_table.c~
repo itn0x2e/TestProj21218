@@ -28,12 +28,40 @@ bool_t textExportRainbowTable(const char * prefix,
 			      const char * output1Filename,
 			      const char * output2Filename) {
 	bool_t ret = FALSE;
+<<<<<<< HEAD:part_c/text_export_rainbow_table.c
+	const char * keys[] = { "rule", "dictionary_name" };
+=======
+
+	/*! TODO: we only need dictionary name and rule, don't we? !*/
 	const char * keys[] = { "dictionary_name", "rainbow_chain_length", "entires_in_hash_table", "bucket_block_length", "rule" };
+>>>>>>> 7ea2b0c6b7315b96e0b6ffde69645de080edc33f:part_c/text_export_rainbow_table.c
 	const char * values[sizeof(keys) / sizeof(*keys)] = {0};
+	const char ** rule = values;
+	const char ** dictFilename = values + 1;
 	const uint_t numKeys = sizeof(keys) / sizeof(*keys);
+	dictionary_t dictionary;
 	char * iniContent = NULL;
+	passwordGenerator_t passwordGenerator;
+	ulong_t maxPasswordLength;
+	char * generatorPassword = NULL;
 	FILE * output1 = NULL;
 	FILE * output2 = NULL;
+
+	const char * rule = NULL;
+	const char * dictionaryFilename = NULL;
+
+	dictionary_t dictionary;
+	passwordGenerator_t passwordGenerator;
+	ulong_t maxPasswordLength;
+	char * generatorPassword = NULL;
+
+	TRACE_FUNC_ENTRY();
+	
+	CHECK(NULL != prefix);
+	CHECK(NULL != iniFilename);
+	CHECK(NULL != output1Filename);
+	CHECK(NULL != output2Filename);
+
 	
 	/* Verify that the DEHT files exist and the output files don't */
 	CHECK(verifyDEHTExists(prefix));
@@ -44,27 +72,102 @@ bool_t textExportRainbowTable(const char * prefix,
 	CHECK(verifyFileExists(iniFilename));
 	iniContent = readEntireTextFile(iniFilename);
 	CHECK(NULL != iniContent);
+<<<<<<< HEAD:part_c/text_export_rainbow_table.c
+	CHECK(parseIni(iniContent, keys, values, numKeys));
+=======
 	CHECK(parseIniPartial(iniContent, keys, values, numKeys));
+
+>>>>>>> 7ea2b0c6b7315b96e0b6ffde69645de080edc33f:part_c/text_export_rainbow_table.c
 	printIni(keys, values, numKeys);
+
+	/*! TODO: better way of doing this? !*/
+	dictionaryFilename = values[0];
+	CHECK(NULL != dictionaryFilename);
+	rule = values[4];
+	CHECK(NULL != rule);
 	
+	CHECK(validateRule(rule));
+	CHECK(readDictionaryFromFile(&dictionary, dictionaryFilename));
+	
+	CHECK(passwordGeneratorInitialize(&passwordGenerator, rule, &dictionary));
+	
+<<<<<<< HEAD:part_c/text_export_rainbow_table.c
+	CHECK(validateRule(*rule));
+	CHECK(readDictionaryFromFile(&dictionary, *dictFilename));
+
+	if (!passwordGeneratorInitialize(&passwordGenerator, *rule, &dictionary)) {
+		goto LBL_CLEANUP_DICTIONARY;
+	}
+
+	maxPasswordLength = passwordGeneratorGetMaxLength(&passwordGenerator);
+
+	generatorPassword = (char *) malloc((maxPasswordLength + 1) * sizeof(char));
+	if (NULL == generatorPassword) {
+		PERROR();
+		goto LBL_CLEANUP_GENERATOR;
+	}
+
 	/* Open output files for writing */
 	output1 = fopen(output1Filename, "w");
 	if (NULL == output1) {
 		perror(output1Filename);
-		goto LBL_ERROR;
+		goto LBL_CLEANUP_GENERATOR;
 	}
 	output2 = fopen(output1Filename, "w");
 	if (NULL == output2) {
 		perror(output2Filename);
-		goto LBL_ERROR;
+		goto LBL_CLEANUP_GENERATOR;
 	}
 	
 	/* Scan DEHT file and print its content */
-	ret = RT_print(prefix, output1, output2);
+	ret = RT_print(output1, output2, &passwordGenerator, generatorPassword, maxPasswordLength, prefix);
+
+LBL_CLEANUP_GENERATOR:
+	passwordGeneratorFinalize(&passwordGenerator);
+LBL_CLEANUP_DICTIONARY:
+	dictionaryFinalize(&dictionary);
+LBL_ERROR:
+=======
+	maxPasswordLength = passwordGeneratorGetMaxLength(&passwordGenerator);
+	
+	generatorPassword = (char *) malloc((maxPasswordLength + 1) * sizeof(char));
+	CHECK_MSG("malloc", (NULL != generatorPassword));
+
+
+	passwordGeneratorCalculatePassword(&passwordGenerator, 0, generatorPassword);
+	printf("pass 0=%s\n", generatorPassword);
+	passwordGeneratorCalculatePassword(&passwordGenerator, 1, generatorPassword);
+	printf("pass 1=%s\n", generatorPassword);
+	passwordGeneratorCalculatePassword(&passwordGenerator, 2, generatorPassword);
+	printf("pass 2=%s\n", generatorPassword);
+
+	/* Open output files for writing */
+	output1 = fopen(output1Filename, "w");
+	CHECK_MSG(output1Filename, (NULL != output1));
+	output2 = fopen(output2Filename, "w");
+	CHECK_MSG(output2Filename, (NULL != output2));
+	
+	/* Scan DEHT file and print its content */
+	CHECK(RT_print(output1, output2, 
+		       &passwordGenerator, generatorPassword, maxPasswordLength,
+		       prefix));
+
+	ret = TRUE;
+	goto LBL_CLEANUP;
 	
 LBL_ERROR:
+	TRACE_FUNC_ERROR();
+
+	/*! TODO: delete files on error? !*/
+	ret = FALSE;
+
+LBL_CLEANUP:
+>>>>>>> 7ea2b0c6b7315b96e0b6ffde69645de080edc33f:part_c/text_export_rainbow_table.c
+	FREE(generatorPassword);
 	FREE(iniContent);
 	FCLOSE(output1);
 	FCLOSE(output2);
+
+	TRACE_FUNC_EXIT();
 	return ret;
 }
