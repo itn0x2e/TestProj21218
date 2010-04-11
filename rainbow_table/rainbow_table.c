@@ -284,71 +284,24 @@ static bool_t fillRainbowTable(DEHT * deht,
 			       BasicHashFunctionPtr cryptHashPtr,
 			       ulong_t chainLength,
 			       const RainbowSeed_t * seeds) {
-	/* Iterate many times (about 10 times size of S) */
 	while(passwordEnumeratorCalculateNextPassword(passwordEnumerator)) {
-
-
-
-
-		static bool_t b = FALSE;
-
-
-
-
 		/* Init curHash := cryptographic-hash(firstPass) */
 		byte_t curHash[MAX_DIGEST_LEN];
 		uint_t curHashLen = (uint_t) cryptHash(cryptHashPtr, firstPass, curHash);
-		/* For j=1 to chain-length do */
-		ulong_t j;
-				
-
-		/*char outStr[1000];
-		if(!b){
-		printf("firstPass == %s\n", firstPass);
-		binary2hexa(curHash, curHashLen, outStr, 1000);
-		printf("curHash == %s\n", outStr);
-		}*/
 		
+		advanceInChain(curHash,
+			       curHashLen,
+			       passwordGenerator,
+			       passwordGeneratorGetSize(passwordGenerator),
+			       kthPass,
+			       cryptHashPtr,
+			       seeds,
+			       chainLength,
+			       0);
 
-		for (j = 0; j < chainLength; ++j) {
-
-
-
-
-
-
-
-
-			/* k = pseudo-random-function with seed seed[j] and input curHash; */
-			RainbowSeed_t k = pseudo_random_function(curHash, curHashLen, seeds[j]); /*! TODO: yet to be implemented */
-			
-			/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
-			passwordGeneratorCalculatePassword(passwordGenerator, k % passwordGeneratorGetSize(passwordGenerator), kthPass);
-			cryptHash(cryptHashPtr, kthPass, curHash);
-			
-			
-			
-			
-
-			/*if(!b){
-			printf("kthPass == %s\n", kthPass);
-			binary2hexa(curHash, curHashLen, outStr, 1000);
-			printf("curHash == %s\n", outStr);
-			}*/
-		/* end */
-		}
-		/*
-		binary2hexa(curHash, curHashLen, outStr, 1000);
-		printf("curHash == %s\n", outStr);
-		*/
-		
-		/* insert into disk embedded hash table the following pair: key=curHash, data=firstPass */
-		/*printf("finished iteration\n");*/
 		if (!insertIntoDEHT(deht, curHash, curHashLen, firstPass)) {
-			/*printf("sfsdfsdfsdfsdafsadfasdfasdfssadfassfsadfasdf\n");*/
 			return FALSE;
 		}
-	/* end */
 	}
 	return TRUE;
 }
@@ -364,8 +317,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 				uint_t targetLen,
 				bool_t * found) {
 	ulong_t j;
-	
-	/*char outStr[1000];*/
 
 	/*! Initially, the respose is that a password matching this hash value cannot be found */
 	*found = FALSE;
@@ -384,25 +335,19 @@ static bool_t queryRainbowTable(DEHT * deht,
 		byte_t curHash[MAX_DIGEST_LEN];
 		const uint_t curHashLen = targetLen;
 		bool_t foundInJ = FALSE;
-		/*printf("***NOW TRYING %u STEPS***\n",j);*/
+
 		/* go down the chain j steps (and get curHash j steps downstream).*/
-		memcpy(curHash, target, targetLen); /*! TODO: is that right? */
-		
-		/*binary2hexa(curHash, curHashLen, outStr, 1000);
-		printf("before first loop: %s\n", outStr);*/
-
+		memcpy(curHash, target, targetLen);
 		advanceInChain(curHash,
-			   curHashLen,
-			   passwordGenerator,
-			   passwordGeneratorGetSize(passwordGenerator),
-			   password,
-			   cryptHashPtr,
-			   seeds,
-			   j,
-			   chainLength - j);
+			       curHashLen,
+			       passwordGenerator,
+			       passwordGeneratorGetSize(passwordGenerator),
+			       password,
+			       cryptHashPtr,
+			       seeds,
+			       j,
+			       chainLength - j);
 
-		/*binary2hexa(curHash, curHashLen, outStr, 1000);
-		printf("after first loop: %s\n", outStr);*/
 		/* query in disc-embedded hash table with key: curHash.
 		 * Get data (a password) call it: tryThisPassword */
 		CHECK(queryPasswordFromDEHT(deht, curHash, curHashLen, password, passwordLen, &foundInJ));
@@ -410,50 +355,27 @@ static bool_t queryRainbowTable(DEHT * deht,
 		/* If tryThisPassword is NULL then continue loop (obviously wrong j)
 		 * Else, assume tryThisPassword is beginning of correct chain so */
 		if (foundInJ) {
-				/* Init curPass:= tryThisPassword */
-				/*strcpy(password, password);*/
+			/* Go chain-length -j steps down (i.e. to the correct location). */
+			cryptHash(cryptHashPtr, password, curHash);
+			advanceInChain(curHash,
+					curHashLen,
+					passwordGenerator,
+					passwordGeneratorGetSize(passwordGenerator),
+					password,
+					cryptHashPtr,
+					seeds,
+					chainLength - j,
+					0);
 
-				/*binary2hexa(curHash, curHashLen, outStr, 1000);
-											printf("currHash: %s\n", outStr);
-											printf("password: %s\n", password);
-											printf("\n\n\n");*/
-
-				/* Go chain-length -j steps down (i.e. to the correct location). */
-				
-				cryptHash(cryptHashPtr, password, curHash);
-				
-				
-				
-				
-				advanceInChain(curHash,
-			   curHashLen,
-			   passwordGenerator,
-			   passwordGeneratorGetSize(passwordGenerator),
-			   password,
-			   cryptHashPtr,
-			   seeds,
-			   chainLength-j,
-			   0);
-			
-				/*printf("\n\n\n");*/
                         /* Check whether cryptographic-hash(curPass)==target */
-				cryptHash(cryptHashPtr, password, curHash);
-			/*{
-				binary2hexa(curHash, curHashLen, outStr, 1000);
-				printf("currHash: %s\n", outStr);
-				printf("password: %s\n", password);
-
-					binary2hexa(target, curHashLen, outStr, 1000);
-					printf("target: %s\n", outStr);}*/
-
+			cryptHash(cryptHashPtr, password, curHash);
 			if (0 == memcmp(curHash, target, targetLen)) {
 				/* If so, return curPass */
 				*found = TRUE;
-				/*printf("FOUNNDDDDDDDDDDDDDDDDDDD\n");*/
 				break;
-			} /* Else, seek for a different j (i.e. false alarm). */ 
-	       } /* End (conditions) */
-	} /* End (main loop on j) */
+			}
+	       }
+	}
 	
 	/* The query was performed correctly */
 	return TRUE;
