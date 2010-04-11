@@ -23,6 +23,7 @@ typedef int (*BasicHashFunctionPtr)(const unsigned char *,int,unsigned char *);
 /* int inputLength , i.e. its length in byte, as it may vary   */
 /* unsigned char *outBuf output buffer to fulfill. Assume long enough*/
 
+/*! TODO: remove? !*/
 #define MD5_OUTPUT_LENGTH_IN_BYTES    (16)
 int MD5BasicHash ( const unsigned char *in,int len, unsigned char *outBuf); 
 
@@ -115,21 +116,110 @@ LONG_INDEX_PROJ pseudo_random_generator_proj(int step);
 /*************************************************************************/
 LONG_INDEX_PROJ pseudo_random_function(const unsigned char *x,int inputLength,LONG_INDEX_PROJ seed);
 
+/**
+* Convert a hash name to a function pointer
+* Function desc: This function takes a string representing a valid hash 
+*		 algorithm name ("MD5" or "SHA1"), and returns the 
+*		 appropriate function pointer.
+*
+* @param name - string of algorithm name
+*
+* @ret A valid func ptr if successful, NULL otherwise
+*
+*/
 BasicHashFunctionPtr getHashFunFromName(const char * name);
 
+/**
+* The reverse of getHashFunFromName() - convert a hash function pointer
+* to the hash algorithm name
+* Function desc: This function takes a valid function pointer for one
+*		 of the hash functions, and returns a pointer to the hash
+*		 algorithm's name ("MD5" or "SHA1"). The returned pointer
+*		 is read-only.
+*
+* @param hashFunc - pointer to hash function
+*
+* @ret pointer to the name string if successful, NULL otherwise
+*
+*/
 const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc);
 
+/**
+* Convert a hash function pointer to the hash's length
+* Function desc: This function takes a valid function pointer for one
+*		 of the hash functions, and returns the size of the 
+*		 result hash.
+*
+* @param hashFunc - pointer to hash function
+*
+* @ret hash size if successful, 0 otherwise
+*
+*/
 unsigned int getHashFunDigestLength(BasicHashFunctionPtr hashFunc);
 
 
-
+/**
+* Calculate the MD-5 hash for data, using the supplied seed,
+* if given.
+* Function desc: This function calculates the hash for 'data',
+*		 using 'seed' as a seed. This is performed by
+*		 using two MD-5 'update' operations, before getting
+*		 the final digest.
+*
+* @param outBuf - output buffer for the result
+* @param seed - input seed (if null - the seed is not used)
+* @param seedLen - length of seed, in bytes
+* @param seed - input data (cannot be null)
+* @param seedLen - length of data, in bytes
+*
+* @ret hash size if successful, 0 otherwise
+*
+*/
 int MD5SeededHash(byte_t * outBuf, 
 		   const byte_t * seed, ulong_t seedLen, 
 		   const byte_t * data, ulong_t dataLen);
+
+/**
+* Calculate the SHA-1 hash for data, using the supplied seed,
+* if given.
+* Function desc: This function calculates the hash for 'data',
+*		 using 'seed' as a seed. This is performed by
+*		 using two SHA-1 'update' operations, before getting
+*		 the final digest.
+*
+* @param outBuf - output buffer for the result
+* @param seed - input seed (if null - the seed is not used)
+* @param seedLen - length of seed, in bytes
+* @param seed - input data (cannot be null)
+* @param seedLen - length of data, in bytes
+*
+* @ret hash size if successful, 0 otherwise
+*
+*/
 int SHA1SeededHash(byte_t * outBuf, 
 		   const byte_t * seed, ulong_t seedLen, 
 		   const byte_t * data, ulong_t dataLen);
 
+
+/**
+* Calculate a reduced hash for data, using supplied seed, if
+* given.
+* Function desc: This function first calculates the MD-5 hash for 'data',
+*		 using 'seed' as a seed.  It then takes a subset
+*		 of that seed, and returns it to the user.
+*		 This action is useful for the calculation of the hash table
+*		 index and of the validation key for a given key.
+*
+* @param output - output buffer for the result
+* @param outputLen - size of output buffer, in bytes
+* @param seed - input seed (if null - the seed is not used)
+* @param seedLen - length of seed, in bytes
+* @param seed - input data (cannot be null)
+* @param seedLen - length of data, in bytes
+*
+* @ret hash size if successful, 0 otherwise
+*
+*/
 int miniHash(byte_t * output, ulong_t outputLen,
 		const byte_t * seed, ulong_t seedLen,
 		const byte_t * data, int dataLen);
