@@ -419,7 +419,7 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 
 	if ('\0' != dataStr[queryRet - 1]) {
 		/* The data read is not a string */
-		/*! TODO: should we print an error about corruption? */
+		fprintf(stderr, "Error: DEHT file corruption");
 		return FALSE;
 	}
 
