@@ -131,20 +131,37 @@ class Authenticate:
 		return True
 
 
-def testAuthentication(cmd):
+def testAuthentication(cmd, hardQuit):
 	ret = True
 
 	cleanFile()
 	a = CreateAuthentication(cmd[0], "MD5")
 	for (username, password) in TEST_SCENARIOS:
 		a.addUser(username, password)
-	a.quit()
+	if hardQuit:
+		a.eofQuit()
+	else:
+		a.quit()
+
+	# try running again without deleting the file, should be an error
+	exceptionOccurred = False
+	try:
+		a = CreateAuthentication(cmd[0], "MD5")
+	except Exception, e:
+		exceptionOccurred = True
+		if -1 == e.args[0].find(r'Error: File "temp_test_authenticate.auth" already exist'):
+			print "bad message about already present file"
+			ret = False
+	if not exceptionOccurred:
+		print "no message about already present file"
+		ret = False
+	a.quit()	
 
 	#first, try authenticating properly
 	a = Authenticate(cmd[1])
 	for (username, password) in TEST_SCENARIOS:
 		if True != a.authenticate(username, password):
-			print "ERROR: failed for (%s : %s)" %(username, password)
+			print "ERROR: didn't allow valid user to authenticate for (%s : %s)" %(username, password)
 	
 	#now, mess with the usernames
 	a = Authenticate(cmd[1])
@@ -160,15 +177,21 @@ def testAuthentication(cmd):
 		if False != a.authenticate(username, password):
 			print "ERROR: allowed invalid user to authenticate! for (%s : %s)" %(username, password)
 			ret = False
+	if hardQuit:
+		a.eofQuit()
+	else:
+		a.quit()
 
 	return ret
 
 
 print "simple authenticate: "
-print testAuthentication(("./create_authentication", "./authenticate"))
+print testAuthentication(("./create_authentication", "./authenticate"), False)
+print testAuthentication(("./create_authentication", "./authenticate"), True)
 
 print "\nsalty authenticate: "
-print testAuthentication(("./create_salty_authentication", "./salty_authenticate"))
-	
+print testAuthentication(("./create_salty_authentication", "./salty_authenticate"), False)
+print testAuthentication(("./create_salty_authentication", "./salty_authenticate"), True)
+
 
 	
