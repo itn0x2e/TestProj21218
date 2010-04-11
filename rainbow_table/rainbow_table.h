@@ -99,7 +99,7 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 */
 void RT_close(RainbowTable_t * self);
 
-
+/*!TODO !*/
 /**
 * Query the rainbow table for a hash, and attempt to return the original password for said hash.
 * Function desc: Using the algorithm detailed in the project spec, this function attempts to

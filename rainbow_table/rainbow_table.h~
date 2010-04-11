@@ -153,7 +153,7 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 
 /**
 * Calculate the correct size for the config object. Exposed to allow use in textual_dumper.c
-* (not an open interface)
+* (not part of the official interface)
 * @param chainLength - Number of links in the chain. For exhaustive tables, this is '0'.
 *		       For real rainbow tables, this is any value larger than 1.
 *
