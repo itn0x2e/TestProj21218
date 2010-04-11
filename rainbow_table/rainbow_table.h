@@ -26,7 +26,7 @@ typedef struct RainbowTable_s {
 } RainbowTable_t;
 
 
-ulong_t getConfigSize(ulong_t chainLength);
+
 
 /**
 * Build a Rainbow Table according to the specified parameters. This is only a creation interface
@@ -148,5 +148,18 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 		char * generatorPassword,
 		ulong_t passwordMaxLen,
 		const char * hashTableFilePrefix);
+
+
+
+/**
+* Calculate the correct size for the config object. Exposed to allow use in textual_dumper.c
+* (not part of the official interface)
+* @param chainLength - Number of links in the chain. For exhaustive tables, this is '0'.
+*		       For real rainbow tables, this is any value larger than 1.
+*
+* @ret size of the config object for the given chain length. Cannot fail.
+*
+*/
+ulong_t getConfigSize(ulong_t chainLength);
 
 #endif /* __RAINBOW_TABLE_H__ */

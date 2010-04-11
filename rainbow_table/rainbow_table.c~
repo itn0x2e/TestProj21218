@@ -6,19 +6,99 @@
 #include "../password/password_enumerator.h"
 #include "rainbow_table.h"
 
+
+
+
+/************************************************  Internal function declarations *********************************************/
+
+/**
+* Create an empty Rainbow Table according to the specified parameters. This is only a creation interface
+* for queries, see RT_open() & RT_query().
+* Function desc: This function will generate a new Rainbow Table as per the user's request
+*		 (Basically, it's a convenience wrapper for DEHT's creation interface).
+*
+* @param prefix - file prefix for DEHT hash table files. files are generated
+*			       for hashTableFilePrefix.key and hashTableFilePrefix.data
+* @param dictName - filename for dictionary
+* @param numEntriesInHashTable - number of buckets in the hash table. This may require some 
+*			     tuning to get decent performance.
+*			  performance.
+* @param nPairsPerBlock - number of key<->data pairs to store in each disk block in the 
+*			  hash table. This may require some tuning to get decent performance.
+* @param configLength - size of config buffer, in bytes.
+*
+* @ret valid instance ptr on success, NULL otherwise
+*
+*/
 static DEHT * createEmptyRainbowTable(const char *prefix,
 	      const char *dictName,
 	      uint_t numEntriesInHashTable,
 	      uint_t nPairsPerBlock,
-	      uint_t nBytesPerKey,
 	      uint_t configLength);
-				      
+
+/**
+* Close a rainbow table DEHT instance
+* Function desc: This function calls DEHT's lock interface (convenience wrapper)
+*
+* @param rainbowTable - pointer to instance to close
+*
+* @ret None
+*
+*/	      
 static void closeRainbowTable(DEHT * rainbowTable);
 
+
+/**
+* Initialize the config for the rainbow table.
+* Function desc: This function will initialize the DEHT payload to the rainbow table
+*		 config for the specified chain length, and generate a set of seeds 
+*		 to be used by the rainbow table. At the end of the operation,
+*		 the result are flushed to disk.
+*
+* @param rainbowTable - DEHT instance to apply to
+* @param rainbowChainLen - length of the chains to be used with the table
+*
+* @ret pointer to the config on success, NULL on failure
+*
+*/
 static const RainbowTableConfig_t * createConfig(DEHT * rainbowTable, ulong_t rainbowChainLen);
 
+/**
+* Create random seeds for the rainbow table
+* Function desc: This function will generate a set of seeds to be used by the rainbow
+*		 table.
+*
+* @param seeds - array of seeds to fill
+* @param rainbowChainLen - amound of seeds to create
+*
+* @ret pointer to the config on success, NULL on failure
+*
+*/
 static void randomizeSeeds(RainbowSeed_t * seeds, ulong_t rainbowChainLen);
 
+
+/**
+* Build a Rainbow Table according to the specified parameters. 
+* Function desc: This function will fill the DEHT instance with chains according to the 
+*		 configuration, by finding a random password each time, following down the
+*		 chain, and inserting the chain to the hash table (key=last hash, data=first password).
+*
+* @param deht - DEHT instance to use for insertion (insert_uniq_into_DEHT())
+* @param passwordEnumerator - a password enumerator over the password space. Expected to be a random
+*			      password enumerator over the password range, of about 10 * the actual
+*			      range (to increase likelihood of a hit for queries)
+* @param passwordGenerator - a password generator (random access to the entire password range)
+* @param firstPass - the buffer associated with the password enumerator, first password in each chain
+* @param generatorPassword - the buffer associated with the password generator, for getting
+*			     the next computed password in the chain
+* @param cryptHashPtr - valid pointer the one of the hash functions (SHA-1 / MD-5)
+* @param rainbowChainLen - length of the rainbow-chains
+* @param chainLength - number of transitions in the chain
+* @param seeds - array of seeds to use for chain computations
+*
+* @ret TRUE on success, FALSE otherwise.
+*
+*/
 static bool_t fillRainbowTable(DEHT * deht,
 			       passwordEnumerator_t * passwordEnumerator,
 			       const passwordGenerator_t * passwordGenerator,
@@ -27,7 +107,27 @@ static bool_t fillRainbowTable(DEHT * deht,
 			       BasicHashFunctionPtr cryptHashPtr,
 			       ulong_t chainLength,
 			       const RainbowSeed_t * seeds);
-			       
+		
+
+/**
+* Query the rainbow table for a hash, and attempt to return the original password for said hash.
+* Function desc: Using the algorithm detailed in the project spec, this function attempts to
+*		 find the original password for the given hash, by finding the password immediately
+*		 preceeding the target hash in a chain in the hash table
+*
+* @param deht - pointer to a DEHT instance holding rainbow chains
+* @param passwordGenerator - a password generator (random access to the entire password range)
+* @param password - the buffer associated with the password enumerator, first password in each chain
+* @param passwordLen - length of the password buffer
+* @param cryptHashPtr - valid pointer the one of the hash functions (SHA-1 / MD-5)
+* @param target - hash to be 'reversed'
+* @param targetLen - length of hash
+* @param found - out parameter - was the algorithm able to deduce the original password for
+*		 the requested hash.
+*
+* @ret TRUE if no errors were encountered, FALSE otherwise.
+*      If the query was successful, the recovered password is stored in the 'password' buffer
+*/	       
 static bool_t queryRainbowTable(DEHT * deht,
 		const passwordGenerator_t * passwordGenerator,
 		char * password,
@@ -38,12 +138,47 @@ static bool_t queryRainbowTable(DEHT * deht,
 		const byte_t * target,
 		uint_t targetLen,
 		bool_t * found);
-				
+		
+
+/**
+* read the rainbow table config from the deht instance
+* Function desc: Using DEHT's user bytes interface, get the rainbow table config.
+*
+* @param deht - pointer to a DEHT instance holding rainbow chains
+* @param config - out parameter - will receive the pointer to the config
+*
+* @ret TRUE if no errors were encountered, FALSE otherwise.
+*/	       		
 static bool_t readConfig(DEHT * deht, RainbowTableConfig_t ** config);
 
 
+/**
+* Insert uniquely into the DEHT instance
+* Function desc: Using DEHT's insert unique interface, insert into the hash table
+*
+* @param deht - pointer to a DEHT instance holding rainbow chains
+* @param key - key to insert under
+* @param keyLen - length of key, in bytes
+* @param dataStr - data to insert for key. Assumed to be a string and inserted WITH the ending null terminator.
+*
+* @ret TRUE if no errors were encountered, FALSE otherwise.
+*/
 static bool_t insertIntoDEHT(DEHT * deht, const byte_t * key, uint_t keyLen, const char * dataStr);
 
+/**
+* Query the hash table for key
+* Function desc: Using DEHT's query interface, check for the presence of key, 
+*		 and retrieve the corresponding data.
+*
+* @param deht - pointer to a DEHT instance holding rainbow chains
+* @param key - key to insert under
+* @param keyLen - length of key, in bytes
+* @param dataStr - buffer to hold the result
+* @param dataStrMaxLen - maximum buffer size for dataStr
+* @param found - out parameter - was the key found in the hash table
+*
+* @ret TRUE if no errors were encountered, FALSE otherwise.
+*/
 static bool_t queryPasswordFromDEHT(DEHT * deht,
 				    const byte_t * key,
 				    uint_t keyLen,
@@ -51,6 +186,24 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 				    uint_t dataStrMaxLen,
 				    bool_t * found);
    
+
+/**
+* 'walk' down the rainbow chain, creating the updated passwords and hashes
+* Function desc: Using the algorithm detailed in the project spec, this function can be used
+*		 to compute the chains used in the table creation and query.
+*
+* @param hash - hash value to begin with
+* @param hashLen - length of hash
+* @param passwordGenerator - a password generator (random access to the entire password range)
+* @param numPossiblePasswords - size of the password space
+* @param password - the buffer associated with the password generator
+* @param cryptHashPtr - valid pointer the one of the hash functions (SHA-1 / MD-5)
+* @param seeds - array of seeds to use for chain computations
+* @param steps - number of steps to make down the chain
+* @param beginningIndex - index in the seeds array to begin at
+*
+* @ret None (cannot fail)
+*/	       
 static void advanceInChain(byte_t * hash,
 			   uint_t hashLen,
 			   const passwordGenerator_t * passwordGenerator,
@@ -60,6 +213,20 @@ static void advanceInChain(byte_t * hash,
 			   const RainbowSeed_t * seeds,
 			   uint_t steps,
 			   uint_t beginningIndex);
+
+
+
+
+
+
+/************************************************  Function defintions *********************************************/
+
+
+
+
+
+
+
 
 bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   const passwordGenerator_t * passwordGenerator,
@@ -79,7 +246,6 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 						     getNameFromHashFun(hashFunc),
 						     nHashTableEntries,
 						     nPairsPerBlock,
-						     BYTES_PER_KEY,
 						     getConfigSize(rainbowChainLen)));
 
 	/* Create rainbow table configuration in the rainbow table */
@@ -217,15 +383,13 @@ bool_t RT_query(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, boo
 static DEHT * createEmptyRainbowTable(const char *prefix,
 				      const char *dictName,
 				      uint_t numEntriesInHashTable,
-				      uint_t nPairsPerBlock,
-				      uint_t nBytesPerKey,
-				      uint_t configLength) {
+				      uint_t nPairsPerBlock, uint_t configLength) {
 	return create_empty_DEHT(prefix,
 				 DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64,
 				 dictName,
 				 (int) numEntriesInHashTable,
 				 (int) nPairsPerBlock,
-				 (int) nBytesPerKey,
+				 BYTES_PER_KEY,
 				 (int) configLength);
 }
 
