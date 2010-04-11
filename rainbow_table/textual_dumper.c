@@ -184,13 +184,16 @@ bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
 
 
 	for (j = 0; j < rt->config->chainLength; ++j) {
-		/* k = pseudo-random-function with seed seed[j] and input curHash; */
-		RainbowSeed_t k = pseudo_random_function(curHash, hashLen, rt->config->seeds[j]); 
-	
-		/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
-		k %= numPossiblePasswords;
-		passwordGeneratorCalculatePassword(rt->passGenerator, k, rt->password);
-		cryptHash(rt->hashFunc, rt->password, curHash);
+
+		/* advance one step in the chain */
+		advanceInChain(curHash, hashLen,
+			   rt->passGenerator,
+			   rt->password,
+			   rt->hashFunc,
+			   rt->config->seeds,
+			   1,
+			   j);
+
 	
 		/* print appropriate password */
 		fprintf(outputFd, "\t%s", rt->password);

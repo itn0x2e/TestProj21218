@@ -147,7 +147,7 @@ bool_t RT_query(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, boo
 * @param hashTableFilePrefix - prefix for DEHT files to open. The files must exist and must
 *			       be the result of a successful call to RT_generate
 *
-* @ret TRUE if no errors were encountered, FALSE otherwise.
+* @return TRUE if no errors were encountered, FALSE otherwise.
 */
 bool_t RT_print(FILE * seedsAndPasswordsFd,
 		FILE * chainsFd,
@@ -156,8 +156,6 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 		char * generatorPassword,
 		ulong_t passwordMaxLen,
 		const char * hashTableFilePrefix);
-
-
 
 /**
 * Calculate the correct size for the config object. Exposed to allow use in textual_dumper.c
@@ -169,5 +167,32 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 *
 */
 ulong_t getConfigSize(ulong_t chainLength);
+
+
+
+/**
+* Travel along the rainbow chain, creating the updated passwords and hashes
+* Function desc: Using the algorithm detailed in the project spec, this function can be used
+*		 to compute the chains used in the table creation and query.
+*
+* @param hash - hash value to begin with
+* @param hashLen - length of hash
+* @param passwordGenerator - a password generator (random access to the entire password range)
+* @param password - the buffer associated with the password generator
+* @param cryptHashPtr - valid pointer the one of the hash functions (SHA-1 / MD-5)
+* @param seeds - array of seeds to use for chain computations
+* @param steps - number of steps to make down the chain
+* @param beginningIndex - index in the seeds array to begin at
+*/	       
+void advanceInChain(byte_t * hash,
+			   uint_t hashLen,
+			   const passwordGenerator_t * passwordGenerator,
+			   char * password,
+			   BasicHashFunctionPtr cryptHashPtr,
+			   const RainbowSeed_t * seeds,
+			   uint_t steps,
+			   uint_t beginningIndex);
+
+
 
 #endif /* __RAINBOW_TABLE_H__ */
