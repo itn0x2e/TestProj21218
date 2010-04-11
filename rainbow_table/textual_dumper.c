@@ -9,15 +9,106 @@
 #include "rainbow_table.h"
 
 
+/************************************************  Internal types declarations *********************************************/
 
-
+/* Type for the enumeration of the rainbow table's passwords and chains.
+   A reference to an instance of this type is passed as the param in the call to DEHT_enumerate */
 typedef struct htEnumerationParams_s {
+	/* Rainbow table instance */
 	RainbowTable_t * rt;
 
+	/* file object for dumping passwords */
 	FILE * passwordsFd;
+	/* file object for dumping chain info */
 	FILE * chainsFd;
 } htEnumerationParams_t;
 
+
+
+
+/************************************************  Internal function declarations *********************************************/
+
+/**
+* Print the seeds values for the specified Rainbow Table to the file.
+* Function desc: This function will dump the seed information to the output file, for
+*		 debugging and testing
+*
+* @param rt - rainbow table instance
+* @param fd - file to dump output to 
+*
+* @ret TRUE on success, FALSE otherwise.
+*
+*/
+static bool_t printSeeds(RainbowTable_t * rt, FILE * fd);
+
+
+/**
+* Starting with the given password, print the associated password and hash in every 
+* step of the chain and return the final hash
+* Function desc: This function dumps the chain contents in every step of the chain,
+*		 as well as copying the resulting hash to the user. This allows the user
+*		 to verify the correctness of the hash table information.
+*
+* @param rt - rainbow table instance
+* @param outputFd - file to dump output to 
+* @param password - initial password for chain
+* @param passwordLen - length of password, in bytes
+* @param hashOut - buffer to copy final hash to
+* @param passwordLen - length of hash buffer, in bytes
+*
+* @ret TRUE on success, FALSE otherwise.
+*
+*/
+
+bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
+			   char * password, ulong_t passwordLen,
+			   byte_t * hashOut, ulong_t hashOutLen);
+
+/**
+* Enumeration callback the prints all the needed chain information for the rainbow table
+* Function desc: By passing this function as the callback to DEHT_enumerate(), this function
+*		 will be called for each key<-> data pair in the hash table.
+*		 by passing a pointer to a htEnumerationParams_t object in the call to
+*		 DEHT_enumerate(), this function will take care of dumping the passwords to one file
+*		 and the chain information (and verification results) to the other.
+*
+* @param bucketIndex - bucket index for current key<->data pair
+* @param key - key of current set
+* @param keyLen - length of key, in bytes
+* @param data - data of current set
+* @param dataLen - length of data, in bytes
+*
+* @ret None
+*
+*/
+static void hashTableEnumerationFunc(int bucketIndex,
+				     byte_t * key, ulong_t keySize, 
+				     byte_t * data, ulong_t dataLen,
+				     void * params);
+
+
+
+
+
+
+
+/************************************************  Function defintions *********************************************/
+
+
+
+
+
+/**
+* Print the seeds values for the specified Rainbow Table to the file.
+* Function desc: This function will dump the seed information to the output file, for
+*		 debugging and testing
+*
+* @param rt - rainbow table instance
+* @param fd - file to dump output to 
+*
+* @ret TRUE on success, FALSE otherwise.
+*
+*/
 static bool_t printSeeds(RainbowTable_t * rt, FILE * fd)
 {
 	bool_t ret = FALSE;
@@ -58,6 +149,7 @@ LBL_CLEANUP:
 	TRACE_FUNC_EXIT();
 	return ret;
 }
+
 
 
 bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,

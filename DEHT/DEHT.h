@@ -101,6 +101,22 @@ typedef struct KeyFilePair_s {
 } KeyFilePair_t;
 
 
+
+/**
+* Enumeration callback function pointer type for DEHT_enumerate()
+* Function desc: This is the type definition for callbacks to be passed to 
+*		 DEHT_enumerate(). The callback will be called for each key<->data
+*		 set in the hash table
+*
+* @param bucketIndex - bucket index for current key<->data pair
+* @param key - key of current set
+* @param keyLen - length of key, in bytes
+* @param data - data of current set
+* @param dataLen - length of data, in bytes
+*
+* @ret None
+*
+*/
 typedef void (* DEHT_enumerationCallback_t) (int bucketIndex,
 					 byte_t * key, ulong_t keyLen,
 					 byte_t * data, ulong_t dataLen, void * param);

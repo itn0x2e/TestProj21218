@@ -7,22 +7,40 @@
 #include "../password/password_generator.h"
 #include "../DEHT/DEHT.h"
 
+
+/* A container type for the seeds values */
 typedef LONG_INDEX_PROJ RainbowSeed_t;
+
 
 /* data stored inside DEHT's user bytes */
 typedef struct RainbowTableConfig_s {
+	/* length of the chains in this rainbow table */
 	ulong_t chainLength;
+	/* array of seeds. The actual length may be anything between 1 member which is ignored (exhaustive mode) and MAX_ULONG */
 	RainbowSeed_t seeds[1];
 } RainbowTableConfig_t;
 
-/* instance */
+
+/* Instance type for rainbow table management.
+   This object is used to perform basic operations on the rainbow table */
 typedef struct RainbowTable_s {
+
+	/* Associated DEHT hash table */
 	DEHT * hashTable;
+
+	/* chain and seeds configuration */
 	RainbowTableConfig_t * config;
+
+	/* hash function to use */
 	BasicHashFunctionPtr hashFunc;
+
+	/* password generator for chains */
 	const passwordGenerator_t * passGenerator;
+	/* password buffer for generator */
 	char * password;
+	/* maximum length of the password buffer */
 	ulong_t passwordLength;
+
 } RainbowTable_t;
 
 
