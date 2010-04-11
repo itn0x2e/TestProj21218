@@ -6,9 +6,6 @@
 #include "../password/password_enumerator.h"
 #include "rainbow_table.h"
 
-
-
-
 /************************************************  Internal function declarations *********************************************/
 
 /**
@@ -156,7 +153,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 static bool_t readConfig(DEHT * deht, RainbowTableConfig_t ** config);
 
 
-/*!TODO !*/
 /**
 * Insert uniquely into the DEHT instance
 * Function desc: Using DEHT's insert unique interface, insert into the hash table
@@ -194,7 +190,7 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
    
 
 /**
-* 'walk' down the rainbow chain, creating the updated passwords and hashes
+* Travel along the rainbow chain, creating the updated passwords and hashes
 * Function desc: Using the algorithm detailed in the project spec, this function can be used
 *		 to compute the chains used in the table creation and query.
 *
@@ -207,8 +203,6 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 * @param seeds - array of seeds to use for chain computations
 * @param steps - number of steps to make down the chain
 * @param beginningIndex - index in the seeds array to begin at
-*
-* @ret None (cannot fail)
 */	       
 static void advanceInChain(byte_t * hash,
 			   uint_t hashLen,

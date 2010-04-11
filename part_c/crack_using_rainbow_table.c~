@@ -11,8 +11,8 @@ void commandLoop(RainbowTable_t * rainbowTable, char * password);
 RainbowTable_t * initializeRainbowTable(const passwordGenerator_t * passGenerator,
 					  char * generatorPassword,
 					  const char * prefix);
-void finalizeRainbowTable(RainbowTable_t * rainbowTable); /* TODO: this func should tolerate NULL as arg, and ignore it */
-bool_t queryRainbowTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, bool_t * found); /* TODO: should receive size allocated for password? */
+void finalizeRainbowTable(RainbowTable_t * rainbowTable); 
+bool_t queryRainbowTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, bool_t * found); 
 
 int main(int argc, char** argv);
 
@@ -155,8 +155,5 @@ void finalizeRainbowTable(RainbowTable_t * rainbowTable) {
 }
 
 bool_t queryRainbowTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, bool_t * found) {
-	/*char s[1000];
-	binary2hexa(hash, (int) hashLen, s, sizeof(s));
-	printf("queryRainbowTable: %s\n", s);*/
 	return RT_query(rainbowTable, hash, hashLen, found);
 }

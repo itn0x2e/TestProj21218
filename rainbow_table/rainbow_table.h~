@@ -7,10 +7,8 @@
 #include "../password/password_generator.h"
 #include "../DEHT/DEHT.h"
 
-
-/* A container type for the seeds value */
+/* A container type for the seeds values */
 typedef LONG_INDEX_PROJ RainbowSeed_t;
-
 
 /* data stored inside DEHT's user bytes */
 typedef struct RainbowTableConfig_s {
@@ -19,7 +17,6 @@ typedef struct RainbowTableConfig_s {
 	/* array of seeds. The actual length may be anything between 1 member which is ignored (exhaustive mode) and MAX_ULONG */
 	RainbowSeed_t seeds[1];
 } RainbowTableConfig_t;
-
 
 /* Instance type for rainbow table management.
    This object is used to perform basic operations on the rainbow table */
@@ -42,9 +39,6 @@ typedef struct RainbowTable_s {
 	ulong_t passwordLength;
 
 } RainbowTable_t;
-
-
-
 
 /**
 * Build a Rainbow Table according to the specified parameters. This is only a creation interface
@@ -69,8 +63,7 @@ typedef struct RainbowTable_s {
 * @param nPairsPerBlock - number of key<->data pairs to store in each disk block in the 
 *			  hash table. This may require some tuning to get decent performance.
 *
-* @ret TRUE on success, FALSE otherwise.
-*
+* @return TRUE on success, FALSE otherwise.
 */
 bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   const passwordGenerator_t * passwordGenerator,
@@ -97,8 +90,8 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 * @param enableFirstBlockCache - If true, we will attempt to use DEHT's first block ptr
 *				 cache to speed up queries.
 *
-* @ret A pointer to a valid instance if successful, NULL otherwise.
-*      This instance MUST BE freed by RT_close, and not just by 'free'!
+* @return A pointer to a valid instance if successful, NULL otherwise.
+*     	  This instance MUST BE freed by RT_close, and not just by 'free'!
 */
 RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 			 char * password,
@@ -112,12 +105,9 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 *		 RT_open().  
 *
 * @param self - pointer to a valid Rainbow Table instance
-*
-* @ret None.
 */
 void RT_close(RainbowTable_t * self);
 
-/*!TODO !*/
 /**
 * Query the rainbow table for a hash, and attempt to return the original password for said hash.
 * Function desc: Using the algorithm detailed in the project spec, this function attempts to
@@ -129,9 +119,9 @@ void RT_close(RainbowTable_t * self);
 * @param found - out parameter - was the algorithm able to deduce the original password for
 *		 the requested hash.
 *
-* @ret TRUE if no errors were encountered, FALSE otherwise.
-*      If the query was successful, the recovered password is stored in the buffer originally
-*      passed to RT_open.
+* @return TRUE if no errors were encountered, FALSE otherwise.
+* 	  If the query was successful, the recovered password is stored in the buffer originally
+*         passed to RT_open.
 */
 bool_t RT_query(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, bool_t * found);
 
