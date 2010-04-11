@@ -5,16 +5,64 @@
 #include "types.h"
 #include "../password/dictionary.h"
 
+/**
+ * Validates the syntax of a rule and possibly outputs an error message.
+ *
+ * @param rule		A string representation of a rule.
+ * @return whether the rule has a valid syntax.
+ *
+ * @pre rule != NULL
+ */
 bool_t validateRule(const char * rule);
+
+/**
+ * Verifies that DEHT files exist and possibly outputs an error message.
+ *
+ * @param prefix	The file prefix
+ * @return whether the DEHT files exist
+ *
+ * @pre prefix != NULL
+ */
 bool_t verifyDEHTExists(const char * prefix);
+
+/**
+ * Verifies that DEHT files do not exist and possibly outputs an error message.
+ *
+ * @param prefix	The file prefix
+ * @return whether the DEHT files do not exist
+ *
+ * @pre prefix != NULL
+ */
 bool_t verifyDEHTNotExist(const char * prefix);
+
+/**
+ * Verifies that a file exists and possibly outputs an error message.
+ *
+ * @param filename	The file name
+ * @return whether the file exists
+ *
+ * @pre prefix != NULL
+ */
 bool_t verifyFileExists(const char * filename);
+
+/**
+ * Verifies that a file does not exists and possibly outputs an error message.
+ *
+ * @param filename	The file name
+ * @return whether the file does not exist
+ *
+ * @pre prefix != NULL
+ */
 bool_t verifyFileNotExist(const char * filename);
 
+/**
+ * Parses the content of an INI file and possibly outputs an error message.
+ *
+ * */
 bool_t parseIni(char * content, const char ** keys, const char ** values, uint_t numKeys);
-bool_t parseIniPartial(char * content, const char ** keys, const char ** values, uint_t numKeys);
+/*bool_t parseIniPartial(char * content, const char ** keys, const char ** values, uint_t numKeys);*/
 bool_t parseIniNum(const char * str, ulong_t * num);
-void printIni(const char ** keys, const char ** values, uint_t numKeys); /* TODO: use this in text_export_rainbow_table */
+void printIni(const char ** keys, const char ** values, uint_t numKeys);
 bool_t parseHashFunName(BasicHashFunctionPtr * hashFunc, const char * name);
 bool_t readDictionaryFromFile(dictionary_t * dictionary, const char * filename);
 
