@@ -6,11 +6,38 @@
 #include "../password/password_enumerator.h"
 #include "rainbow_table.h"
 
+
+/**
+* Create an empty Rainbow Table according to the specified parameters. This is only a creation interface
+* for queries, see RT_open() & RT_query().
+* Function desc: This function will generate a new Rainbow Table as per the user's request.
+*
+* @param prefix - file prefix for DEHT hash table files. files are generated
+*			       for hashTableFilePrefix.key and hashTableFilePrefix.data
+* @param dictName - filename for dictionary
+* @param numEntriesInHashTable - number of buckets in the hash table. This may require some 
+*			     tuning to get decent performance.
+*			  performance.
+* @param nPairsPerBlock - number of key<->data pairs to store in each disk block in the 
+*			  hash table. This may require some tuning to get decent performance.
+* @param passwordEnumerator - a password enumerator over the password space. Expected to be a random
+*			      password enumerator over the password range, of about 10 * the actual
+*			      range (to increase likelihood of a hit for queries)
+* @param passwordGenerator - a password generator (random access to the entire password range)
+* @param enumeratorPassword - the buffer associated with the password enumerator
+* @param generatorPassword - the buffer associated with the password generator
+* @param hashFunc - valid pointer the one of the hash function (SHA-1 / MD-5)
+* @param rainbowChainLen - length of the rainbow-chains
+* @param prefix - file prefix for DEHT hash table files. files are generated
+*			       for hashTableFilePrefix.key and hashTableFilePrefix.data
+*
+* @ret TRUE on success, FALSE otherwise.
+*
+*/
 static DEHT * createEmptyRainbowTable(const char *prefix,
 	      const char *dictName,
 	      uint_t numEntriesInHashTable,
 	      uint_t nPairsPerBlock,
-	      uint_t nBytesPerKey,
 	      uint_t configLength);
 				      
 static void closeRainbowTable(DEHT * rainbowTable);
@@ -79,7 +106,6 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 						     getNameFromHashFun(hashFunc),
 						     nHashTableEntries,
 						     nPairsPerBlock,
-						     BYTES_PER_KEY,
 						     getConfigSize(rainbowChainLen)));
 
 	/* Create rainbow table configuration in the rainbow table */
@@ -217,15 +243,13 @@ bool_t RT_query(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, boo
 static DEHT * createEmptyRainbowTable(const char *prefix,
 				      const char *dictName,
 				      uint_t numEntriesInHashTable,
-				      uint_t nPairsPerBlock,
-				      uint_t nBytesPerKey,
-				      uint_t configLength) {
+				      uint_t nPairsPerBlock, uint_t configLength) {
 	return create_empty_DEHT(prefix,
 				 DEHT_keyToTableIndexHasher, DEHT_keyToValidationKeyHasher64,
 				 dictName,
 				 (int) numEntriesInHashTable,
 				 (int) nPairsPerBlock,
-				 (int) nBytesPerKey,
+				 BYTES_PER_KEY,
 				 (int) configLength);
 }
 
