@@ -34,15 +34,11 @@ static DEHT * createEmptyRainbowTable(const char *prefix,
 	      uint_t configLength);
 
 
-/*!TODO !*/
 /**
 * Close a rainbow table DEHT instance
 * Function desc: This function calls DEHT's lock interface (convenience wrapper)
 *
 * @param rainbowTable - pointer to instance to close
-*
-* @ret None
-*
 */	      
 static void closeRainbowTable(DEHT * rainbowTable);
 
@@ -530,7 +526,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 					0);
 
                         /* Check whether the hash of the current password is the target */
-			/*cryptHash(cryptHashPtr, password, curHash);*/
 			if (0 == memcmp(curHash, target, targetLen)) {
 				/* If so, return the current password */
 				*found = TRUE;

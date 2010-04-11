@@ -34,15 +34,11 @@ static DEHT * createEmptyRainbowTable(const char *prefix,
 	      uint_t configLength);
 
 
-/*!TODO !*/
 /**
 * Close a rainbow table DEHT instance
 * Function desc: This function calls DEHT's lock interface (convenience wrapper)
 *
 * @param rainbowTable - pointer to instance to close
-*
-* @ret None
-*
 */	      
 static void closeRainbowTable(DEHT * rainbowTable);
 
