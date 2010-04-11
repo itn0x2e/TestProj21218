@@ -323,7 +323,11 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 
 	/* if chain length is 0, we will not require a password generator (otherwise, one is neccessary) */
 	if (0 != self->config->chainLength) {
-		CHECK(NULL != passGenerator);
+		if (NULL == passGenerator) {
+			/* probably, the user is trying to open a rainbow table as an exhaustive table */
+			fprintf(stderr, "Error: rainbow table has chains\n");
+			goto LBL_ERROR;
+		}
 	}
 
 	ret = self;
