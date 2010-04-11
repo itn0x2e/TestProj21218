@@ -10,16 +10,12 @@
 #include <stdio.h>
 #include "../common/types.h"
 
-
-
-
 /********************************************************************/
 /* type DEHT_DISK_PTR stands for "pointers" representation in DEHT  */
 /* Data-type of long (argument of "fseek" function) represents an   */
 /* offset in a file, which is "disk pointers" in our implementation */
 /********************************************************************/
 #define DEHT_DISK_PTR    long 
-
 
 
 /*******************************************************  MACROS & DEFINITIONS *****************************************************/
@@ -85,9 +81,6 @@
 		*(__NEXT_BLOCK_PTR(ht, blockPtr)) = nextBlockPtr; \
 	} while (0)
 
-
-
-
 /************************************************  Type definitions *********************************************/
 
 /* This struct represents a key-data pair as stored in the key file
@@ -112,9 +105,6 @@ typedef struct KeyFilePair_s {
 * @param keyLen - length of key, in bytes
 * @param data - data of current set
 * @param dataLen - length of data, in bytes
-*
-* @ret None
-*
 */
 typedef void (* DEHT_enumerationCallback_t) (int bucketIndex,
 					 byte_t * key, ulong_t keyLen,
@@ -228,9 +218,8 @@ DEHT *create_empty_DEHT(const char *prefix,
 /* Returns NULL if fail (e.g. files are not exist) with message to stderr       */
 /********************************************************************************/
 DEHT *load_DEHT_from_files(const char *prefix,
-						   hashKeyIntoTableFunctionPtr hashfun, hashKeyforEfficientComparisonFunctionPtr validfun); 
-
-
+			   hashKeyIntoTableFunctionPtr hashfun,
+			   hashKeyforEfficientComparisonFunctionPtr validfun); 
 
 /********************************************************************************/
 /* Function insert_uniquely_DEHT inserts an ellement.                           */
@@ -318,11 +307,6 @@ int write_DEHT_pointers_table(DEHT *ht);
 /************************************************************************************/
 int calc_DEHT_last_block_per_bucket(DEHT *ht); 
 
-
-
-
-
-
 /************************************************************************************/
 /* Function lock_DEHT_files closes the DEHT files and release memory.               */
 /* Input: DEHT to act on. No Output (never fail).                                   */
@@ -351,7 +335,7 @@ void lock_DEHT_files(DEHT *ht);
 *	Rainbow Table module) delete these files if THEY have an internal error,
 *	requiring a cleanup operation
 *
-* @ret - TRUE on succes, FALSE otherwise. 
+* @return TRUE on succes, FALSE otherwise. 
 *
 */
 bool_t DEHT_removeFiles(const char * filenamePrefix);
@@ -368,8 +352,8 @@ bool_t DEHT_removeFiles(const char * filenamePrefix);
 * @param bufSize - out parameter - After the call, the ulong_t pointed to
 * 		   by bufSize will hold the user buffer size.
 *
-* @ret DEHT_STATUS_SUCCESS on first call for this DEHT object, DEHT_STATUS_NOT_NEEDED
-*      on subsequent calls, DEHT_STATUS_FAIL on failure.
+* @return DEHT_STATUS_SUCCESS on first call for this DEHT object, DEHT_STATUS_NOT_NEEDED
+*	  on subsequent calls, DEHT_STATUS_FAIL on failure.
 *
 */
 int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
@@ -388,8 +372,8 @@ int DEHT_getUserBytes(DEHT * ht, byte_t * * bufPtr, ulong_t * bufSize);
 *
 * @param ht - hash table object
 *
-* @ret DEHT_STATUS_SUCCESS on successful dump to disk, DEHT_STATUS_NOT_NEEDED if the buffer isn't
-*      allocated or if numUnreleatedBytesSaved is 0. DEHT_STATUS_FAIL is returned on failure.
+* @return DEHT_STATUS_SUCCESS on successful dump to disk, DEHT_STATUS_NOT_NEEDED if the buffer isn't
+*	  allocated or if numUnreleatedBytesSaved is 0. DEHT_STATUS_FAIL is returned on failure.
 *
 */
 int DEHT_writeUserBytes(DEHT * ht);
@@ -406,8 +390,7 @@ int DEHT_writeUserBytes(DEHT * ht);
 * @param callback - a call back to call (must not be null)
 * @param param - generic parameter for use by the callback (can be null)
 *
-* @ret TRUE on success, FALSE otherwise
-*
+* @return TRUE on success, FALSE otherwise
 */
 bool_t DEHT_enumerate(DEHT * ht, 
 		      DEHT_enumerationCallback_t callback, void * param);
