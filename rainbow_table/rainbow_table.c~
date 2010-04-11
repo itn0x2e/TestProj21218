@@ -247,6 +247,9 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 	DEHT * rainbowTable = NULL;
 	const RainbowTableConfig_t * config = NULL;
 
+
+	TRACE_FUNC_ENTRY();
+	
 	/* Create an empty rainbow table */
 	CHECK(rainbowTable = createEmptyRainbowTable(hashTableFilePrefix,
 						     getNameFromHashFun(hashFunc),
@@ -267,12 +270,20 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 			       hashFunc,
 			       rainbowChainLen,
 			       config->seeds);
+	goto LBL_CLEANUP;
+
 
 LBL_ERROR:
-	closeRainbowTable(rainbowTable);
+	ret = FALSE;
+	TRACE_FUNC_ERROR();
 
-	/* We failed to generate the table, so we should remove the file */
-	(void) DEHT_removeFiles(hashTableFilePrefix);
+LBL_CLEANUP:
+	closeRainbowTable(rainbowTable);
+	if (!ret) {
+		/* We failed to generate the table, so we should remove the file */
+		(void) DEHT_removeFiles(hashTableFilePrefix);
+	}
+	TRACE_FUNC_EXIT();
 
 	return ret;
 }

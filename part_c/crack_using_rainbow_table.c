@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
 bool_t crackUsingRainbowTable(const char * prefix,
 			      const char * rule,
 			      const char * dictionaryFilename) {
+	bool_t ret = FALSE;
 	dictionary_t dictionary;
 	passwordGenerator_t passwordGenerator;
 	ulong_t maxPasswordLength;
@@ -68,15 +69,15 @@ bool_t crackUsingRainbowTable(const char * prefix,
 	commandLoop(rainbowTable, generatorPassword);
 	
 	finalizeRainbowTable(rainbowTable);
-	return TRUE;
-	
+	ret = TRUE;
+
 LBL_CLEANUP_GENERATOR:
 	passwordGeneratorFinalize(&passwordGenerator);
 LBL_CLEANUP_DICTIONARY:
 	dictionaryFinalize(&dictionary);
 LBL_ERROR:
 	FREE(generatorPassword);
-	return FALSE;
+	return ret;
 }
 
 bool_t crackUsingRainbowTableUsingIni(const char * prefix, const char * iniFilename) {

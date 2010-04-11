@@ -17,8 +17,8 @@
  * @param keySize - number of bytes in the data buffer
  * @param tableSize - number of buckets in hash table
  *
- * @ret An index between 0 and tableSize
- *      on subsequent calls, DEHT_STATUS_FAIL on failure.
+ * @return	An index between 0 and tableSize
+ * 		on subsequent calls, DEHT_STATUS_FAIL on failure.
  *
  */
 int DEHT_keyToTableIndexHasher(const unsigned char * key, int keySize, int tableSize);
@@ -35,7 +35,7 @@ int DEHT_keyToTableIndexHasher(const unsigned char * key, int keySize, int table
  * @param keySize - number of bytes in the data buffer
  * @param resBuf - a buffer that will receive the hash output
  *
- * @ret always 0 (the project spec didn't specify anything as to these function's return value)
+ * @return	always 0 (the project spec didn't specify anything as to these function's return value)
  *
  */
 int DEHT_keyToValidationKeyHasher64(const unsigned char * key,int keySize, unsigned char * resBuf);
@@ -51,7 +51,7 @@ int DEHT_keyToValidationKeyHasher64(const unsigned char * key,int keySize, unsig
  * @param keySize - number of bytes in the data buffer
  * @param resBuf - a buffer that will receive the hash output
  *
- * @ret always 0 (the project spec didn't specify anything as to these function's return value)
+ * @return	always 0 (the project spec didn't specify anything as to these function's return value)
  *
  */
 int DEHT_keyToValidationKeyHasher128(const unsigned char * key,int keySize, unsigned char * resBuf);

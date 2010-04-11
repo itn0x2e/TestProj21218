@@ -216,8 +216,6 @@ bool_t removeFile(char * fileName)
 	CHECK(NULL != fileName);
 
 	/* First, check if the file is present */
-	/*! Due to the fact we were limited to using the ANSI-C std-lib, this is the best way we could
-	   check a file's existance.  Using the unix API would be much better (access / stat) !*/
 	fd = fopen(fileName, "rb");
 	if (NULL == fd) {
 		return TRUE;
