@@ -83,7 +83,7 @@ bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
 	numPossiblePasswords = passwordGeneratorGetSize(rt->passGenerator);
 
        /* first, print the initial password */
-        fprintf(outputFd, "firstPass=%s", password);
+        fprintf(outputFd, "%s", password);
         
         /* calculate its hash */
         CHECK(NULL != rt->hashFunc);
@@ -92,7 +92,7 @@ bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
         
         /* print the hash (in hex) */
         binary2hexa(curHash, hashLen, hashStr, sizeof(hashStr));
-        fprintf(outputFd, "\tfirstHash=%s", hashStr);
+        fprintf(outputFd, "\t%s", hashStr);
 
 
 	for (j = 0; j < rt->config->chainLength; ++j) {
@@ -105,11 +105,11 @@ bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
 		cryptHash(rt->hashFunc, rt->password, curHash);
 	
 		/* print appropriate password */
-		fprintf(outputFd, "\tpass=%s", rt->password);
+		fprintf(outputFd, "\t%s", rt->password);
 
 		/* print corresponding hash */
 		binary2hexa(curHash, hashLen, hashStr, sizeof(hashStr));
-		fprintf(outputFd, "\thash=%s", hashStr);
+		fprintf(outputFd, "\t%s", hashStr);
 	}
 
 	/* copy result hash to user */
@@ -152,9 +152,8 @@ static void hashTableEnumerationFunc(int bucketIndex,
 	CHECK(NULL != enumerationParams->passwordsFd);
 	CHECK(NULL != enumerationParams->chainsFd);
 
-	
-	fprintf(enumerationParams->passwordsFd, "%s\n", data);
 
+	fprintf(enumerationParams->passwordsFd, "%s\n", data);
 
 	CHECK(calcAndPrintChain(enumerationParams->rt, enumerationParams->chainsFd,
 				(char *) data, dataLen,

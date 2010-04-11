@@ -154,7 +154,6 @@ RainbowTable_t * initializeRainbowTable(const passwordGenerator_t * passGenerato
 
 void finalizeRainbowTable(RainbowTable_t * rainbowTable) {
 	RT_close(rainbowTable);
-	FREE(rainbowTable);
 }
 
 bool_t queryRainbowTable(RainbowTable_t * rainbowTable, byte_t * hash, uint_t hashLen, bool_t * found) {

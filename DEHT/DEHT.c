@@ -296,7 +296,7 @@ static bool_t DEHT_enumerateBlock(DEHT * ht,
 * @ret TRUE on success, FALSE otherwise
 *
 */
-static bool_t DEHT_enumerateBucket(DEHT * ht, ulong_t bucketIndex, 
+static bool_t DEHT_enumerateBucket(DEHT * ht, int bucketIndex, 
 			    byte_t * blockBuffer,
 			    DEHT_enumerationCallback_t callback, void * param);
 
@@ -542,8 +542,9 @@ int insert_uniquely_DEHT ( DEHT *ht, const unsigned char *key, int keyLength,
 			goto LBL_ERROR;
 		}
 
+
 		/* if we got here, the key was found */
-		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): updating record at %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockDiskOffset));
+		TRACE_FPRINTF((stderr, "TRACE: %s:%d (%s): key already in DEHT. Updating record at %#x\n", __FILE__, __LINE__, __FUNCTION__, (uint_t) keyBlockDiskOffset));
 
 		/* update data in the data file */
 		CHECK(DEHT_addData(ht, data, dataLength, &newDataOffset)); 
@@ -1383,7 +1384,7 @@ static void DEHT_formatFilenames(DEHT * ht, char * prefix)
 	
 LBL_ERROR:
 	TRACE_FUNC_ERROR();
-	/* Fail silently. Our called will be able to handle this. */
+	/* Fail silently. Our caller will be able to handle this. */
 
 LBL_CLEANUP:
 	TRACE_FUNC_EXIT();
@@ -1445,7 +1446,7 @@ LBL_CLEANUP:
 static bool_t DEHT_enumerateBlock(DEHT * ht, 
 				byte_t * blockBuffer,
 				int bucketIndex,
-				DEHT_enumerationCallback_t func, void * param)
+				DEHT_enumerationCallback_t callback, void * param)
 {
 	bool_t ret = FALSE;
 
@@ -1458,7 +1459,8 @@ static bool_t DEHT_enumerateBlock(DEHT * ht,
 	
 	CHECK(NULL != ht);
 	CHECK(NULL != blockBuffer);
-	CHECK(NULL != func);
+	CHECK(NULL != callback);
+
 
 	for (recordIndex = 0; recordIndex < GET_USED_RECORD_COUNT(blockBuffer); ++recordIndex) {
 		currPair = GET_N_REC_PTR_IN_BLOCK(ht, blockBuffer, recordIndex);
@@ -1468,8 +1470,8 @@ static bool_t DEHT_enumerateBlock(DEHT * ht,
 		/* terminate for sure */
 		currData[MIN(bytesRead, sizeof(currData) - 1)] = 0x00;
 
-		/* call user func */
-		func(bucketIndex, 
+		/* call user callback */
+		callback(bucketIndex, 
 		     currPair->key, ht->header.nBytesPerValidationKey,
 		     currData, bytesRead,
 		     param);		
@@ -1490,9 +1492,9 @@ LBL_CLEANUP:
 
 
 
-static bool_t DEHT_enumerateBucket(DEHT * ht, ulong_t bucketIndex, 
+static bool_t DEHT_enumerateBucket(DEHT * ht, int bucketIndex, 
 			    byte_t * blockBuffer,
-			    DEHT_enumerationCallback_t func, void * param)
+			    DEHT_enumerationCallback_t callback, void * param)
 {
 	bool_t ret = FALSE;
 	DEHT_DISK_PTR blockOffset = 0;
@@ -1500,14 +1502,14 @@ static bool_t DEHT_enumerateBucket(DEHT * ht, ulong_t bucketIndex,
 	TRACE_FUNC_ENTRY();
 	CHECK(NULL != ht);
 	CHECK(NULL != blockBuffer);
-	CHECK(NULL != func);
+	CHECK(NULL != callback);
 
 	CHECK(DEHT_findFirstBlockForBucket(ht, bucketIndex, &blockOffset));
 
 	while (0 != blockOffset) {
 		CHECK_MSG(ht->sKeyfileName, (pfread(ht->keyFP, blockOffset, blockBuffer, KEY_FILE_BLOCK_SIZE(ht))));
 		
-		CHECK(DEHT_enumerateBlock(ht, blockBuffer, bucketIndex, func, param));
+		CHECK(DEHT_enumerateBlock(ht, blockBuffer, bucketIndex, callback, param));
 		
 		blockOffset = GET_NEXT_BLOCK_PTR(ht, blockBuffer);
 	}
@@ -1526,23 +1528,23 @@ LBL_CLEANUP:
 
 
 bool_t DEHT_enumerate(DEHT * ht, 
-		      DEHT_enumerationCallback_t func, void * param)
+		      DEHT_enumerationCallback_t callback, void * param)
 {
 	bool_t ret = FALSE;
 
-	ulong_t bucketIndex = 0;
+	int bucketIndex = 0;
 	byte_t * currBlock = NULL;
 
 	TRACE_FUNC_ENTRY();
 	CHECK(NULL != ht);
-	CHECK(NULL != func);
+	CHECK(NULL != callback);
 
 	/* A buffer to hold a single block */
 	currBlock = malloc(KEY_FILE_BLOCK_SIZE(ht));
 	CHECK_MSG("malloc", (NULL != currBlock));
 
 	for (bucketIndex = 0; bucketIndex < ht->header.numEntriesInHashTable; ++bucketIndex) {
-		CHECK(DEHT_enumerateBucket(ht, bucketIndex, currBlock, func, param));
+		CHECK(DEHT_enumerateBucket(ht, bucketIndex, currBlock, callback, param));
 	}
 
 	ret = TRUE;

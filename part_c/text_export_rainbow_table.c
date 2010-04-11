@@ -74,7 +74,7 @@ bool_t textExportRainbowTable(const char * prefix,
 		perror(output1Filename);
 		goto LBL_CLEANUP_GENERATOR;
 	}
-	output2 = fopen(output1Filename, "w");
+	output2 = fopen(output2Filename, "w");
 	if (NULL == output2) {
 		perror(output2Filename);
 		goto LBL_CLEANUP_GENERATOR;
