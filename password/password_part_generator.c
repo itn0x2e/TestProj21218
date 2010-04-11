@@ -6,7 +6,8 @@
 #include "password_part_generator.h"
 
 static passwordPartGenerator_t * createAlphabetPhraseGenerator(const char * rangeStr, alphabet_t alphabet);
-static passwordPartGenerator_t * createSingleCasedDictionaryWordGenerator(const dictionary_t * dictionary, letterCase_t letterCase);
+static passwordPartGenerator_t * createSingleCasedDictionaryWordGenerator(const dictionary_t * dictionary,
+									  letterCase_t letterCase);
 static passwordPartGenerator_t * createMixedCasedDictionaryWordGenerator(const dictionary_t * dictionary);
 
 passwordPartGenerator_t * passwordPartGeneratorCreate(const char * rulePart, const dictionary_t * dictionary) {
@@ -49,11 +50,14 @@ ulong_t passwordPartGeneratorGetMaxLength(const passwordPartGenerator_t * self) 
 	return self->maxLength;
 }
 
-char * passwordPartGeneratorCalculatePassword(const passwordPartGenerator_t * self, ulong_t index, char * buf) {
+char * passwordPartGeneratorCalculatePassword(const passwordPartGenerator_t * self,
+					      ulong_t index,
+					      char * buf) {
 	return self->calcPassFunc(self, index, buf);
 }
 
-static passwordPartGenerator_t * createAlphabetPhraseGenerator(const char * rangeStr, alphabet_t alphabet) {
+static passwordPartGenerator_t * createAlphabetPhraseGenerator(const char * rangeStr,
+							       alphabet_t alphabet) {
 	ulong_t minLength;
 	ulong_t maxLength;
 	alphabetPhraseGenerator_t * alphabetPhraseGenerator =
@@ -63,7 +67,6 @@ static passwordPartGenerator_t * createAlphabetPhraseGenerator(const char * rang
 		return NULL;
 	}
 
-	/* TODO: validate input? */
 	minLength = atoi(rangeStr);
 	maxLength = atoi(strchr(rangeStr, '-') + 1);
 
@@ -72,15 +75,18 @@ static passwordPartGenerator_t * createAlphabetPhraseGenerator(const char * rang
 	return (passwordPartGenerator_t *) alphabetPhraseGenerator;
 }
 
-static passwordPartGenerator_t * createSingleCasedDictionaryWordGenerator(const dictionary_t * dictionary, letterCase_t letterCase) {
+static passwordPartGenerator_t * createSingleCasedDictionaryWordGenerator(const dictionary_t * dictionary,
+									  letterCase_t letterCase) {
 	singleCasedDictionaryWordGenerator_t * singleCasedDictionaryWordGenerator =
-			malloc(sizeof(singleCasedDictionaryWordGenerator_t));
+		malloc(sizeof(singleCasedDictionaryWordGenerator_t));
 
 	if (NULL == singleCasedDictionaryWordGenerator) {
 		return NULL;
 	}
 
-	singleCasedDictionaryWordGeneratorInitialize(singleCasedDictionaryWordGenerator, dictionary, letterCase);
+	singleCasedDictionaryWordGeneratorInitialize(singleCasedDictionaryWordGenerator,
+						     dictionary,
+						     letterCase);
 
 	return (passwordPartGenerator_t *) singleCasedDictionaryWordGenerator;
 }
@@ -93,8 +99,8 @@ static passwordPartGenerator_t * createMixedCasedDictionaryWordGenerator(const d
 		return NULL;
 	}
 
-	mixedCasedDictionaryWordGeneratorInitialize(mixedCasedDictionaryWordGenerator, dictionary);
+	mixedCasedDictionaryWordGeneratorInitialize(mixedCasedDictionaryWordGenerator,
+						    dictionary);
 
 	return (passwordPartGenerator_t *) mixedCasedDictionaryWordGenerator;
 }
-

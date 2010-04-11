@@ -2,10 +2,10 @@
 #include "password_enumerator.h"
 
 void passwordEnumeratorInitialize(passwordEnumerator_t * self,
-								  const passwordGenerator_t * generator,
-								  char * password,
-								  ulong_t iterations,
-								  getGeneratorIndexFuncPtr_t getGeneratorIndexFunc) {
+				  const passwordGenerator_t * generator,
+				  char * password,
+				  ulong_t iterations,
+				  getGeneratorIndexFuncPtr_t getGeneratorIndexFunc) {
 	self->generator = generator;
 	self->password = password;
 	self->iterations = iterations;
@@ -21,8 +21,8 @@ bool_t passwordEnumeratorCalculateNextPassword(passwordEnumerator_t* self) {
 	}
 
 	passwordGeneratorCalculatePassword(self->generator,
-									   self->getGeneratorIndexFunc(self),
-									   self->password);
+					   self->getGeneratorIndexFunc(self),
+					   self->password);
 
 	self->index++;
 	return TRUE;
