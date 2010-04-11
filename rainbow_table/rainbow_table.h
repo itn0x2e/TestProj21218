@@ -37,9 +37,7 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   ulong_t rainbowChainLen,
 		   const char * hashTableFilePrefix,
 		   ulong_t nHashTableEntries,
-		   ulong_t nPairsPerBlock,
-		   bool_t b1, /*! TODO: tmp */
-		   bool_t b2 /*! TODO: tmp */);
+		   ulong_t nPairsPerBlock);
 
 RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 			 char * password,
@@ -60,16 +58,5 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 		char * generatorPassword,
 		ulong_t passwordMaxLen,
 		const char * hashTableFilePrefix);
-
-/*
-void goDownChain(byte_t * curHash,
-		uint_t curHashLen,
-		const passwordGenerator_t * passwordGenerator,
-		ulong_t numPossiblePasswords,
-		char * pass,
-		BasicHashFunctionPtr cryptHashPtr,
-		const RainbowSeed_t * seeds,
-		ulong_t iterations);
-*/
 
 #endif /* __RAINBOW_TABLE_H__ */

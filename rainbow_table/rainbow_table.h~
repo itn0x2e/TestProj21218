@@ -21,7 +21,6 @@ typedef struct RainbowTable_s {
 	RainbowTableConfig_t * config;
 	BasicHashFunctionPtr hashFunc;
 	const passwordGenerator_t * passGenerator;
-	ulong_t numPossiblePasswords;
 	char * password;
 	ulong_t passwordLength;
 } RainbowTable_t;
@@ -38,12 +37,9 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 		   ulong_t rainbowChainLen,
 		   const char * hashTableFilePrefix,
 		   ulong_t nHashTableEntries,
-		   ulong_t nPairsPerBlock,
-		   bool_t b1, /*! TODO: tmp */
-		   bool_t b2 /*! TODO: tmp */);
+		   ulong_t nPairsPerBlock);
 
 RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
-			 ulong_t numPossiblePasswords,
 			 char * password,
 			 ulong_t passwordLength,
 			 const char * hashTableFilePrefix,

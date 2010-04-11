@@ -88,7 +88,6 @@ bool_t createRainbowTable(const char * hashName,
 					   &passwordGenerator,
 					   enumeratorPassword,
 					   RANDOM_PASSWORD_NUM_FACTOR * passwordGeneratorGetSize(&passwordGenerator));
-	printf("before\n");
 	ret = RT_generate((passwordEnumerator_t *) &randomPasswordEnumerator,
 			  &passwordGenerator,
 			  enumeratorPassword,
@@ -97,11 +96,7 @@ bool_t createRainbowTable(const char * hashName,
 			  chainLength,
 			  prefix,
 			  entiresInHashTable,
-			  bucketBlockLength,
-			  TRUE, /* TODO: ? */
-			  TRUE /* TODO: ? */
-			  );
-	printf("after: %s\n", ret ? "TRUE" : "FALSE");
+			  bucketBlockLength);
 
 LBL_CLEANUP_GENERATOR:
 	passwordGeneratorFinalize(&passwordGenerator);

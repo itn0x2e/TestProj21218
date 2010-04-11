@@ -168,16 +168,13 @@ bool_t generateExaustiveTable(passwordEnumerator_t * enumerator,
 			      char * generatorPassword,
 			      BasicHashFunctionPtr hashFunc,
 			      const char * prefix) {
-	/* TODO: dummy */
-	while(passwordEnumeratorCalculateNextPassword(enumerator)) printf("%s\n", enumeratorPassword);
-	
-	return RT_generate(enumerator,generator, enumeratorPassword, generatorPassword, hashFunc,
-			0 /*ulong_t rainbowChainLen*/,
-
-			prefix /*const char * hashTableFilePrefix*/,
-			TABLE_OF_POINTERS_ENTRIES/*ulong_t nHashTableEntries*/,
-			PAIRS_PER_BLOCK/*ulong_t nPairsPerBlock*/,
-			FALSE/*bool_t enableFirstBlockCache*/,
-			FALSE/*bool_t enableLastBlockCache*/
-			);
+	return RT_generate(enumerator,
+			   generator,
+			   enumeratorPassword,
+			   generatorPassword,
+			   hashFunc,
+			   0,
+			   prefix,
+			   TABLE_OF_POINTERS_ENTRIES,
+			   PAIRS_PER_BLOCK);
 }
