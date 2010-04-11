@@ -33,7 +33,6 @@ bool_t exhaustive_query(const char * prefix) {
 		rainbowTable = initializeExaustiveTable(prefix, password, sizeof(password) - 1);
 		if (NULL != rainbowTable) {
 			commandLoop(rainbowTable, password);
-			
 			finalizeExaustiveTable(rainbowTable);
 			return TRUE;	
 		}
@@ -82,9 +81,5 @@ void finalizeExaustiveTable(RainbowTable_t * rainbowTable) {
 }
 
 bool_t queryExaustiveTable(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, bool_t * found) {
-	char s[1000];
-	binary2hexa(hash, (int) hashLen, s, sizeof(s));
-	printf("queryExaustiveTable	%s\n", s);
-	
 	return RT_query(self, hash, hashLen, found);
 }
