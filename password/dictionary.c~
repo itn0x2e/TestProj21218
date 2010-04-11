@@ -4,9 +4,34 @@
 #include "../common/utils.h"
 #include "dictionary.h"
 
+/**
+ * Finds the next word in the supplied raw dict. Used for the dict vectorification process.
+ *
+ * @param rawDict	A pointer to the current location in the dictionary, 
+ *			from which to seek forward
+ * @param next		A pointer that will be set the next word in the dictionary,
+ *			or NULL if no such word could be found
+ * @param nextLen	A pointer that will receive the length of the new word
+ *
+ * @return TRUE upon success, FALSE otherwise
+ */
 static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextLen);
-static bool_t isWordChar(char * c);
+static bool_t isWordChar(char c);
+
+/**
+ * Converts a string to lower case in place
+ *
+ * @param buf	The pointer to string to convert.
+ * @param len	The number of chars to convert
+ */
 static void strToLower(char * buf, uint_t len);
+
+/**
+ * Converts a string to upper case in place
+ *
+ * @param buf	The pointer to string to convert.
+ * @param len	The number of chars to convert
+ */
 static void strToUpper(char * buf, uint_t len);
 
 bool_t dictionaryInitialize(dictionary_t * self, const char * rawDict) {
@@ -16,17 +41,17 @@ bool_t dictionaryInitialize(dictionary_t * self, const char * rawDict) {
 	uint_t currWordLen = 0;
 	uint_t rawDictLen = strlen(rawDict);
 
+	/* Create a copy of the raw data - lower cased followed by upper cased */
 	self->rawDataLowerUpper = (char *) malloc(((2 * rawDictLen) + 1) * sizeof(*(self->rawDataLowerUpper)));
 	CHECK(NULL != self->rawDataLowerUpper);
-
 	strcpy(self->rawDataLowerUpper, rawDict);
 	strToLower(self->rawDataLowerUpper, rawDictLen);
 	strcpy(self->rawDataLowerUpper + rawDictLen, rawDict);
 	strToUpper(self->rawDataLowerUpper + rawDictLen, rawDictLen);
 	self->rawDataLowerUpper[2 * rawDictLen] = '\0';
 
+	/* Scan the upper cased part in order to count the words */
 	currWord = self->rawDataLowerUpper + rawDictLen;
-
 	while (findNextWordInRawDict(currWord, &currWord, &currWordLen)) {
 		++dictLen;
 		currWord += currWordLen + 1;
@@ -111,7 +136,7 @@ static bool_t findNextWordInRawDict(char * rawDict, char ** next, uint_t * nextL
 	return TRUE;
 }
 
-static bool_t isWordChar(char * c) {
+static bool_t isWordChar(char c) {
 	return (isgraph(c) || (' ' == c) || ('\t' == c));
 }
 
