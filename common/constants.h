@@ -5,8 +5,9 @@
 #include "sha1.h"
 #include "utils.h"
 
-#define MAX_USERNAME_LEN (80)
-#define MAX_PASSWORD_LEN (80)
+/* The project spec defined 80 bytes as the maximum length */
+#define MAX_USERNAME_LEN (80 + 1)
+#define MAX_PASSWORD_LEN (80 + 1)
 
 #define MAX_LINE_LEN (256)
 

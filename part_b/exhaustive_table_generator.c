@@ -8,10 +8,12 @@
 #include "../password/random_password_enumerator.h"
 #include "../rainbow_table/rainbow_table.h"
 
+
+/* Hash table settings according to project spec */
 #define PAIRS_PER_BLOCK (7)
 #define SIGNATURE_LENGTH_PER_KEY (8)
 #define TABLE_OF_POINTERS_ENTRIES (65536) /* 2^16 */
-/* TODO: what about the 16-bit hash function???????????? [Use 65536 (2^16) entries in the table-of-pointers (i.e. 16-bit hash function).] */
+
 
 int main(int argc, char** argv);
 

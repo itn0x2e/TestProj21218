@@ -229,7 +229,7 @@ bool_t removeFile(char * fileName)
 	FCLOSE(fd);
 
 	/* remove the file */
-	CHECK(0 == remove(fileName));
+	CHECK_MSG(fileName, (0 == remove(fileName)));
 
 	ret = TRUE;
 	goto LBL_CLEANUP;

@@ -146,7 +146,8 @@ RainbowTable_t * initializeRainbowTable(const passwordGenerator_t * passGenerato
 	return RT_open(passGenerator,
 			generatorPassword,
 			passwordGeneratorGetMaxLength(passGenerator),
-			prefix);
+			prefix,
+			TRUE);
 }
 
 void finalizeRainbowTable(RainbowTable_t * rainbowTable) {

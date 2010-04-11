@@ -9,8 +9,8 @@ int main(int argc, char** argv);
 bool_t exhaustive_query(const char * prefix);
 void commandLoop(RainbowTable_t * rainbowTable, char * password);
 RainbowTable_t * initializeExaustiveTable(const char * prefix, char * password, ulong_t passwordLen);
-void finalizeExaustiveTable(RainbowTable_t * rainbowTable); /* TODO: this func should tolerate NULL as arg, and ignore it */
-bool_t queryExaustiveTable(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, bool_t * found); /* TODO: should receive size allocated for password? */
+void finalizeExaustiveTable(RainbowTable_t * rainbowTable); 
+bool_t queryExaustiveTable(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, bool_t * found); 
 
 int main(int argc, char** argv) {
 	if (2 != argc) {
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 
 bool_t exhaustive_query(const char * prefix) {
 	RainbowTable_t * rainbowTable = NULL;
-	char password[1000]; /* TODO: determine some fixed size */
+	char password[MAX_PASSWORD_LEN];
 	
 	if (verifyDEHTExists(prefix)) {
 		rainbowTable = initializeExaustiveTable(prefix, password, sizeof(password) - 1);

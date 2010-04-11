@@ -147,9 +147,6 @@ bool_t pfwrite(FILE * fd, int offset_from_begining, byte_t * buf, size_t buf_siz
 
 	/* write */
 	CHECK(buf_size == fwrite(buf, 1, buf_size, fd));
-	/*! TODO: remove? !*/
-	fflush(fd);
-
 
 	ret = TRUE;
 

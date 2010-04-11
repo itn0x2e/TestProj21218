@@ -189,7 +189,7 @@ bool_t calcAndPrintChain(RainbowTable_t * rt, FILE * outputFd,
 
 	for (j = 0; j < rt->config->chainLength; ++j) {
 		/* k = pseudo-random-function with seed seed[j] and input curHash; */
-		RainbowSeed_t k = pseudo_random_function(curHash, hashLen, rt->config->seeds[j]); /*! TODO: yet to be implemented */
+		RainbowSeed_t k = pseudo_random_function(curHash, hashLen, rt->config->seeds[j]); 
 	
 		/* curHash = cryptographic-hash(get_kth_password_64b(k,S)); */
 		k %= numPossiblePasswords;
