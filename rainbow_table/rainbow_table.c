@@ -370,7 +370,9 @@ static bool_t queryRainbowTable(DEHT * deht,
 	
 	/*char outStr[1000];*/
 
-	ulong_t numPossiblePasswords = passwordGeneratorGetSize(passwordGenerator);
+	/*! TODO: this should be inside the chain scaning function */
+	ulong_t numPossiblePasswords = 0;
+	
 
 	char * tryThisPassword = (char *) malloc((passwordLen + 1) * sizeof(char));
 	if (NULL == tryThisPassword) {
@@ -378,6 +380,11 @@ static bool_t queryRainbowTable(DEHT * deht,
 		return FALSE;
 	}
 
+	/*! TODO: this should be inside the chain scaning function */
+	if (NULL != passwordGenerator) {
+		numPossiblePasswords = passwordGeneratorGetSize(passwordGenerator);
+	}
+	
 	/*! Initially, the respose is that a password matching this hash value cannot be found */
 	*found = FALSE;
 
