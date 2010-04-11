@@ -15,7 +15,7 @@
 
 LONG_INDEX_PROJ pseudo_random_generator_proj(int step)
 {
-	LONG_INDEX_PROJ hashedBuffer[MD5_OUTPUT_LENGTH_IN_BYTES/sizeof(LONG_INDEX_PROJ)];
+	LONG_INDEX_PROJ hashedBuffer[MD5_DIGEST_LEN/sizeof(LONG_INDEX_PROJ)];
 	int tmp2hashBuf[2];
 	tmp2hashBuf[0] = step; /*make sure step affects result*/
 	tmp2hashBuf[1] = 0xbadf00d; /*make your program different from other*/
@@ -47,8 +47,7 @@ int MD5SeededHash(byte_t * outBuf,
 		   const byte_t * seed, ulong_t seedLen, 
 		   const byte_t * data, ulong_t dataLen)
 {
-	/*! TODO: restore !*/
-	MD5_CTX mdContext;/*! = {0}; !*/
+	MD5_CTX mdContext;
 
 	TRACE_FUNC_ENTRY();
 
@@ -87,8 +86,7 @@ int SHA1SeededHash(byte_t * outBuf,
 		   const byte_t * seed, ulong_t seedLen, 
 		   const byte_t * data, ulong_t dataLen)
 {
-	/*! TODO: restore !*/
-	SHA1Context hashCtx; /*! = {0}; !*/
+	SHA1Context hashCtx;
 
 	TRACE_FUNC_ENTRY();
 
@@ -125,10 +123,8 @@ int miniHash(byte_t * output, ulong_t outputLen,
 
 	int ret = 0;
 
-	/*! TODO: restore !*/
-	byte_t properHash[MD5_OUTPUT_LENGTH_IN_BYTES]; /*! = {0}; !*/
+	byte_t properHash[MD5_DIGEST_LEN];
 
-/*!	uint_t i = 0; !*/
 	size_t hashSize = 0;
 
 	TRACE_FUNC_ENTRY();
@@ -146,12 +142,6 @@ int miniHash(byte_t * output, ulong_t outputLen,
 		goto LBL_ERROR;
 	}
 
-	/*! TODO: remove / restore !*/
-	/* now, shrink it by a xor rolling */
-/*	for (i = 0;  i < hashSize; ++i) {
-		output[i % outputLen] = output[i % outputLen] ^ properHash[i];
-	}
-*/
 	memcpy(output, properHash, MIN(outputLen, sizeof(properHash)));
 
 	ret = outputLen;

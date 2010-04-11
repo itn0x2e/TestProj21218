@@ -9,6 +9,14 @@
 #include "utils.h"
 #include "types.h"
 
+
+#define SHA1_DIGEST_LEN (sizeof(((SHA1Context *) 0)->Message_Digest))
+#define MD5_DIGEST_LEN (sizeof(((MD5_CTX *) 0)->digest))
+#define MAX_DIGEST_LEN (MAX(SHA1_DIGEST_LEN, MD5_DIGEST_LEN))
+
+
+
+
 /*************************************************************************/
 /* typedef BasicHashFunctionPtr:                                         */
 /* A cryptographic hash function performs many bitic operation on a      */
@@ -23,14 +31,10 @@ typedef int (*BasicHashFunctionPtr)(const unsigned char *,int,unsigned char *);
 /* int inputLength , i.e. its length in byte, as it may vary   */
 /* unsigned char *outBuf output buffer to fulfill. Assume long enough*/
 
-/*! TODO: remove? !*/
-#define MD5_OUTPUT_LENGTH_IN_BYTES    (16)
 int MD5BasicHash ( const unsigned char *in,int len, unsigned char *outBuf); 
 
-#define SHA1_OUTPUT_LENGTH_IN_BYTES   (32)
 int SHA1BasicHash ( const unsigned char *in,int len, unsigned char *outBuf); 
 
-#define HASH_MAX_SIZE (MAX(SHA1_OUTPUT_LENGTH_IN_BYTES, MD5_OUTPUT_LENGTH_IN_BYTES))
 
 
 /*************************************************************************/
