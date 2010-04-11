@@ -36,6 +36,8 @@ static DEHT * createEmptyRainbowTable(const char *prefix,
 	      uint_t nPairsPerBlock,
 	      uint_t configLength);
 
+
+/*!TODO !*/
 /**
 * Close a rainbow table DEHT instance
 * Function desc: This function calls DEHT's lock interface (convenience wrapper)
@@ -46,6 +48,7 @@ static DEHT * createEmptyRainbowTable(const char *prefix,
 *
 */	      
 static void closeRainbowTable(DEHT * rainbowTable);
+
 
 
 /**
@@ -109,6 +112,7 @@ static bool_t fillRainbowTable(DEHT * deht,
 			       const RainbowSeed_t * seeds);
 		
 
+
 /**
 * Query the rainbow table for a hash, and attempt to return the original password for said hash.
 * Function desc: Using the algorithm detailed in the project spec, this function attempts to
@@ -152,6 +156,7 @@ static bool_t queryRainbowTable(DEHT * deht,
 static bool_t readConfig(DEHT * deht, RainbowTableConfig_t ** config);
 
 
+/*!TODO !*/
 /**
 * Insert uniquely into the DEHT instance
 * Function desc: Using DEHT's insert unique interface, insert into the hash table
@@ -164,6 +169,7 @@ static bool_t readConfig(DEHT * deht, RainbowTableConfig_t ** config);
 * @ret TRUE if no errors were encountered, FALSE otherwise.
 */
 static bool_t insertIntoDEHT(DEHT * deht, const byte_t * key, uint_t keyLen, const char * dataStr);
+
 
 /**
 * Query the hash table for key
