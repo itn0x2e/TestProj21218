@@ -213,7 +213,7 @@ LONG_INDEX_PROJ pseudo_random_function(const unsigned char *x,int inputLength,LO
 	
 	ASSERT(MAX_DIGEST_LEN >= sizeof(ret));
 	
-	miniHash(&ret, sizeof(ret), &seed, sizeof(seed), x, inputLength);
+	miniHash((byte_t *) &ret, sizeof(ret), (const byte_t *) &seed, sizeof(seed), x, inputLength);
 	return ret;
 }
 

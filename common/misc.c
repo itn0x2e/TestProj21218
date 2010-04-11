@@ -249,6 +249,3 @@ const char * getNameFromHashFun(BasicHashFunctionPtr hashFunc) {
 
 	return NULL;
 }
-
-
-

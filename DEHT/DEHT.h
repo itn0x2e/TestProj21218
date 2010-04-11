@@ -18,7 +18,6 @@
 /* Data-type of long (argument of "fseek" function) represents an   */
 /* offset in a file, which is "disk pointers" in our implementation */
 /********************************************************************/
-/*! No idea why this is a define and not a proper typedef, but that's what the project spec asked for !*/
 #define DEHT_DISK_PTR    long 
 
 
