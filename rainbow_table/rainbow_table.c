@@ -112,9 +112,8 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 			 bool_t enableFirstBlockCache,
 			 bool_t enableLastBlockCache) {
 	RainbowTable_t * ret = NULL;
-
 	RainbowTable_t * self = NULL;
-	/*printf("RT_open\n");*/
+	
 	TRACE_FUNC_ENTRY();
 
 	CHECK(NULL != hashTableFilePrefix);
@@ -137,7 +136,6 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 	/* (Note, however, that errors here are treated as non-terminal, to increase robustness) */
 	(void) read_DEHT_pointers_table(self->hashTable);
 
-
 	/* find the hash type */
 	self->hashFunc = getHashFunFromName(self->hashTable->header.sDictionaryName);
 	CHECK(NULL != self->hashFunc);
@@ -155,7 +153,6 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 	ret = self;
 	goto LBL_CLEANUP;
 
-
 LBL_ERROR:
 	ret = NULL;
 	TRACE_FUNC_ERROR();
@@ -172,9 +169,6 @@ LBL_CLEANUP:
 
 	return ret;
 }
-
-
-
 
 void RT_close(RainbowTable_t * self) {
 	TRACE_FUNC_ENTRY();
@@ -206,7 +200,6 @@ LBL_CLEANUP:
 
 
 bool_t RT_query(RainbowTable_t * self, const byte_t * hash, ulong_t hashLen, bool_t * found) {
-	/*{int  i; for(i=0;i< self->config->chainLength; ++i) printf("seed[i] == %08X", self->config->seeds[i]);}*/
 	if (!queryRainbowTable(self->hashTable,
 				self->passGenerator,
 				self->password,
@@ -258,7 +251,7 @@ static const RainbowTableConfig_t * createConfig(DEHT * rainbowTable, ulong_t ra
 	/* Write the rainbow chain length and seeds into the config */
 	config->chainLength = rainbowChainLen;
 	randomizeSeeds(config->seeds, config->chainLength);
-	/*{int  i; for(i=0;i<config->chainLength; ++i) printf("seed[%u] == %08X\n", i, config->seeds[i]);}*/
+	
 	/* Store the config */
 	CHECK(DEHT_STATUS_FAIL != DEHT_writeUserBytes(rainbowTable));
 	
@@ -318,18 +311,16 @@ static bool_t queryRainbowTable(DEHT * deht,
 				bool_t * found) {
 	ulong_t j;
 
-	/*! Initially, the respose is that a password matching this hash value cannot be found */
+	/* Initially, the respose is that a password matching this hash value cannot be found */
 	*found = FALSE;
 
-	/*! If the length of the target hash value is wrong, is is useless to look for it */
+	/* If the length of the target hash value is wrong, iא is useless to look for it */
 	if (targetLen != getHashFunDigestLength(cryptHashPtr)) {
 		/* Return immidiately, informing that the query was performed correctly,
 		* but a password matching this hash value cannot be found */
 		return TRUE;
 	}
 	
-	/* For j=1 to chain-length do */
-	/*! I added (j == 0) too */
 	for (j = 0; j <= chainLength; ++j) {
 		/* Gamble that our password is location "j" in some chain as follow:*/
 		byte_t curHash[MAX_DIGEST_LEN];
@@ -348,12 +339,11 @@ static bool_t queryRainbowTable(DEHT * deht,
 			       j,
 			       chainLength - j);
 
-		/* query in disc-embedded hash table with key: curHash.
-		 * Get data (a password) call it: tryThisPassword */
+		/* query in disc-embedded hash table with key: curHash. */
 		CHECK(queryPasswordFromDEHT(deht, curHash, curHashLen, password, passwordLen, &foundInJ));
 
-		/* If tryThisPassword is NULL then continue loop (obviously wrong j)
-		 * Else, assume tryThisPassword is beginning of correct chain so */
+		/* If not found then continue loop (obviously wrong j)
+		 * Else, assume that this password is beginning of correct chain so */
 		if (foundInJ) {
 			/* Go chain-length -j steps down (i.e. to the correct location). */
 			cryptHash(cryptHashPtr, password, curHash);
@@ -367,10 +357,10 @@ static bool_t queryRainbowTable(DEHT * deht,
 					chainLength - j,
 					0);
 
-                        /* Check whether cryptographic-hash(curPass)==target */
+                        /* Check whether the hash of the current password is the target */
 			cryptHash(cryptHashPtr, password, curHash);
 			if (0 == memcmp(curHash, target, targetLen)) {
-				/* If so, return curPass */
+				/* If so, return the current password */
 				*found = TRUE;
 				break;
 			}
@@ -405,11 +395,11 @@ LBL_ERROR:
 }
 
 static bool_t insertIntoDEHT(DEHT * deht, const byte_t * key, uint_t keyLen, const char * dataStr) {
-	char outStr[1000];
-	binary2hexa(key, keyLen, outStr, 1000);
-	printf("INSERT\tkey == %s, data == \"%s\"\n", outStr, dataStr);
-	/*! TODO: document that we do put the terminating null */
-	return (DEHT_STATUS_FAIL != insert_uniquely_DEHT(deht, key, keyLen, (const unsigned char *) dataStr, strlen(dataStr) + 1));
+	return (DEHT_STATUS_FAIL != insert_uniquely_DEHT(deht,
+							 key,
+							 keyLen,
+							 (const unsigned char *) dataStr,
+							 strlen(dataStr) + 1));
 }
 
 static bool_t queryPasswordFromDEHT(DEHT * deht,
@@ -419,41 +409,23 @@ static bool_t queryPasswordFromDEHT(DEHT * deht,
 				    uint_t dataStrMaxLen,
 				    bool_t * found) {
 	
-	int queryRet;
-
-	/*char outStr[1000];*/
-	
-
-
-
-	/*! TODO: document that we do read the terminating null */
-	queryRet = query_DEHT(deht, key, keyLen, (byte_t *) dataStr, dataStrMaxLen + 1);
+	int queryRet = query_DEHT(deht, key, keyLen, (byte_t *) dataStr, dataStrMaxLen + 1);
 
 	switch(queryRet) {
 		case DEHT_STATUS_NOT_NEEDED:
 			*found = FALSE;
 			return TRUE;
 		case DEHT_STATUS_FAIL:
-			printf("DEHT_STATUS_FAIL\n");
 			return FALSE;
 	}
 
-	/*binary2hexa(key, keyLen, outStr, 1000);*/
-
-	/*printf("QUERY\tkey == %s\t found %s\n", outStr, dataStr);*/
-
 	if ('\0' != dataStr[queryRet - 1]) {
 		/* The data read is not a string */
-		/*TODO: should we print an error about corruption? */
+		/*! TODO: should we print an error about corruption? */
 		return FALSE;
 	}
 
 	*found = TRUE;
-	
-
-
-	/*printf("FOUND\tkey == %s, data == %s\n", outStr, dataStr);*/
-	
 	
 	return TRUE;
 }
