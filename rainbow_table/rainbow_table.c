@@ -530,7 +530,6 @@ static bool_t queryRainbowTable(DEHT * deht,
 					0);
 
                         /* Check whether the hash of the current password is the target */
-			cryptHash(cryptHashPtr, password, curHash);
 			if (0 == memcmp(curHash, target, targetLen)) {
 				/* If so, return the current password */
 				*found = TRUE;

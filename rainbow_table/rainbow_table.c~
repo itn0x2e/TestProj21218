@@ -326,6 +326,7 @@ RainbowTable_t * RT_open(const passwordGenerator_t * passGenerator,
 		if (NULL == passGenerator) {
 			/* probably, the user is trying to open a rainbow table as an exhaustive table */
 			fprintf(stderr, "Error: rainbow table has chains\n");
+			goto LBL_ERROR;
 		}
 	}
 
@@ -529,7 +530,7 @@ static bool_t queryRainbowTable(DEHT * deht,
 					0);
 
                         /* Check whether the hash of the current password is the target */
-			cryptHash(cryptHashPtr, password, curHash);
+			/*cryptHash(cryptHashPtr, password, curHash);*/
 			if (0 == memcmp(curHash, target, targetLen)) {
 				/* If so, return the current password */
 				*found = TRUE;
