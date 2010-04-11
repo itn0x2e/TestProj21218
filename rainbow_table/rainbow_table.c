@@ -98,8 +98,10 @@ bool_t RT_generate(passwordEnumerator_t * passwordEnumerator,
 
 LBL_ERROR:
 	closeRainbowTable(rainbowTable);
-	/*!TODO: should we delete the DEHT files upon failure? */
-	/*! TODO: should I really avoid FREE(seeds)? */
+
+	/* We failed to generate the table, so we should remove the file */
+	(void) DEHT_removeFiles(hashTableFilePrefix);
+
 	return ret;
 }
 
