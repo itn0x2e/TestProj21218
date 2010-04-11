@@ -211,8 +211,8 @@ bool_t RT_print(FILE * seedsAndPasswordsFd,
 
 	/* Open rainbow table (all caches off, since we'll be doing sequencial access */
 	rt = RT_open(passGenerator, generatorPassword, 
-		     passwordMaxLen, hashTableFilePrefix,
-		     FALSE, FALSE);
+		     passwordMaxLen, hashTableFilePrefix, 
+		     FALSE);
 	CHECK(NULL != rt);
 
 

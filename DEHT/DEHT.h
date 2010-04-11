@@ -339,7 +339,7 @@ void lock_DEHT_files(DEHT *ht);
 * @ret - TRUE on succes, FALSE otherwise. 
 *
 */
-bool_t DEHT_removeFiles(char * filenamePrefix);
+bool_t DEHT_removeFiles(const char * filenamePrefix);
 
 /**
 * Use to get a pointer to the raw user buffer stored inside DEHT's data file

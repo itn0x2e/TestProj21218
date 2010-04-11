@@ -236,7 +236,7 @@ static bool_t DEHT_readDataAtOffset(DEHT * ht, DEHT_DISK_PTR dataBlockOffset,
 * @ret None (can only fail due to mis-use)
 *
 */
-static void DEHT_formatFilenames(DEHT * ht, char * prefix);
+static void DEHT_formatFilenames(DEHT * ht, const char * prefix);
 
 /**
 * Clean DEHT's files (according to the DEHT instance's 
@@ -1364,7 +1364,7 @@ LBL_CLEANUP:
 	return;
 }
 
-static void DEHT_formatFilenames(DEHT * ht, char * prefix)
+static void DEHT_formatFilenames(DEHT * ht, const char * prefix)
 {
 	TRACE_FUNC_ENTRY();
 	CHECK(NULL != ht);
@@ -1410,7 +1410,7 @@ LBL_CLEANUP:
 	return ret;
 }
 
-bool_t DEHT_removeFiles(char * filenamePrefix)
+bool_t DEHT_removeFiles(const char * filenamePrefix)
 {
 	bool_t ret = FALSE;
 	DEHT tempContainer;
